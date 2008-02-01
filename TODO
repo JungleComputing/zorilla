@@ -1,0 +1,27 @@
+- define default status items ("nr.of.workers", "ID", ...)
+- redesign node resource management
+- fix virtual vs physical file issues
+- implemente master/worker zorilla
+- tolerate services not starting
+- implement priority Q scheduling
+
+- finish implementing Security
+- make better distinction between USER and ZORILLA error in phases
+- add better/more robust support for ibis user apps
+- add support for GAT for the user (in seperate JVM)
+
+- add support for "blacklisting" nodes if they are deemed broken or too slow
+  for a computation. Possibly adjust searching parameters for new nodes.
+- pipe files through user connection
+- support pre stage of remote files
+- support submit to a remote zorilla node
+- add better minitoring to GAT
+- support steering via the GAT
+- add support for frontend/backend scenario (via the GAT?)
+- add support for FAT Binaries
+- implement other scheduling metrics
+- add clustering support to P2P network
+- implement fully distributed job object
+- add economics to scheduler
+
+

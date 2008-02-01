@@ -1,0 +1,61 @@
+<project name="Zorilla" default="build" basedir=".">
+    <description>
+        Build file for Zorilla
+    </description>
+    	
+    <!-- set a timestamp -->
+    <tstamp>
+        <format property="TIMESTAMP" pattern="yyyyMMdd-HHmm-ss"/>
+    </tstamp>
+
+    <!-- empty version by default -->
+    <property name="VERSION" value="-1.0beta6"/>
+	
+    <target name="build" description="build everything">
+        <ant dir="zoni"/>
+        <ant dir="node"/>
+    </target>
+
+    <target name="clean" description="clean everything">
+        <ant dir="zoni" target="clean"/>
+        <ant dir="node" target="clean"/>
+    	
+    	<delete dir="dist" />
+    </target>
+	
+    <target name="javadoc" description="create javadoc documentation">
+        <ant dir="zoni" target="javadoc"/>
+    </target>
+
+    <target name="dist" 
+        depends="build, javadoc" 
+        description="create a binary distribution of zorilla">
+
+        <zip destfile="zorilla-src.zip">
+            <zipfileset dir="zoni/src" prefix="zorilla-src/"/>
+            <zipfileset dir="node/src" prefix="zorilla-src/"/>
+        </zip>
+    	
+    	<delete dir="dist"/>
+    	<mkdir dir="dist" />
+    	
+        <tar destfile="dist/zorilla${VERSION}.tar.gz" compression="gzip">
+            <tarfileset dir="." prefix="zorilla${VERSION}"
+                includes="zorilla-src.zip, README, */lib/**, */javadoc/**, log4j.properties, LICENSE"
+                />
+            <tarfileset dir="." prefix="zorilla${VERSION}" mode="755"
+                includes="bin/**"
+                />
+        </tar>
+
+        <zip destfile="dist/zorilla${VERSION}.zip">
+            <zipfileset dir="." prefix="zorilla${VERSION}"
+                includes="zorilla-src.zip, README, */lib/**, */javadoc/**, log4j.properties, LICENSE"
+                />
+            <zipfileset dir="." prefix="zorilla${VERSION}" filemode="755"
+                includes="bin/**"
+                />
+        </zip>
+
+    </target>
+</project>

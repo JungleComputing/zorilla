@@ -1,0 +1,72 @@
+<project 
+    name="zoni" 
+    default="build" 
+    basedir=".">
+
+    <description>
+        Build file for Zorilla Node Interface (ZoNI)
+    </description>
+
+    <!-- create the class path. Consists of all external jars -->
+    <path id="class_path">
+        <fileset dir="external">
+            <include name="*.jar" />
+        </fileset>
+    </path>
+
+    <target name="build" depends="clean, compile">
+    </target>
+
+    <target name="javadoc"
+        depends="compile"
+        description="generate all javadocs">
+
+        <javadoc destdir="javadoc"
+            access="public"
+            classpathref="class_path"
+            packagenames="*"
+            sourcepath="src"
+            overview="src/overview.html">
+            <link href="http://java.sun.com/j2se/1.4.2/docs/api/" />
+        </javadoc>
+    </target>
+
+
+    <target name="compile" 
+        description="compile and build jar file">
+
+        <tstamp />
+
+        <mkdir dir="tmp" />
+        <mkdir dir="lib" />
+
+        <!-- Compile the java code from src into tmp -->
+        <javac srcdir="src" 
+               destdir="tmp" 
+               debug="on"
+               source="1.5"
+               target="1.5"
+               classpathref="class_path">
+		<compilerarg value="-Xlint:unchecked" />
+	</javac>
+
+        <jar destfile="lib/${ant.project.name}${VERSION}.jar" 
+            basedir="tmp" 
+            includes="**/*.class">
+        </jar>
+
+        <!-- add external stuff to lib -->
+        <copy todir="lib">
+            <fileset dir="external" />
+        </copy>
+
+        <delete dir="tmp" />
+    </target>
+
+    <target name="clean" description="clean up">
+        <delete dir="tmp" />
+        <delete dir="lib" />
+        <delete dir="javadoc" />
+    </target>
+
+</project>

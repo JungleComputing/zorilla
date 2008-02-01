@@ -1,0 +1,29 @@
+body {  font-family: Verdana, Arial, Helvetica, sans-serif; color: #000000; font-size: 12px; background-color: #FFFFFF }
+table, th, td {  font-family: Verdana, Arial, Helvetica, sans-serif; color: #000000; font-size: 12px}
+img { border: none }
+a:link {  font-family: Verdana, Arial, Helvetica, sans-serif; color: #0066FF}
+a:hover {  font-family: Verdana, Arial, Helvetica, sans-serif; color: #6689CC}
+a:visited {  font-family: Verdana, Arial, Helvetica, sans-serif; color: #02236A}
+a:active {  font-family: Verdana, Arial, Helvetica, sans-serif; color: #0033FF}
+p  {  font-family: Verdana, Arial, Helvetica, sans-serif; color: #000000; font-size: 12px; line-height: 18px} 
+li {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; color: #000000; line-height: 18px}
+dd {  font-family: Verdana, Arial, Helvetica, sans-serif; color: #000000; font-size: 12px; line-height: 18px} 
+h1 {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 24px; color: #6689CC; font-weight: bold}
+h2 {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 18px; font-weight: normal; color: #6689CC}
+h3 {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: #6689CC}
+h4 { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; color: #333366}
+h5 { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; color: #000000 }
+h6 { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; color: #000000 }
+ul, ol {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; color: #000000; line-height: 18px }
+address  {  font-family: Verdana, Arial, Helvetica, sans-serif; color: #000000; font-size: 12px; line-height: 18px} 
+
+dt  {  font-family: Verdana, Arial, Helvetica, sans-serif; color: #000000; font-size: 14px; font-weight: bold; line-height: 18px} 
+dd  {  font-family: Verdana, Arial, Helvetica, sans-serif; color: #000000; font-size: 12px; font-weight: normal; line-height: 18px} 
+
+
+table { vertical-align: top }
+/*td { vertical-align: top }*/
+
+#menucell { background-image: url('sidebar-web.png') ; background-repeat: repeat-x ; background-position: top left ; vertical-align: top ;  background-color: #6689CC ; width: 130px}
+
+td.menu { padding-bottom: 1cm}
