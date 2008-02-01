@@ -1,0 +1,86 @@
+<project 
+    name="zorilla-node" 
+    default="build" 
+    basedir=".">
+
+    <description>
+        Build file for Zorilla Node
+    </description>
+
+    <!-- import environment properties -->
+    <property environment="env"/>
+
+    <!-- create the class path. Consists of all external jars,
+    zoni and bamboo -->
+    <path id="class_path">
+        <fileset dir="external">
+            <include name="*.jar" />
+        </fileset>
+        <fileset dir="../zoni/lib">
+            <include name="*.jar" />
+        </fileset>
+        <fileset dir="../bamboo/lib">
+            <include name="*.jar" />
+        </fileset>
+    </path>
+
+    <target name="build" depends="clean, compile">
+    </target>
+
+    <target name="init">
+        <tstamp />
+
+        <mkdir dir="tmp" />
+        <mkdir dir="lib" />
+    </target>
+
+
+    <target name="javadoc" 
+        depends="init" 
+        description="generate all javadocs">
+
+        <javadoc destdir="javadoc" 
+            access="public"
+            classpathref="class_path"
+            packagenames="nl.vu.zorilla.*"
+            sourcepath="src" 
+            overview="src/overview.html">
+            <link href="http://java.sun.com/j2se/1.4.2/docs/api/" />
+        </javadoc>
+    </target>
+
+    <target name="compile" 
+        depends="init" 
+        description="build jar file">
+
+        <!-- Compile the java code from src into tmp -->
+        <javac srcdir="src" 
+            destdir="tmp" 
+            debug="on"
+            classpathref="class_path" 
+            />
+
+        <jar destfile="lib/${ant.project.name}-${VERSION}.jar" 
+            basedir="tmp" 
+            includes="**/*.class">
+        	
+            <manifest>
+                <attribute name="Implementation-Version" value="${VERSION}"/>
+            </manifest>
+        </jar>
+
+        <!-- add external stuff to lib -->
+        <copy todir="lib">
+            <fileset dir="external" />
+        </copy>
+
+        <delete dir="tmp" />
+    </target>
+
+    <target name="clean" description="clean up">
+        <delete dir="tmp" />
+        <delete dir="lib" />
+        <delete dir="javadoc" />
+    </target>
+
+</project>

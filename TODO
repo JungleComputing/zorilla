@@ -1,0 +1,37 @@
+*** Bugs ***
+
+- reimplement IPUtils
+- write GAT test
+- debug GAT linkage
+
+- pull/pull Input/Output file model
+- pull output streams
+
+
+INITIAL		user submits job & sends files
+
+RUN		user offline or pulls output streams (in blocks)
+
+POST_STAGE	user pulls output from zorilla
+
+
+*** Features ***
+
+- add support for "blacklisting" nodes if they are deemed broken or too slow
+  for a computation. Possibly adjust searching parameters for new nodes.
+- pipe files through user connection
+- support pre stage of remote files
+- support submit to a remote zorilla node
+- add better minitoring to GAT
+- support steering via the GAT
+- add support for frontend/backend scenario (via the GAT?)
+- add support for FAT Binaries
+- finish implementing AAA
+- replace Bamboo with a new P2P network
+- implement other scheduling metrics
+- add clustering support to P2P network
+- implement vivaldiV2
+- implement fully distributed job object
+- add economics to scheduler
+- use distance instead of hops for flooding
+

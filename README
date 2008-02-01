@@ -1,0 +1,63 @@
+***** Zorilla Distribution README *****
+
+Zorilla is a P2P Supercomputing middleware. It tries to implement as much
+features as possible common to most grid middleware systems (such as Globus and
+Condor) but without any of the central components or management overhead. It
+should be possible to set-up and run jobs on a zorilla network within 5 minutes.
+
+For more information and publications on Zorilla see the website of the ibis
+project: http://www.cs.vu.nl/ibis
+
+***** Basic Zorilla System Overview *****
+
+Zorilla nodes join together in a P2P network to cooperate in running 
+supercomputing applications. So, to run applications on your own "p2p grid" 
+you need to:
+
+1) Start one or more Zorilla nodes and tell them about each other.
+   Alternatively you can join an existing network. Use the zorilla or
+   zorilla.bat script for this purpose (see below for more info)
+   
+2) Submit nodes to your local node. Use zubmit or submit.bat
+
+3) Done!
+
+
+The Zorilla distribution consists of 4 sub parts:
+
+1) node     The main Zorilla damon type application which is able to join a 
+	    Zorilla P2P network, find resources, schedule jobs, etc.
+2) apps     Utility applications usefull to submit jobs, list information on
+            a zorilla node, etc
+3) zoni     An implementation of the Zorilla Node Interface used to contact
+            a running zorilla node from a client. Used in the apps, the Zorilla
+            GAT adaptor, etc.
+4) bamboo   Customized version of the Bamboo DHT (www.bamboo-dht.org) system
+            created by Sean Rhea see bamboo/LICENSE for the license of bamboo
+
+***** RUNNING ZORILLA *****
+
+there are several scripts in the "bin" directory to start and use Zorilla.
+
+bin/zorilla     start a zorilla node
+bin/zubmit      submit jobs to a zorilla node
+bin/zee         print information on jobs and genral status of a node
+bin/zet         set attributes of jobs and nodes
+bin/zap         kill jobs and nodes
+
+All these scripts need a ZORILLA_HOME environment variable set to the location
+of your zorilla installation and JAVA_HOME set to the location of your java
+installation
+
+use the --help option of each script to find out about the options. using no
+options at all should suffice for most scripts though.
+
+configuration options of zorilla can be set in multiple ways:
+
+1) using the command line options of the "zorilla" script (see --help)
+2) using system properties (usually set with the -Dvariable=key option of java)
+3) using a configuration file (default location $HOME/.zorilla/config) consisting of
+   lines with variable=key pairs
+
+use the "--config_options" option for a list of valid options and a short
+description for each. 
