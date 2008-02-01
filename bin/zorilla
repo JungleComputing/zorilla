@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ -z $JAVA_HOME ];  then
+	echo please set JAVA_HOME to the location of your java installation
+	exit
+fi
+
+if [ -z $ZORILLA_HOME ];  then
+	echo please set ZORILLA_HOME to the location of your zorilla installation
+	exit
+fi
+
+#add zorilla home dir to classpath for log4j.properties file
+
+CLASSPATH=$ZORILLA_HOME
+for i in $ZORILLA_HOME/zoni/lib/*.jar ; do CLASSPATH="$CLASSPATH:$i" ; done
+for i in $ZORILLA_HOME/node/lib/*.jar ; do CLASSPATH="$CLASSPATH:$i" ; done
+
+exec $JAVA_HOME/bin/java -server -ea -cp $CLASSPATH nl.vu.zorilla.Main $@
+
