@@ -1,0 +1,48 @@
+This is a snapshot of the zorilla system. Don't expect anything to work yet, as
+it is very much work in progress. Zorilla is a Peer-to-Peer supercomputing 
+system. Zorilla nodes join together in a P2P network to cooperate in running 
+supercomputing applications.
+
+Zorilla consists of 4 sub parts:
+
+1) node     A damon type application which is able to join a Zorilla P2P
+            network, find resources, schedule jobs, etc.
+2) apps     Utility applications usefull to submit jobs, list information on
+            a zorilla node, etc
+3) zoni     An implementation of the Zorilla Node Interface used to contact
+            a running zorilla node from a client. Used in the apps, the Zorilla
+            GAT adaptor, etc.
+4) bamboo   Customized version of the Bamboo DHT (www.bamboo-dht.org) system
+            created by Sean Rhea see bamboo/LICENSE for the license of bamboo
+
+---- DOCUMENTATION ----
+
+for documentation, see the docs directory. Also see the javadoc directory in
+the zoni directory for an overview of classes and functions
+
+---- RUNNING ZORILLA ----
+
+there are several scripts in the "bin" directory to start and use Zorilla.
+
+bin/zorilla     start a zorilla node
+bin/zubmit      submit jobs to a zorilla node
+bin/zee         print information on jobs and genral status of a node
+bin/zet         set attributes of jobs and nodes
+bin/zap         kill jobs and nodes
+
+All these scripts need a ZORILLA_HOME environment variable set to the location
+of your zorilla installation and JAVA_HOME set to the location of your java
+installation
+
+use the --help option of each script to find out about the options. using no
+options at all should suffice for most scripts though.
+
+configuration options of zorilla can be set in multiple ways:
+
+1) using the command line options of the "zorilla" script (see --help)
+2) using system properties (usually set with the -Dvariable=key option of java)
+3) using a configuration file (default location $HOME/.zorilla/config) consisting of
+   lines with variable=key pairs
+
+use the "--config_options" option for a list of valid options and a short
+description for each. 

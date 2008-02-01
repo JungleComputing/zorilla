@@ -1,0 +1,15 @@
+//default for all user applications
+grant {
+	permission java.io.FilePermission "-", "read, write";
+	permission java.net.SocketPermission "*", "resolve,accept,connect,listen";
+
+	//for System.getProperties()
+	permission java.util.PropertyPermission "*", "read,write";
+
+	//for overriding serialization code (used in Ibis)
+	permission java.io.SerializablePermission "enableSubclassImplementation", "";
+	permission java.lang.reflect.ReflectPermission "suppressAccessChecks", "";
+	permission java.lang.RuntimePermission "accessClassInPackage.sun.misc", "";
+	permission java.lang.RuntimePermission "accessDeclaredMembers", "";
+};
+
