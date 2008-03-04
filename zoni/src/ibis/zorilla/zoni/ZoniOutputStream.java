@@ -1,6 +1,7 @@
 package ibis.zorilla.zoni;
 
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -41,17 +42,11 @@ public class ZoniOutputStream extends DataOutputStream {
         }
     }
 
-    public void writeFile(InputStream file) throws IOException {
-        byte[] buffer = new byte[ZoniProtocol.MAX_BLOCK_SIZE];
-        while (true) {
-            int bytesRead = file.read(buffer);
-
-            if (bytesRead == -1) {
-                writeInt(-1);
-                return;
-            }
-
-            write(buffer, 0, bytesRead);
+    public void writeFile(File file) throws IOException {
+        if (file == null) {
+            writeString(null);
+        } else {
+            writeString(file.getPath());
         }
     }
     
@@ -65,21 +60,4 @@ public class ZoniOutputStream extends DataOutputStream {
         }
     }
 
-    public void writeURI(URI uri) throws IOException {
-        if (uri == null) {
-            writeString(null);
-        } else {
-            writeString(uri.toString());
-        }
-    }
-
-    public void writeURIMap(Map<URI, URI> map) throws IOException {
-        writeInt(map.size());
-
-        for(Map.Entry<URI,URI> entry: map.entrySet()) {
-            writeURI(entry.getKey());
-            writeURI(entry.getValue());
-        }
-    }
-    
 }

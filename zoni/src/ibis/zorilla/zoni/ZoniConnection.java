@@ -3,6 +3,7 @@ package ibis.zorilla.zoni;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
@@ -61,38 +62,16 @@ public final class ZoniConnection {
         return peerID;
     }
 
-    public String submitJob(URI executable, String[] arguments,
-            Map<String,String> environment, Map<String,String> attributes, Map<URI,URI> preStage, Map<URI,URI> postStage,
-            URI stdin, URI stdout, URI stderr, CallbackReceiver callbackGenerator)
+    public String submitJob(Job job, CallbackReceiver callbackReceiver)
             throws ZoniException, IOException {
         logger.debug("submitting job");
 
         out.writeInt(ZoniProtocol.OPCODE_SUBMIT_JOB);
-        out.writeURI(executable);
-
-        // arguments;
-        out.writeStringArray(arguments);
-
-        logger.debug("writing environment:");
-        out.writeStringMap(environment);
-        logger.debug("writing attributes");
-        out.writeStringMap(attributes);
-
-        logger.debug("writing pre stage:");
-        out.writeURIMap(preStage);
-        logger.debug("writing post stage:");
-        out.writeURIMap(postStage);
-
-        out.writeURI(stdin);
-        out.writeURI(stdout);
-        out.writeURI(stderr);
+        job.writeTo(out);
         
-        //write CWD so node can map relative paths to absolute paths
-        out.writeString(System.getProperty("user.dir"));
-        
-        if (callbackGenerator != null) {
+        if (callbackReceiver != null) {
             out.writeBoolean(true);
-            out.writeInetSocketAddresses(callbackGenerator.addresses());
+            out.writeInetSocketAddresses(callbackReceiver.addresses());
         } else {
             out.writeBoolean(false);
         }
@@ -215,6 +194,38 @@ public final class ZoniConnection {
 
         return info;
     }
+    
+    public boolean isDirectory(OutputFile file, String jobID) {
+        logger.debug("getting file info");
+
+        out.writeInt(ZoniProtocol.OPCODE_GET_FILE_INFO);
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readString();
+
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new ZoniException("exception on getting peer info: "
+                    + message);
+        }
+
+        Map info = in.readStringMap();
+
+        return info;
+        
+        
+        
+    }
+    
+    /**
+     * Writes an output file to the given stream
+     */
+    public void getOutputFile(OutputFile file, OutputStream stream, String jobID) {
+        
+        
+    }
+       
 
     public void setNodeAttributes(Map<String,String> updatedAttributes) throws ZoniException,
             IOException {

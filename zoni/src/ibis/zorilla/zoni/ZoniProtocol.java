@@ -32,6 +32,10 @@ public final class ZoniProtocol {
 
     public static final int OPCODE_KILL_NODE = 9;
 
+    public static final int OPCODE_GET_FILE_INFO = 10;
+
+    public static final int OPCODE_GET_FILE = 11;
+    
     // callbacks
 
     public static final int CALLBACK_JOBINFO = 0;
