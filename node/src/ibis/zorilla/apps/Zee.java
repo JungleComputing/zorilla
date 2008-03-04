@@ -2,7 +2,6 @@ package ibis.zorilla.apps;
 
 import ibis.zorilla.zoni.JobInfo;
 import ibis.zorilla.zoni.ZoniConnection;
-import ibis.zorilla.zoni.ZoniException;
 import ibis.zorilla.zoni.ZoniProtocol;
 
 import java.io.IOException;
@@ -73,7 +72,7 @@ public final class Zee {
     }
 
     private static void printJobInfo(String job, ZoniConnection connection,
-        boolean verbose) throws ZoniException, IOException {
+        boolean verbose) throws IOException {
 
         JobInfo info = connection.getJobInfo(job);
 

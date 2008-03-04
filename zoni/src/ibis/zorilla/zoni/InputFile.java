@@ -1,6 +1,7 @@
 package ibis.zorilla.zoni;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,6 +28,17 @@ public class InputFile {
         this.file = null;
         this.size = size;
         this.inputStream = inputStream;
+    }
+    
+    /**
+     * Input file which is send over the connection when the job is submitted
+     */
+    public InputFile(String sandboxPath, File file)
+            throws Exception {
+        this.path = sandboxPath;
+        this.file = null;
+        this.size = file.length();
+        this.inputStream = new FileInputStream(file);
     }
 
     /**
@@ -91,4 +103,9 @@ public class InputFile {
     public File getFile() {
         return file;
     }
+    
+    public void closeStream() throws IOException {
+        inputStream.close();
+    }
+        
 }

@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.URI;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -24,7 +23,7 @@ public final class ZoniConnection {
     private final String peerID;
 
     public ZoniConnection(InetSocketAddress address, String id, int sourceType)
-            throws IOException, ZoniException {
+            throws IOException {
         socket = new Socket();
         socket.connect(address);
 
@@ -48,7 +47,7 @@ public final class ZoniConnection {
 
         if (status != ZoniProtocol.STATUS_OK) {
             close();
-            throw new ZoniException("connecting failed, peer replied: "
+            throw new IOException("connecting failed, peer replied: "
                     + message);
         }
         peerID = in.readString();
@@ -63,7 +62,7 @@ public final class ZoniConnection {
     }
 
     public String submitJob(Job job, CallbackReceiver callbackReceiver)
-            throws ZoniException, IOException {
+            throws  IOException {
         logger.debug("submitting job");
 
         out.writeInt(ZoniProtocol.OPCODE_SUBMIT_JOB);
@@ -83,7 +82,7 @@ public final class ZoniConnection {
 
         if (status != ZoniProtocol.STATUS_OK) {
             close();
-            throw new ZoniException("submission failed: " + message);
+            throw new IOException("submission failed: " + message);
         }
 
         String jobID = in.readString();
@@ -91,7 +90,7 @@ public final class ZoniConnection {
         return jobID;
     }
 
-    public JobInfo getJobInfo(String jobID) throws ZoniException, IOException {
+    public JobInfo getJobInfo(String jobID) throws IOException {
         out.writeInt(ZoniProtocol.OPCODE_GET_JOB_INFO);
         out.writeString(jobID);
         out.flush();
@@ -101,7 +100,7 @@ public final class ZoniConnection {
 
         if (status != ZoniProtocol.STATUS_OK) {
             close();
-            throw new ZoniException("exception on getting job info: " + message);
+            throw new IOException("exception on getting job info: " + message);
         }
 
         String id = in.readString();
@@ -115,7 +114,7 @@ public final class ZoniConnection {
     }
 
     public void setJobAttributes(String jobID, Map<String,String> updatedAttributes)
-            throws ZoniException, IOException {
+            throws IOException {
 
         out.writeInt(ZoniProtocol.OPCODE_SET_JOB_ATTRIBUTES);
         out.writeString(jobID);
@@ -129,12 +128,12 @@ public final class ZoniConnection {
 
         if (status != ZoniProtocol.STATUS_OK) {
             close();
-            throw new ZoniException("exception on setting job attributes: "
+            throw new IOException("exception on setting job attributes: "
                     + message);
         }
     }
 
-    public void cancelJob(String jobID) throws ZoniException, IOException {
+    public void cancelJob(String jobID) throws IOException {
         if (jobID == null) {
             return;
         }
@@ -149,11 +148,11 @@ public final class ZoniConnection {
 
         if (status != ZoniProtocol.STATUS_OK) {
             close();
-            throw new ZoniException("exception on cancelling job: " + message);
+            throw new IOException("exception on cancelling job: " + message);
         }
     }
 
-    public String[] getJobList() throws ZoniException, IOException {
+    public String[] getJobList() throws IOException {
         out.writeInt(ZoniProtocol.OPCODE_GET_JOB_LIST);
         out.flush();
 
@@ -162,7 +161,7 @@ public final class ZoniConnection {
 
         if (status != ZoniProtocol.STATUS_OK) {
             close();
-            throw new ZoniException("exception on getting job list: " + message);
+            throw new IOException("exception on getting job list: " + message);
         }
 
         int nrOfJobs = in.readInt();
@@ -175,7 +174,7 @@ public final class ZoniConnection {
         return jobs;
     }
 
-    public Map getNodeInfo() throws ZoniException, IOException {
+    public Map getNodeInfo() throws IOException {
         logger.debug("getting peer info");
 
         out.writeInt(ZoniProtocol.OPCODE_GET_NODE_INFO);
@@ -186,7 +185,7 @@ public final class ZoniConnection {
 
         if (status != ZoniProtocol.STATUS_OK) {
             close();
-            throw new ZoniException("exception on getting peer info: "
+            throw new IOException("exception on getting peer info: "
                     + message);
         }
 
@@ -195,7 +194,7 @@ public final class ZoniConnection {
         return info;
     }
     
-    public boolean isDirectory(OutputFile file, String jobID) {
+    public OutputFile[] getFiles(String jobID) throws IOException {
         logger.debug("getting file info");
 
         out.writeInt(ZoniProtocol.OPCODE_GET_FILE_INFO);
@@ -206,28 +205,65 @@ public final class ZoniConnection {
 
         if (status != ZoniProtocol.STATUS_OK) {
             close();
-            throw new ZoniException("exception on getting peer info: "
+            throw new IOException("exception on getting peer info: "
                     + message);
         }
+        
+        OutputFile[] result = new OutputFile[in.readInt()];
 
-        Map info = in.readStringMap();
+        for(int i = 0; i < result.length; i++) {
+            result[i] = new OutputFile(in);
+        }
 
-        return info;
-        
-        
-        
+        return result;
     }
     
     /**
-     * Writes an output file to the given stream
+     * Writes an output file to the given stream.
+     * 
+     * @throws IOException in case of trouble
      */
-    public void getOutputFile(OutputFile file, OutputStream stream, String jobID) {
+    public void getOutputFile(OutputFile file, OutputStream stream, String jobID) throws IOException {
+        logger.debug("getting file");
+
+        out.writeInt(ZoniProtocol.OPCODE_GET_FILE);
+
+        out.writeString(jobID);
+        file.writeTo(out);
         
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readString();
+
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on getting peer info: "
+                    + message);
+        }
+        
+        int size = in.readInt();
+        byte[] buffer = new byte[1024];
+        
+        while (size > 0) {
+
+            int tryRead = (int) Math.min(size, buffer.length);
+
+            int read = in.read(buffer, 0, tryRead);
+
+            if (read == -1) {
+                throw new IOException("EOF on reading input file");
+            }
+
+            stream.write(buffer, 0, read);
+
+            size = size - read;
+        }
         
     }
        
 
-    public void setNodeAttributes(Map<String,String> updatedAttributes) throws ZoniException,
+    public void setNodeAttributes(Map<String,String> updatedAttributes) throws 
             IOException {
         out.writeInt(ZoniProtocol.OPCODE_SET_NODE_ATTRIBUTES);
 
@@ -240,13 +276,13 @@ public final class ZoniConnection {
 
         if (status != ZoniProtocol.STATUS_OK) {
             close();
-            throw new ZoniException("exception on setting peer attributes: "
+            throw new IOException("exception on setting peer attributes: "
                     + message);
         }
 
     }
 
-    public void kill(boolean recursive) throws ZoniException, IOException {
+    public void kill(boolean recursive) throws  IOException {
         logger.debug("killing peer (recursive = " + recursive + ")");
 
         out.writeInt(ZoniProtocol.OPCODE_KILL_NODE);
@@ -264,7 +300,7 @@ public final class ZoniConnection {
         close();
 
         if (status != ZoniProtocol.STATUS_OK) {
-            throw new ZoniException("exception on killing peer: " + message);
+            throw new IOException("exception on killing peer: " + message);
         }
     }
 

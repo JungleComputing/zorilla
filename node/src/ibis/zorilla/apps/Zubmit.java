@@ -1,16 +1,17 @@
 package ibis.zorilla.apps;
 
+import ibis.zorilla.zoni.Job;
+import ibis.zorilla.zoni.InputFile;
 import ibis.zorilla.zoni.JobInfo;
+import ibis.zorilla.zoni.OutputFile;
 import ibis.zorilla.zoni.ZoniConnection;
-import ibis.zorilla.zoni.ZoniException;
 import ibis.zorilla.zoni.ZoniProtocol;
 
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,32 +21,38 @@ public final class Zubmit {
 
     private static final Logger logger = Logger.getLogger(Zubmit.class);
 
-    private static URI createURI(String string) {
-        try {
-            return new URI(string);
-        } catch (URISyntaxException e) {
-            System.err.println("could not create uri from: " + string);
-            System.exit(1);
-            // unreachable code
-            return null;
-        }
-    }
-
-    private static void addFile(String string, Map<URI, URI> result)
-            throws Exception {
+    private static InputFile parseInputFile(String string) throws Exception {
         logger.debug("string = " + string);
 
         String[] equalSplit = string.split("=", 2);
 
-        URI src = createURI(equalSplit[0]);
+        File file = new File(equalSplit[0]);
 
-        URI dst = null;
+        String sandboxPath;
         if (equalSplit.length == 2) {
-            //src=dst pair
-            dst = createURI(equalSplit[1]);
+            sandboxPath = equalSplit[1];
+        } else {
+            sandboxPath = file.getName();
         }
-        
-        result.put(src, dst);
+
+        return new InputFile(sandboxPath, file);
+    }
+
+    private static OutputFile parseOutputFile(String string) throws Exception {
+        logger.debug("string = " + string);
+
+        String[] equalSplit = string.split("=", 2);
+
+        String sandboxPath = equalSplit[0];
+
+        File file;
+        if (equalSplit.length == 2) {
+            file = new File(equalSplit[1]);
+        } else {
+            file = new File(sandboxPath);
+        }
+
+        return new OutputFile(sandboxPath, file);
     }
 
     private static int parsePort(String string) {
@@ -127,12 +134,12 @@ public final class Zubmit {
             Map<String, String> environment = new HashMap<String, String>();
             Map<String, String> attributes = new HashMap<String, String>();
 
-            Map<URI, URI> preStage = new HashMap<URI, URI>();
-            Map<URI, URI> postStage = new HashMap<URI, URI>();
+            ArrayList<InputFile> preStage = new ArrayList<InputFile>();
+            ArrayList<OutputFile> postStage = new ArrayList<OutputFile>();
 
-            URI stdin = null;
-            URI stdout = null;
-            URI stderr = null;
+            InputFile stdin = null;
+            OutputFile stdout = null;
+            OutputFile stderr = null;
 
             // first option not recognized by this program. Assumed to be
             // executable (URI) of submitted job. URI has java:// scheme
@@ -162,11 +169,11 @@ public final class Zubmit {
                 } else if (command[i].equals("-i")
                         || command[i].equals("--input")) {
                     i++;
-                    addFile(command[i], preStage);
+                    preStage.add(parseInputFile(command[i]));
                 } else if (command[i].equals("-o")
                         || command[i].equals("--output")) {
                     i++;
-                    addFile(command[i], postStage);
+                    postStage.add(parseOutputFile(command[i]));
                 } else if (command[i].equals("-#w")
                         || command[i].equals("--workers")) {
                     i++;
@@ -174,15 +181,15 @@ public final class Zubmit {
                 } else if (command[i].equals("-si")
                         || command[i].equals("--stdin")) {
                     i++;
-                    stdin = createURI(command[i]);
+                    stdin = new InputFile("<<stdin>>", new File(command[i]));
                 } else if (command[i].equals("-so")
                         || command[i].equals("--stdout")) {
                     i++;
-                    stdout = createURI(command[i]);
+                    stdout = new OutputFile("<<stdout>>", new File(command[i]));
                 } else if (command[i].equals("-se")
                         || command[i].equals("--stderr")) {
                     i++;
-                    stderr = createURI(command[i]);
+                    stderr = new OutputFile("<<stderr>>", new File(command[i]));
                 } else if (command[i].equals("-a")
                         || command[i].equals("--attribute")) {
                     i++;
@@ -222,7 +229,7 @@ public final class Zubmit {
                 System.exit(1);
             }
 
-            URI executable = new URI(command[executableIndex]);
+            String executable = command[executableIndex];
 
             String[] arguments =
                 new String[(command.length - (executableIndex + 1))];
@@ -232,22 +239,12 @@ public final class Zubmit {
                 j++;
             }
 
-            if (stdout == null) {
-                if (waitUntilDone) {
-                    stdout =
-                        File.createTempFile("zorilla", "stdout").getAbsoluteFile().toURI();
-                } else {
-                    stdout = createURI("job.out");
-                }
+            if (stdout == null && !waitUntilDone) {
+                    stdout = new OutputFile("<<stdout>>", new File("job.out"));
             }
 
-            if (stderr == null) {
-                if (waitUntilDone) {
-                    stderr =
-                        File.createTempFile("zorilla", "stdout").getAbsoluteFile().toURI();
-                } else {
-                    stderr = createURI("job.err");
-                }
+            if (stderr == null && !waitUntilDone) {
+                    stderr = new OutputFile("<<stderr>>", new File("job.err"));
             }
 
             if (verbose) {
@@ -258,9 +255,8 @@ public final class Zubmit {
                     System.out.println("no pre stage files");
                 } else {
                     String preStageString = "Pre stage files:";
-                    for (Map.Entry<URI,URI> entry : preStage.entrySet()) {
-                        preStageString +=
-                            "\n " + entry.getKey() + " = " + entry.getValue();
+                    for (InputFile file : preStage) {
+                        preStageString += "\n " + file;
                     }
                     System.out.println(preStageString);
                 }
@@ -269,9 +265,8 @@ public final class Zubmit {
                     System.out.println("no post stage files");
                 } else {
                     String postStageString = "Post stage files:";
-                    for (Map.Entry<URI, URI> entry : postStage.entrySet()) {
-                        postStageString +=
-                            "\n " + entry.getKey() + " = " + entry.getValue();
+                    for (OutputFile file : postStage) {
+                        postStageString += "\n " + file;
                     }
                     System.out.println(postStageString);
                 }
@@ -282,23 +277,26 @@ public final class Zubmit {
                 System.out.println("**********************");
             }
 
+            // String executable, String[] arguments,
+            // Map<String, String> environment, Map<String, String> attributes,
+            // InputFile[] inputFiles, OutputFile[] outputFiles, InputFile
+            // stdin,
+            // OutputFile stdout, OutputFile stderr
+
+            Job job =
+                new Job(executable, arguments, environment, attributes,
+                        preStage.toArray(new InputFile[0]),
+                        postStage.toArray(new OutputFile[0]), stdin, stdout,
+                        stderr);
+
             ZoniConnection connection =
                 new ZoniConnection(nodeSocketAddress, null,
                         ZoniProtocol.TYPE_CLIENT);
-            
+
             String jobID;
-            try {
             jobID =
-                connection.submitJob(executable, arguments, environment,
-                    attributes, preStage, postStage, stdin, stdout, stderr,
+                connection.submitJob(job,
                     null);
-            
-            } catch (ZoniException z) {
-                System.err.println(z.getMessage());
-                System.exit(1);
-                //unreachable code
-                return;
-            }
 
             System.err.println("submitted job, id = " + jobID);
 
