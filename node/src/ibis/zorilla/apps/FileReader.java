@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.net.URI;
 
 import org.apache.log4j.Logger;
 
@@ -25,12 +24,15 @@ public final class FileReader implements Runnable {
 
     private boolean ended = false;
 
-    public FileReader(URI uri, OutputStream out) {
+    public FileReader(File file, OutputStream out) {
 
-        if (uri == null) {
-            file = null;
-        } else {
-            file = new File(uri);
+        this.file = file;
+        
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            System.err.println("error on creating file: " + file + "error = " + e);
+            System.exit(1);
         }
         
         this.out = out;

@@ -19,9 +19,6 @@
         <fileset dir="external/ibis">
             <include name="*.jar" />
         </fileset>
-        <fileset dir="external/gat">
-            <include name="*.jar" />
-        </fileset>
         <fileset dir="../zoni/lib">
             <include name="*.jar" />
         </fileset>
@@ -77,7 +74,8 @@
         </jar>
 
         <!-- add external stuff to lib -->
-        <copy todir="lib" flatten="true">
+        <copy todir="lib">
+
             <fileset dir="external" />
         </copy>
 

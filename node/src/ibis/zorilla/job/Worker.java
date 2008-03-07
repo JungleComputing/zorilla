@@ -57,7 +57,7 @@ public final class Worker implements Runnable {
     private int exitStatus;
 
     /**
-     * creates a new child for a given Job.
+     * creates a new child for a given JobDescription.
      * 
      */
     public Worker(Job job, UUID id, Node node, long deadline) {
@@ -83,7 +83,7 @@ public final class Worker implements Runnable {
     private ProcessBuilder nativeCommand(File workingDir) throws Exception {
         ProcessBuilder result = new ProcessBuilder();
 
-        String location = job.getExecutable().getPath();
+        String location = job.getExecutable();
 
         File executableFile = new File(location);
 
@@ -208,7 +208,7 @@ public final class Worker implements Runnable {
         }
 
         // add main class
-        result.command().add(job.getExecutable().getSchemeSpecificPart());
+        result.command().add(job.getExecutable().replaceFirst("java:", ""));
 
         // arguments
         String[] arguments = job.getArguments();
@@ -349,8 +349,7 @@ public final class Worker implements Runnable {
             setStatus(Status.PRE_STAGE);
             workingDir = createScratchDir(id);
 
-            String jobType = job.getExecutable().getScheme();
-            if (jobType != null && jobType.equalsIgnoreCase("java")) {
+            if (job.getExecutable().startsWith("java")) {
                 processBuilder = javaCommand(workingDir);
             } else {
                 processBuilder = nativeCommand(workingDir);

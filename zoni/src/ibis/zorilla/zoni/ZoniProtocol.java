@@ -5,7 +5,7 @@ public final class ZoniProtocol {
     /**
      * client protocol version
      */
-    public static final int VERSION = 3;
+    public static final int VERSION = 4;
 
     // only authentication so far...
     public static final int AUTHENTICATION_NONE = 0;

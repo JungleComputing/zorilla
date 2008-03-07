@@ -21,7 +21,6 @@ import ibis.zorilla.util.Resources;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -57,7 +56,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
     private Map<String, String> environment;
 
-    private URI executable;
+    private String executable;
 
     // *** FILES *** \\
 
@@ -277,7 +276,7 @@ public final class Copy extends Job implements Receiver, Runnable {
     }
 
     @Override
-    public synchronized URI getExecutable() throws Exception {
+    public synchronized String getExecutable() throws Exception {
         if (!initialized) {
             throw new Exception("copy not initialized");
         }
@@ -560,7 +559,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
                 environment = (Map<String, String>) call.readObject();
 
-                executable = (URI) call.readObject();
+                executable = call.readString();
 
                 preStageFiles = new InputFile[call.readInt()];
                 for (int i = 0; i < preStageFiles.length; i++) {
@@ -594,8 +593,7 @@ public final class Copy extends Job implements Receiver, Runnable {
             readDynamicState(call);
             call.finish();
 
-            String scheme = executable.getScheme();
-            if ((scheme == null || !scheme.equalsIgnoreCase("java"))
+            if (executable.startsWith("java")
                     && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
                 throw new Exception("running of non-java job not allowed");
             }
@@ -680,13 +678,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
     @Override
     public synchronized boolean isJava() {
-        String scheme = executable.getScheme();
-
-        if (scheme == null) {
-            return false;
-        }
-
-        return scheme.equals("java");
+        return executable.startsWith("java");
     }
 
     /**

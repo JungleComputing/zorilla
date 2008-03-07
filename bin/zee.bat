@@ -11,7 +11,6 @@ SET ZORILLA_CLASSPATH=
 
 FOR %%i IN ("%ZORILLA_HOME%\zoni\lib\*.jar") DO CALL "%ZORILLA_HOME%\bin\AddToClassPath.bat" %%i
 FOR %%i IN ("%ZORILLA_HOME%\node\lib\*.jar") DO CALL "%ZORILLA_HOME%\bin\AddToClassPath.bat" %%i
-FOR %%i IN ("%ZORILLA_HOME%\node\lib\gat\*.jar") DO CALL "%ZORILLA_HOME%\bin\AddToClassPath.bat" %%i
 FOR %%i IN ("%ZORILLA_HOME%\node\lib\ibis\*.jar") DO CALL "%ZORILLA_HOME%\bin\AddToClassPath.bat" %%i
 
 

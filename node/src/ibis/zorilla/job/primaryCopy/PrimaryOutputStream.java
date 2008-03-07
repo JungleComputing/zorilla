@@ -13,7 +13,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -31,8 +30,6 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
     // .getLogger(PrimaryOutputFile.class);
 
     private final String sandboxPath;
-
-    private final URI uri;
 
     private final UUID id;
 
@@ -54,7 +51,6 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         logger.debug("creating log file (" + file + " at primary");
 
         this.file = file;
-        uri = file.toURI();
 
         this.primary = primary;
         sandboxPath = "<log file>";
@@ -74,28 +70,22 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
      * 
      * @throws IOException
      */
-    public PrimaryOutputStream(String sandboxPath, URI uri, Primary primary,
-            boolean stream, String userDir) throws Exception, IOException {
+    public PrimaryOutputStream(String sandboxPath, File file, Primary primary
+            ) throws Exception, IOException {
         this.sandboxPath = sandboxPath;
-        this.uri = uri;
         this.primary = primary;
+        this.file = file;
 
         if (sandboxPath == null) {
             throw new Exception("sandbox path cannot be null");
         }
         
-        File file;
-        if (uri == null) {
-            //use filename of sandbox filefor name of file
-            File sandboxFile = new File(sandboxPath);
-            file = new File(userDir + File.separator + sandboxFile.getName());
-        } else {
-            file = new File(uri.getPath());
+        if (file == null) {
+            throw new Exception("file cannot be null");
         }
-
+        
         if (!file.isAbsolute()) {
-            // make file absolute
-            file = new File(userDir + File.separator + uri.getPath());
+            throw new Exception("file must be absolute");
         }
 
         if (file.isDirectory()) {
@@ -105,7 +95,7 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         file.delete();
 
         if (file.exists()) {
-            throw new Exception("could not perge output file");
+            throw new Exception("could not purge output file");
         }
 
         // (re) create file
@@ -114,11 +104,9 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         if (!file.canWrite()) {
             throw new Exception("cannot write to file");
         }
-        
-        this.file = file;
 
         logger.debug("creating primary output file for path " + sandboxPath
-                + " with backing file " + file + "(uri = " + uri + ")");
+                + " with backing file " + file);
 
         id = Node.generateUUID();
 
@@ -242,7 +230,7 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
     }
 
     public String toString() {
-        return "sandbox path = " + sandboxPath + ", dst uri = " + uri + ", dst file = " + file ;
+        return "sandbox path = " + sandboxPath + ", file = " + file ;
     }
 
 }

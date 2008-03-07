@@ -6,11 +6,11 @@ import ibis.zorilla.Config;
 import ibis.zorilla.Service;
 import ibis.zorilla.job.primaryCopy.Primary;
 import ibis.zorilla.util.Resources;
+import ibis.zorilla.zoni.JobDescription;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -44,12 +44,13 @@ public final class JobService implements Service, Runnable {
                 "worker.security.policy"));
 
         int defaultWorkers = Runtime.getRuntime().availableProcessors() + 1;
-        int maxWorkers = node.config().getIntProperty(Config.MAX_WORKERS, defaultWorkers);
-        
+        int maxWorkers = node.config().getIntProperty(Config.MAX_WORKERS,
+                defaultWorkers);
+
         logger.info("Maximum of " + maxWorkers + " workers on this node");
-        
-        availableResources =
-            new Resources(1, maxWorkers, 1024 * 1024 * 1024, 1024 * 1024 * 1024);
+
+        availableResources = new Resources(1, maxWorkers, 1024 * 1024 * 1024,
+                1024 * 1024 * 1024);
         usedResources = new HashMap<UUID, Resources>();
     }
 
@@ -69,26 +70,27 @@ public final class JobService implements Service, Runnable {
 
             FileWriter writer = new FileWriter(file);
 
-            writer.write("// Zorilla worker security file. All applications will be limited\n"
-                    + "// to these permissions when running...\n"
-                    + "grant {\n"
-                    + "\tpermission java.io.FilePermission \"-\", \"read, write, execute, delete\";\n"
-                    + "\tpermission java.net.SocketPermission \"*\", \"resolve,accept,connect,listen\";\n"
-                    + "\n"
-                    + "\t//for System.getProperties()\n"
-                    + "\tpermission java.util.PropertyPermission \"*\", \"read,write\";\n"
+            writer
+                    .write("// Zorilla worker security file. All applications will be limited\n"
+                            + "// to these permissions when running...\n"
+                            + "grant {\n"
+                            + "\tpermission java.io.FilePermission \"-\", \"read, write, execute, delete\";\n"
+                            + "\tpermission java.net.SocketPermission \"*\", \"resolve,accept,connect,listen\";\n"
+                            + "\n"
+                            + "\t//for System.getProperties()\n"
+                            + "\tpermission java.util.PropertyPermission \"*\", \"read,write\";\n"
 
-                    + "\t//to create Classloaders\n"
-                    + "\tpermission java.lang.RuntimePermission \"createClassLoader\";\n"
-                    + "\n"
-                    + "\t//for overriding serialization code (used in Ibis)\n"
-                    + "\tpermission java.io.SerializablePermission \"enableSubclassImplementation\", \"\";\n"
-                    + "\tpermission java.lang.reflect.ReflectPermission \"suppressAccessChecks\", \"\";\n"
-                    + "\tpermission java.lang.RuntimePermission \"accessClassInPackage.sun.misc\", \"\";\n"
-                    + "\tpermission java.lang.RuntimePermission \"accessDeclaredMembers\", \"\";\n"
-                    + "\tpermission java.lang.RuntimePermission \"shutdownHooks\", \"\";\n"
+                            + "\t//to create Classloaders\n"
+                            + "\tpermission java.lang.RuntimePermission \"createClassLoader\";\n"
+                            + "\n"
+                            + "\t//for overriding serialization code (used in Ibis)\n"
+                            + "\tpermission java.io.SerializablePermission \"enableSubclassImplementation\", \"\";\n"
+                            + "\tpermission java.lang.reflect.ReflectPermission \"suppressAccessChecks\", \"\";\n"
+                            + "\tpermission java.lang.RuntimePermission \"accessClassInPackage.sun.misc\", \"\";\n"
+                            + "\tpermission java.lang.RuntimePermission \"accessDeclaredMembers\", \"\";\n"
+                            + "\tpermission java.lang.RuntimePermission \"shutdownHooks\", \"\";\n"
 
-                    + "};\n");
+                            + "};\n");
 
             writer.flush();
             writer.close();
@@ -103,7 +105,7 @@ public final class JobService implements Service, Runnable {
      * returns the job with the given ID
      * 
      * @throws Exception
-     *             if there is no Job for the given ID
+     *             if there is no JobDescription for the given ID
      */
     public synchronized Job getJob(UUID jobID) throws Exception {
         Job result = jobs.get(jobID);
@@ -119,28 +121,16 @@ public final class JobService implements Service, Runnable {
         return jobs.values().toArray(new Job[0]);
     }
 
-    public Job submitJob(URI executable, String[] arguments,
-            Map<String, String> environment, Map<String, String> attributes,
-            Map<URI, URI> preStage, Map<URI, URI> postStage, URI stdout,
-            URI stdin, URI stderr, String userDir, Callback callback) throws Exception {
+    public Job submitJob(JobDescription description, Callback callback)
+            throws Exception {
 
         synchronized (this) {
             if (killed) {
                 throw new Exception("job service already killed");
             }
         }
-        
-        
-        String type = attributes.get("jobstate.type");
-        
-        if (type != null && !type.equalsIgnoreCase("primaryCopy")) {
-            throw new Exception("unknown job type: " + type);
-        }
-        
 
-        Job job =
-            new Primary(executable, arguments, environment, attributes,
-                preStage, postStage, stdout, stdin, stderr, userDir, callback, node);
+        Job job = new Primary(description, callback, node);
 
         synchronized (this) {
             jobs.put(job.getID(), job);
@@ -197,9 +187,10 @@ public final class JobService implements Service, Runnable {
 
         if (request.zero()) {
             // infinite-loop-preventer
-            logger.warn(
-                "tried to check number of times \"zero\" resources are available, returning 0",
-                new Exception());
+            logger
+                    .warn(
+                            "tried to check number of times \"zero\" resources are available, returning 0",
+                            new Exception());
             return 0;
         }
 
@@ -217,7 +208,7 @@ public final class JobService implements Service, Runnable {
 
     public void start() {
         ThreadPool.createNew(this, "job service");
-        logger.info("Started Job service");
+        logger.info("Started JobDescription service");
     }
 
     public void handleConnection(DirectSocket socket) {

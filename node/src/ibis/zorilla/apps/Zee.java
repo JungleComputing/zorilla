@@ -35,7 +35,7 @@ public final class Zee {
     }
 
     private static InetSocketAddress parseSocketAddress(String string) {
-        int port = 0;
+        int port = ZoniProtocol.DEFAULT_PORT;
 
         String[] strings = string.split(":");
 

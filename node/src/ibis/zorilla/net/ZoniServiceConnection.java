@@ -5,6 +5,7 @@ import ibis.zorilla.job.Job;
 import ibis.zorilla.zoni.ZoniInputStream;
 import ibis.zorilla.zoni.ZoniOutputStream;
 import ibis.zorilla.zoni.ZoniProtocol;
+import ibis.zorilla.zoni.JobDescription;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -12,8 +13,6 @@ import java.io.EOFException;
 import java.io.IOException;
 
 import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -49,16 +48,7 @@ final class ZoniServiceConnection implements Runnable {
     }
 
     private void submitJob() throws IOException, Exception {
-        URI executable = in.readURI();
-        String[] arguments = in.readStringArray();
-        Map<String, String> environment = in.readStringMap();
-        Map<String, String> attributes = in.readStringMap();
-        Map<URI, URI> preStage = in.readURIMap();
-        Map<URI, URI> postStage = in.readURIMap();
-        URI stdin = in.readURI();
-        URI stdout = in.readURI();
-        URI stderr = in.readURI();
-        String userDir = in.readString();
+        JobDescription jobDescription = new JobDescription(in, node.getTmpDir());
 
         ZoniCallback callback = null;
 
@@ -67,9 +57,7 @@ final class ZoniServiceConnection implements Runnable {
         }
 
         Job job =
-            node.jobService().submitJob(executable, arguments, environment,
-                attributes, preStage, postStage, stdout, stdin, stderr,
-                userDir, callback);
+            node.jobService().submitJob(jobDescription, callback);
         if (callback != null) {
             callback.setJob(job);
         }

@@ -14,7 +14,6 @@ import ibis.zorilla.job.net.Receiver;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.BitSet;
@@ -61,7 +60,7 @@ public class InputFile implements ibis.zorilla.io.InputFile, Receiver {
 
     private final String sandboxPath;
 
-    private final URI uri;
+ //   private final URI uri;
     
     private final File file;
 
@@ -81,10 +80,9 @@ public class InputFile implements ibis.zorilla.io.InputFile, Receiver {
     private BitSet availableBlocks;
     
     // create a primary input file
-    public InputFile(File file, URI uri, String sandboxPath, Primary p)
+    public InputFile(File file, String sandboxPath, Primary p)
             throws Exception, IOException {
         this.file = file;
-        this.uri = uri;
         this.sandboxPath = sandboxPath;
         this.id = Node.generateUUID();
         this.job = p;
@@ -101,7 +99,7 @@ public class InputFile implements ibis.zorilla.io.InputFile, Receiver {
             throw new Exception("cannot read from file (" + file + ")");
         }  
         
-        logger.debug("new input file: " + file + " src = " + uri + " sandbox path = " + sandboxPath);
+        logger.debug("new input file: " + file + " sandbox path = " + sandboxPath);
 
         FileChannel channel = createFileChannel(file);
         size = channel.size();
@@ -134,7 +132,6 @@ public class InputFile implements ibis.zorilla.io.InputFile, Receiver {
         this.job = copy;
 
         try {
-            uri = (URI) in.readObject();
             sandboxPath = in.readString();
             id = (UUID) in.readObject();
             size = in.readLong();
@@ -159,7 +156,6 @@ public class InputFile implements ibis.zorilla.io.InputFile, Receiver {
     }
 
     public void writeBootStrap(ObjectOutput output) throws IOException {
-        output.writeObject(uri);
         output.writeString(sandboxPath());
         output.writeObject(id());
         output.writeLong(size);
@@ -437,7 +433,7 @@ public class InputFile implements ibis.zorilla.io.InputFile, Receiver {
     }
 
     public String toString() {
-        return "src = " + uri + " dst = " + sandboxPath;
+        return sandboxPath;
     }
 
 }

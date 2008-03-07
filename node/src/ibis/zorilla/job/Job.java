@@ -9,7 +9,6 @@ import ibis.zorilla.util.PropertyUndefinedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,7 +16,7 @@ import org.apache.log4j.Logger;
 
 /**
  * A job in the zorilla system. May be created either from a description of the
- * job and all the needed files, or from a serialized from of another Job object
+ * job and all the needed files, or from a serialized from of another JobDescription object
  */
 public abstract class Job {
 
@@ -31,7 +30,7 @@ public abstract class Job {
         { "nr.of.workers", "on.user.exit", "on.user.error", "worker.memory",
                 "worker.diskspace", "worker.processors", "claim.node", "ibis",
                 "ibis.nameserver", "jobstate.type", "malleable", "lifetime",
-                "classpath" };
+                "classpath", "split.stdout", "split.stderr", "copy.output" };
 
     /*
      * Attributes
@@ -233,7 +232,7 @@ public abstract class Job {
      */
     public abstract Map<String, String> getStats();
 
-    public abstract URI getExecutable() throws Exception;
+    public abstract String getExecutable() throws Exception;
 
     /**
      * Returns the input files in the virtual file system.

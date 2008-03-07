@@ -3,17 +3,20 @@ package ibis.zorilla.zoni;
 import java.io.File;
 import java.io.IOException;
 
-public class OutputFile {
+public class ZoniOutputFile {
 
     private final String sandboxPath;
 
     private final File file;
 
+    //variables used to retrieve output files from the zorilla node when the
+    //job has finished
+    
     private final boolean exists;
 
     private final boolean isDirectory;
 
-    private final OutputFile[] children;
+    private final ZoniOutputFile[] children;
 
     /**
      * Output file which has to be retrieved.
@@ -24,13 +27,13 @@ public class OutputFile {
      *            is this file a directory.
      * 
      */
-    public OutputFile(String sandboxPath, boolean isDirectory) {
+    public ZoniOutputFile(String sandboxPath) {
         this.sandboxPath = sandboxPath;
-        this.isDirectory = isDirectory;
-
+        
         file = null;
         exists = false;
-        children = new OutputFile[0];
+        isDirectory = false;
+        children = new ZoniOutputFile[0];
     }
 
     /**
@@ -41,25 +44,25 @@ public class OutputFile {
      * @param file
      *            final location of the output file (can also be a directory)
      */
-    public OutputFile(String sandboxPath, File file) {
+    public ZoniOutputFile(String sandboxPath, File file) {
         this.sandboxPath = sandboxPath;
-        this.isDirectory = file.isDirectory();
-        this.file = file.getAbsoluteFile();
+        this.file = file;
 
+        isDirectory = false;
         exists = false;
-        children = new OutputFile[0];
+        children = new ZoniOutputFile[0];
     }
 
-    OutputFile(ZoniInputStream in) throws IOException {
+    ZoniOutputFile(ZoniInputStream in) throws IOException {
         sandboxPath = in.readString();
         file = in.readFile();
         exists = in.readBoolean();
         isDirectory = in.readBoolean();
-        children = new OutputFile[in.readInt()];
+        children = new ZoniOutputFile[in.readInt()];
 
         // recursive :)
         for (int i = 0; i < children.length; i++) {
-            children[i] = new OutputFile(in);
+            children[i] = new ZoniOutputFile(in);
         }
     }
 
@@ -71,7 +74,7 @@ public class OutputFile {
 
         out.writeInt(children.length);
         // recursive :)
-        for (OutputFile file : children) {
+        for (ZoniOutputFile file : children) {
             file.writeTo(out);
         }
     }
@@ -82,6 +85,14 @@ public class OutputFile {
 
     public boolean isDirectory() {
         return isDirectory;
+    }
+    
+    public File getFile() {
+        return file;
+    }
+    
+    public String getSandboxPath() {
+        return sandboxPath;
     }
 
 }

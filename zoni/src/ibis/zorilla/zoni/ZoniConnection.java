@@ -61,7 +61,7 @@ public final class ZoniConnection {
         return peerID;
     }
 
-    public String submitJob(Job job, CallbackReceiver callbackReceiver)
+    public String submitJob(JobDescription job, CallbackReceiver callbackReceiver)
             throws  IOException {
         logger.debug("submitting job");
 
@@ -194,7 +194,7 @@ public final class ZoniConnection {
         return info;
     }
     
-    public OutputFile[] getFiles(String jobID) throws IOException {
+    public ZoniOutputFile[] getFiles(String jobID) throws IOException {
         logger.debug("getting file info");
 
         out.writeInt(ZoniProtocol.OPCODE_GET_FILE_INFO);
@@ -209,10 +209,10 @@ public final class ZoniConnection {
                     + message);
         }
         
-        OutputFile[] result = new OutputFile[in.readInt()];
+        ZoniOutputFile[] result = new ZoniOutputFile[in.readInt()];
 
         for(int i = 0; i < result.length; i++) {
-            result[i] = new OutputFile(in);
+            result[i] = new ZoniOutputFile(in);
         }
 
         return result;
@@ -223,7 +223,7 @@ public final class ZoniConnection {
      * 
      * @throws IOException in case of trouble
      */
-    public void getOutputFile(OutputFile file, OutputStream stream, String jobID) throws IOException {
+    public void getOutputFile(ZoniOutputFile file, OutputStream stream, String jobID) throws IOException {
         logger.debug("getting file");
 
         out.writeInt(ZoniProtocol.OPCODE_GET_FILE);

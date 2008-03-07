@@ -1,9 +1,9 @@
 package ibis.zorilla.apps;
 
-import ibis.zorilla.zoni.Job;
-import ibis.zorilla.zoni.InputFile;
+import ibis.zorilla.zoni.JobDescription;
+import ibis.zorilla.zoni.ZoniInputFile;
 import ibis.zorilla.zoni.JobInfo;
-import ibis.zorilla.zoni.OutputFile;
+import ibis.zorilla.zoni.ZoniOutputFile;
 import ibis.zorilla.zoni.ZoniConnection;
 import ibis.zorilla.zoni.ZoniProtocol;
 
@@ -21,7 +21,26 @@ public final class Zubmit {
 
     private static final Logger logger = Logger.getLogger(Zubmit.class);
 
-    private static InputFile parseInputFile(String string) throws Exception {
+    private static void addInputFile(String sandboxPath, File file,
+            JobDescipr) {
+        if (file.isDirectory()) {
+            for (File child : file.listFiles()) {
+                // recursive
+                addInputFile(sandboxPath + "/" + child.getName(), file, files);
+            }
+        } else {
+            try {
+                files.add(new ZoniInputFile(sandboxPath, file));
+            } catch (Exception e) {
+                System.err.println("cannot add input file to job: " + file
+                        + " error = " + e.getMessage());
+                System.exit(1);
+            }
+        }
+    }
+
+    private static void parseInputFile(String string,
+            JobDescription job) throws Exception {
         logger.debug("string = " + string);
 
         String[] equalSplit = string.split("=", 2);
@@ -35,10 +54,12 @@ public final class Zubmit {
             sandboxPath = file.getName();
         }
 
-        return new InputFile(sandboxPath, file);
+        addInputFile(sandboxPath, file, job);
+
     }
 
-    private static OutputFile parseOutputFile(String string) throws Exception {
+    private static ZoniOutputFile parseOutputFile(String string)
+            throws Exception {
         logger.debug("string = " + string);
 
         String[] equalSplit = string.split("=", 2);
@@ -52,7 +73,7 @@ public final class Zubmit {
             file = new File(sandboxPath);
         }
 
-        return new OutputFile(sandboxPath, file);
+        return new ZoniOutputFile(sandboxPath, file);
     }
 
     private static int parsePort(String string) {
@@ -72,7 +93,7 @@ public final class Zubmit {
     }
 
     private static InetSocketAddress parseSocketAddress(String string) {
-        int port = 0;
+        int port = ZoniProtocol.DEFAULT_PORT;
 
         String[] strings = string.split(":");
 
@@ -97,49 +118,50 @@ public final class Zubmit {
     }
 
     private static void usage() {
-        System.out.println("usage: zubmit [OPTION].. EXECUTABLE_URI [JOB_ARGUMENTS]"
-                + "\n\nOptions:"
-                + "\n-na,  --node_address IP:PORT        address of node to submit job to"
-                + "\n-a,  --attribute KEY=VALUE          add key value pair to attributes of job"
-                + "\n-e,  --environment KEY=VALUE        add key value pair to environment of job"
-                + "\n-#w,  --workers N                   specify initial nr of workers "
-                + "\n                                    (sets nr.of.workers attribute)"
-                + "\n-w,  --wait_until_running           wait until the job starts before exiting"
-                + "\n-W,  --wait_until_done              wait until the job is done before exiting"
-                + "\n                                    also prints stdout and stderr to the"
-                + "\n                                    console and cancels the job when zubmit"
-                + "\n                                    is interrupted by Ctrl-C"
-                + "\n-v,  --verbose                      print some more info"
+        System.out
+                .println("usage: zubmit [OPTION].. EXECUTABLE_URI [JOB_ARGUMENTS]"
+                        + "\n\nOptions:"
+                        + "\n-na,  --node_address IP:PORT        address of node to submit job to"
+                        + "\n-a,  --attribute KEY=VALUE          add key value pair to attributes of job"
+                        + "\n-e,  --environment KEY=VALUE        add key value pair to environment of job"
+                        + "\n-c,  --cores N                      specify initial nr of cores used "
+                        + "\n                                    (sets nr.of.workers attribute)"
+                        + "\n-w,  --wait_until_running           wait until the job starts before exiting"
+                        + "\n-I,  --interactive                  wait until the job is done before exiting"
+                        + "\n                                    also prints stdout and stderr to the"
+                        + "\n                                    console, streams stdin to the job,"
+                        + "\n                                    cancels the job when zubmit"
+                        + "\n                                    is interrupted by Ctrl-C, and retrieves"
+                        + "\n                                    output when the job finishes"
+                        + "\n-v,  --verbose                      print some more info"
 
-                + "\n\nFiles options:"
-                + "\n-i,  --input [VIRTUAL_PATH=]PATH    add input file"
-                + "\n-o,  --output [VIRTUAL_PATH=]PATH   add output file"
-                + "\n-so, --stdout PATH                  set standard out file"
-                + "\n-si, --stdin PATH                   set standard in file"
-                + "\n-se, --stderr PATH                  set standard error file"
+                        + "\n\nFiles options:"
+                        + "\n-i,  --input [VIRTUAL_PATH=]PATH    add input file"
+                        + "\n-o,  --output [VIRTUAL_PATH=]PATH   add output file"
+                        + "\n-so, --stdout PATH                  set standard out file"
+                        + "\n-si, --stdin PATH                   set standard in file"
+                        + "\n-se, --stderr PATH                  set standard error file"
+                        + "\n-s,  --split-output                 use a seperate output/error file per worker"
 
-        );
+                );
     }
 
     public static void main(String[] command) {
         boolean waitUntilRunning = false;
-        boolean waitUntilDone = false;
+        boolean interactive = false;
         boolean verbose = false;
+        boolean splitOutput = false;
 
         try {
-            InetSocketAddress nodeSocketAddress =
-                new InetSocketAddress(InetAddress.getByName(null),
-                        ZoniProtocol.DEFAULT_PORT);
+            InetSocketAddress nodeSocketAddress = new InetSocketAddress(
+                    InetAddress.getByName(null), ZoniProtocol.DEFAULT_PORT);
 
-            Map<String, String> environment = new HashMap<String, String>();
-            Map<String, String> attributes = new HashMap<String, String>();
-
-            ArrayList<InputFile> preStage = new ArrayList<InputFile>();
-            ArrayList<OutputFile> postStage = new ArrayList<OutputFile>();
-
-            InputFile stdin = null;
-            OutputFile stdout = null;
-            OutputFile stderr = null;
+            JobDescription jobDescription = new JobDescription();
+            ArrayList<String> inputFiles = new ArrayList<String>();
+            ArrayList<String> outputFiles = new ArrayList<String>();
+            File stdin = null;
+            File stdout = new File("job.out");
+            File stderr = new File("job.err");
 
             // first option not recognized by this program. Assumed to be
             // executable (URI) of submitted job. URI has java:// scheme
@@ -155,13 +177,12 @@ public final class Zubmit {
                 if (command[i].equals("-w")
                         || command[i].equals("--wait_until_running")) {
                     waitUntilRunning = true;
-                } else if (command[i].equals("-W")
-                        || command[i].equals("--wait_until_done")) {
-                    waitUntilDone = true;
+                } else if (command[i].equals("-I")
+                        || command[i].equals("--interactive")) {
+                    interactive = true;
                 } else if (command[i].equals("-v")
                         || command[i].equals("--verbose")) {
                     verbose = true;
-
                 } else if (command[i].equals("-na")
                         || command[i].equals("--node_address")) {
                     i++;
@@ -169,53 +190,61 @@ public final class Zubmit {
                 } else if (command[i].equals("-i")
                         || command[i].equals("--input")) {
                     i++;
-                    preStage.add(parseInputFile(command[i]));
+                    inputFiles.add(command[i]);
                 } else if (command[i].equals("-o")
                         || command[i].equals("--output")) {
                     i++;
-                    postStage.add(parseOutputFile(command[i]));
-                } else if (command[i].equals("-#w")
-                        || command[i].equals("--workers")) {
+                    outputFiles.add(command[i]);
+                } else if (command[i].equals("-c")
+                        || command[i].equals("--cores")) {
                     i++;
-                    attributes.put("nr.of.workers", command[i]);
+                    jobDescription.setAttribute("nr.of.workers", command[i]);
+                } else if (command[i].equals("-s")
+                        || command[i].equals("--split-output")) {
+                    i++;
+                    jobDescription.setAttribute("split.stdout", "true");
+                    jobDescription.setAttribute("split.stderr", "true");
                 } else if (command[i].equals("-si")
                         || command[i].equals("--stdin")) {
                     i++;
-                    stdin = new InputFile("<<stdin>>", new File(command[i]));
+                    stdin = new File(command[i]);
                 } else if (command[i].equals("-so")
                         || command[i].equals("--stdout")) {
                     i++;
-                    stdout = new OutputFile("<<stdout>>", new File(command[i]));
+                    stdout = new File(command[i]);
                 } else if (command[i].equals("-se")
                         || command[i].equals("--stderr")) {
                     i++;
-                    stderr = new OutputFile("<<stderr>>", new File(command[i]));
+                    stderr = new File(command[i]);
                 } else if (command[i].equals("-a")
                         || command[i].equals("--attribute")) {
                     i++;
                     String[] parts = command[i].split("=");
                     if (parts.length != 2) {
-                        System.err.println("attribute should be defined as VARIABLE=VALUE (not "
-                                + command[i] + ")");
+                        System.err
+                                .println("attribute should be defined as VARIABLE=VALUE (not "
+                                        + command[i] + ")");
                         System.exit(1);
                     }
-                    attributes.put(parts[0], parts[1]);
+                    jobDescription.setAttribute(parts[0], parts[1]);
                 } else if (command[i].equals("-e")
                         || command[i].equals("--environment")) {
                     i++;
                     String[] parts = command[i].split("=");
                     if (parts.length != 2) {
-                        System.err.println("environment variable should be defined as VARIABLE=VALUE (not "
-                                + command[i] + ")");
+                        System.err
+                                .println("environment variable should be defined as VARIABLE=VALUE (not "
+                                        + command[i] + ")");
                         System.exit(1);
                     }
-                    environment.put(parts[0], parts[1]);
+                    jobDescription.setEnvironment(parts[0], parts[1]);
                 } else if (command[i].equals("--help")) {
                     usage();
                     return;
                 } else {
                     if (command[i].startsWith("-")) {
-                        System.err.println("unrecognized option: " + command[i]);
+                        System.err
+                                .println("unrecognized option: " + command[i]);
                         usage();
                         System.exit(1);
                     }
@@ -231,72 +260,41 @@ public final class Zubmit {
 
             String executable = command[executableIndex];
 
-            String[] arguments =
-                new String[(command.length - (executableIndex + 1))];
+            String[] arguments = new String[(command.length - (executableIndex + 1))];
             int j = 0;
             for (int i = executableIndex + 1; i < command.length; i++) {
                 arguments[j] = command[i];
                 j++;
             }
-
-            if (stdout == null && !waitUntilDone) {
-                    stdout = new OutputFile("<<stdout>>", new File("job.out"));
+            
+            if (interactive) {
+                
+                
+                
+            } else {
+                for(String file: inputFiles) {
+                    parseInputFile(file, jobDescription);
+                }
+                
+                
+                jobDescription.setStdinFile(stdin);
+                jobDescription.setStdoutFile(stdout);
+                jobDescription.setStderrFile(stderr);
+                
+                
             }
-
-            if (stderr == null && !waitUntilDone) {
-                    stderr = new OutputFile("<<stderr>>", new File("job.err"));
-            }
+            
 
             if (verbose) {
                 System.out.println("*** submitting job ***");
-                System.out.println("Zorilla node address = "
-                        + nodeSocketAddress);
-                if (preStage.isEmpty()) {
-                    System.out.println("no pre stage files");
-                } else {
-                    String preStageString = "Pre stage files:";
-                    for (InputFile file : preStage) {
-                        preStageString += "\n " + file;
-                    }
-                    System.out.println(preStageString);
-                }
-
-                if (postStage.isEmpty()) {
-                    System.out.println("no post stage files");
-                } else {
-                    String postStageString = "Post stage files:";
-                    for (OutputFile file : postStage) {
-                        postStageString += "\n " + file;
-                    }
-                    System.out.println(postStageString);
-                }
-
-                System.out.println("stdin = " + stdin);
-                System.out.println("stdout = " + stdout);
-                System.out.println("stderr = " + stderr);
-                System.out.println("**********************");
+                System.out.println(jobDescription);
             }
 
-            // String executable, String[] arguments,
-            // Map<String, String> environment, Map<String, String> attributes,
-            // InputFile[] inputFiles, OutputFile[] outputFiles, InputFile
-            // stdin,
-            // OutputFile stdout, OutputFile stderr
-
-            Job job =
-                new Job(executable, arguments, environment, attributes,
-                        preStage.toArray(new InputFile[0]),
-                        postStage.toArray(new OutputFile[0]), stdin, stdout,
-                        stderr);
-
-            ZoniConnection connection =
-                new ZoniConnection(nodeSocketAddress, null,
-                        ZoniProtocol.TYPE_CLIENT);
+            ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
+                    null, ZoniProtocol.TYPE_CLIENT);
 
             String jobID;
-            jobID =
-                connection.submitJob(job,
-                    null);
+            jobID = connection.submitJob(jobDescription, null);
 
             System.err.println("submitted job, id = " + jobID);
 
@@ -314,20 +312,20 @@ public final class Zubmit {
 
                     Thread.sleep(500);
                 }
-            }
-
-            if (waitUntilDone) {
+            } else if (interactive) {
                 if (verbose) {
                     System.out.println("waiting until job is done");
                 }
 
-                FileReader stdoutReader = new FileReader(stdout, System.out);
-                FileReader stderrReader = new FileReader(stderr, System.err);
+                FileReader stdoutReader = new FileReader(stdout.getFile(),
+                        System.out);
+                FileReader stderrReader = new FileReader(stderr.getFile(),
+                        System.err);
 
                 // register shutdown hook to cancel job..
                 try {
                     Runtime.getRuntime().addShutdownHook(
-                        new Shutdown(connection, jobID));
+                            new Shutdown(connection, jobID));
                 } catch (Exception e) {
                     // IGNORE
                 }

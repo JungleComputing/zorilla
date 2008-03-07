@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-
 import org.apache.log4j.Logger;
 
 import ibis.smartsockets.direct.DirectSocket;
@@ -37,11 +36,14 @@ public class ZoniService implements Service, Runnable {
     public ZoniService(Node node) throws IOException {
         this.node = node;
 
-        InetAddress localHost = InetAddress.getByName(null);
 
-        serverSocket = new ServerSocket();
-        serverSocket.bind(new InetSocketAddress(localHost, node.config()
-                .getIntProperty(Config.ZONI_PORT)));
+        int port = node.config().getIntProperty(Config.ZONI_PORT);
+
+        serverSocket = new ServerSocket(port);
+        
+        // InetAddress localHost = InetAddress.getByName(null);
+        // serverSocket.bind(new InetSocketAddress(localHost, port));
+
     }
 
     public void start() {
@@ -50,13 +52,13 @@ public class ZoniService implements Service, Runnable {
         logger.info("Started Zoni service on port "
                 + serverSocket.getLocalPort());
     }
-    
+
     public synchronized Map<String, String> getStats() {
         Map<String, String> result = new HashMap<String, String>();
 
         return result;
     }
-    
+
     public void handleConnection(DirectSocket socket) {
         logger.error("TCP connection to UDP discovery service");
     }
@@ -68,7 +70,8 @@ public class ZoniService implements Service, Runnable {
 
                 Socket socket = serverSocket.accept();
 
-                ZoniServiceConnection connection = new ZoniServiceConnection(socket, node);
+                ZoniServiceConnection connection = new ZoniServiceConnection(
+                        socket, node);
 
                 synchronized (this) {
                     connections.add(connection);
