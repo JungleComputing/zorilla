@@ -2,8 +2,6 @@ package ibis.zorilla.zoni;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,16 +23,11 @@ public class JobDescription {
 
     private File stdinFile;
 
-    private InputStream stdinStream;
-
     private File stdoutFile;
-
-    private OutputStream stdoutStream;
 
     private File stderrFile;
 
-    private OutputStream stderrStream;
-    
+    // if interactive, stdin/out/err are not used
     private boolean interactive;
 
     public JobDescription() {
@@ -42,7 +35,7 @@ public class JobDescription {
         attributes = new HashMap<String, String>();
         inputFiles = new ArrayList<ZoniInputFile>();
         outputFiles = new ArrayList<ZoniOutputFile>();
-        
+
         interactive = false;
     }
 
@@ -52,7 +45,7 @@ public class JobDescription {
 
         environment = in.readStringMap();
         attributes = in.readStringMap();
-        
+
         interactive = in.readBoolean();
 
         inputFiles = new ArrayList<ZoniInputFile>();
@@ -78,7 +71,7 @@ public class JobDescription {
 
         out.writeStringMap(environment);
         out.writeStringMap(attributes);
-        
+
         out.writeBoolean(interactive);
 
         out.writeInt(inputFiles.size());
@@ -150,16 +143,6 @@ public class JobDescription {
 
     public void setStderrFile(File file) {
         this.stderrFile = file.getAbsoluteFile();
-        this.stderrStream = null;
-    }
-
-    public OutputStream getStderrStream() {
-        return stderrStream;
-    }
-
-    public void setStderrStream(OutputStream stderrStream) {
-        this.stderrStream = stderrStream;
-        this.stderrFile = null;
     }
 
     public File getStdinFile() {
@@ -168,16 +151,6 @@ public class JobDescription {
 
     public void setStdinFile(File file) {
         this.stdinFile = file.getAbsoluteFile();
-        this.stdinStream = null;
-    }
-
-    public InputStream getStdinStream() {
-        return stdinStream;
-    }
-
-    public void setStdinStream(InputStream stdinStream) {
-        this.stdinStream = stdinStream;
-        this.stdinFile = null;
     }
 
     public File getStdoutFile() {
@@ -186,20 +159,14 @@ public class JobDescription {
 
     public void setStdoutFile(File file) {
         this.stdoutFile = file.getAbsoluteFile();
-        this.stdinStream = null;
     }
 
-    public OutputStream getStdoutStream() {
-        return stdoutStream;
-    }
-
-    public void setStdoutStream(OutputStream stdoutStream) {
-        this.stdoutFile = null;
-        this.stdoutStream = stdoutStream;
-    }
-    
     public void setInteractive(boolean interactive) {
         this.interactive = interactive;
+    }
+
+    public boolean isInteractive() {
+        return interactive;
     }
 
 }

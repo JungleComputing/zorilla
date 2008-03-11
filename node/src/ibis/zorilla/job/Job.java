@@ -1,11 +1,15 @@
 package ibis.zorilla.job;
 
+import ibis.ipl.IbisIdentifier;
 import ibis.util.TypedProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.io.InputFile;
 import ibis.zorilla.io.ZorillaPrintStream;
+import ibis.zorilla.job.net.EndPoint;
+import ibis.zorilla.job.net.Receiver;
 import ibis.zorilla.util.PropertyUndefinedException;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,7 +20,8 @@ import org.apache.log4j.Logger;
 
 /**
  * A job in the zorilla system. May be created either from a description of the
- * job and all the needed files, or from a serialized from of another JobDescription object
+ * job and all the needed files, or from a serialized from of another
+ * JobDescription object
  */
 public abstract class Job {
 
@@ -26,11 +31,11 @@ public abstract class Job {
 
     public static final long DEFAULT_JOB_LIFETIME = 15 * 60 * 1000;
 
-    public static final String[] validAttributes =
-        { "nr.of.workers", "on.user.exit", "on.user.error", "worker.memory",
-                "worker.diskspace", "worker.processors", "claim.node", "ibis",
-                "ibis.nameserver", "jobstate.type", "malleable", "lifetime",
-                "classpath", "split.stdout", "split.stderr", "copy.output" };
+    public static final String[] validAttributes = { "nr.of.workers",
+            "on.user.exit", "on.user.error", "worker.memory",
+            "worker.diskspace", "worker.processors", "claim.node", "ibis",
+            "ibis.nameserver", "jobstate.type", "malleable", "lifetime",
+            "classpath", "split.stdout", "split.stderr", "copy.output" };
 
     /*
      * Attributes
@@ -71,7 +76,7 @@ public abstract class Job {
     public static final int CANCELLED = 8;
 
     public static final int ERROR = 9;
-    
+
     /**
      * create a constituent of the jobstate
      * 
@@ -83,7 +88,7 @@ public abstract class Job {
         String type = advert.getJobImplementationType();
 
         if (type.equalsIgnoreCase("primaryCopy")) {
-            return new ibis.zorilla.job.primaryCopy.Copy(advert, node);
+            return new ibis.zorilla.job.Copy(advert, node);
         } else {
             throw new Exception("unknown state type");
         }
@@ -92,8 +97,8 @@ public abstract class Job {
     protected static void checkAttributes(TypedProperties attributes)
             throws Exception {
 
-        TypedProperties wrong =
-            attributes.checkProperties(null, validAttributes, null, false);
+        TypedProperties wrong = attributes.checkProperties(null,
+                validAttributes, null, false);
 
         if (wrong.size() > 0) {
             throw new Exception("invalid attributes: " + wrong.toString());
@@ -112,7 +117,9 @@ public abstract class Job {
 
         if (onUserExit != null
                 && !(onUserExit.equalsIgnoreCase("ignore")
-                        || onUserExit.equalsIgnoreCase("cancel.job") || onUserExit.equalsIgnoreCase("close.world") || onUserExit.equalsIgnoreCase("job.error"))) {
+                        || onUserExit.equalsIgnoreCase("cancel.job")
+                        || onUserExit.equalsIgnoreCase("close.world") || onUserExit
+                        .equalsIgnoreCase("job.error"))) {
             throw new Exception("invalid value for on.user.exit: " + onUserExit);
         }
 
@@ -120,8 +127,11 @@ public abstract class Job {
 
         if (onUserError != null
                 && !(onUserError.equalsIgnoreCase("ignore")
-                        || onUserError.equalsIgnoreCase("cancel.job") || onUserError.equalsIgnoreCase("close.world") || onUserError.equalsIgnoreCase("job.error"))) {
-            throw new Exception("invalid value for on.user.error: " + onUserError);
+                        || onUserError.equalsIgnoreCase("cancel.job")
+                        || onUserError.equalsIgnoreCase("close.world") || onUserError
+                        .equalsIgnoreCase("job.error"))) {
+            throw new Exception("invalid value for on.user.error: "
+                    + onUserError);
         }
     }
 
@@ -244,11 +254,31 @@ public abstract class Job {
      */
     protected abstract String[] getPostStageFiles() throws Exception;
 
+    public abstract OutputFile[] getOutputFiles() throws Exception;
+    
     /**
      * Returns a stream suitable to write standard out to. Do not close stream
      * when done writing. May return null.
      */
     protected abstract OutputStream getStdout() throws Exception;
+
+    /**
+     * Write standard out to the given output stream. Blocks until this job has
+     * finished
+     */
+    public abstract void readStdout(OutputStream out) throws Exception;
+
+    /**
+     * Write standard err to the given output stream. Blocks until this job has
+     * finished.
+     */
+    public abstract void readStderr(OutputStream out) throws Exception;
+
+    /**
+     * Read data from the given stream and hand it to the stdin of all workers.
+     * Blocks until the job is done.
+     */
+    public abstract void writeStdin(InputStream in) throws Exception;
 
     /**
      * Returns the standard in file.
@@ -311,4 +341,28 @@ public abstract class Job {
             throws PropertyUndefinedException;
 
     public abstract int getExitStatus();
+
+    final static String fileName(File file) throws IOException {
+        String[] pathElements = file.getPath().split("/");
+
+        if (pathElements.length == 0) {
+            throw new IOException("could not find filename in given file"
+                    + " path: " + file.getPath());
+        }
+
+        return pathElements[pathElements.length - 1];
+    }
+
+    public final String toString() {
+        return getID().toString().substring(0, 7);
+    }
+
+    abstract void log(String message);
+
+    abstract void log(String message, Exception exception);
+
+    abstract EndPoint newEndPoint(String name, Receiver receiver)
+            throws IOException, Exception;
+
+    abstract IbisIdentifier getRandomConstituent();
 }

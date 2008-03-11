@@ -1,4 +1,4 @@
-package ibis.zorilla.job.primaryCopy;
+package ibis.zorilla.job;
 
 import ibis.ipl.ReadMessage;
 import ibis.zorilla.Node;
@@ -114,7 +114,7 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
     }
 
   
-    public String path() {
+    public String sandboxPath() {
         return sandboxPath;
     }
 
@@ -171,7 +171,7 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         if (endPoint == null) {
             throw new IOException("file not exported");
         }
-        output.writeString(path());
+        output.writeString(sandboxPath());
         output.writeObject(id);
         output.writeObject(endPoint.getID());
     }

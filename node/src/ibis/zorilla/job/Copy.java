@@ -1,4 +1,4 @@
-package ibis.zorilla.job.primaryCopy;
+package ibis.zorilla.job;
 
 import ibis.ipl.Ibis;
 import ibis.ipl.IbisIdentifier;
@@ -10,8 +10,6 @@ import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.io.ObjectInput;
 import ibis.zorilla.io.ZorillaPrintStream;
-import ibis.zorilla.job.Advert;
-import ibis.zorilla.job.Worker;
 import ibis.zorilla.job.net.Call;
 import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Factory;
@@ -21,6 +19,7 @@ import ibis.zorilla.util.Resources;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -906,6 +905,26 @@ public final class Copy extends Job implements Receiver, Runnable {
     @Override
     public int getExitStatus() {
         return 0;
+    }
+
+    @Override
+    public void writeStdin(InputStream in) throws Exception {
+        throw new Exception("can only write to standard in where job was submitted");
+    }
+
+    @Override
+    public void readStderr(OutputStream out) throws Exception {
+        throw new Exception("can only read from standard err where job was submitted");
+    }
+
+    @Override
+    public void readStdout(OutputStream out) throws Exception {
+        throw new Exception("can only read from standard out where job was submitted");
+    }
+
+    @Override
+    public OutputFile[] getOutputFiles() throws Exception {
+        throw new Exception("can only get output files where job was submitted");
     }
 
 }

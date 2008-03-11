@@ -1,6 +1,8 @@
 package ibis.zorilla.apps;
 
+import ibis.zorilla.zoni.InputForwarder;
 import ibis.zorilla.zoni.JobDescription;
+import ibis.zorilla.zoni.OutputForwarder;
 import ibis.zorilla.zoni.ZoniInputFile;
 import ibis.zorilla.zoni.JobInfo;
 import ibis.zorilla.zoni.ZoniOutputFile;
@@ -8,15 +10,11 @@ import ibis.zorilla.zoni.ZoniConnection;
 import ibis.zorilla.zoni.ZoniProtocol;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -288,17 +286,11 @@ public final class Zubmit {
 
             jobDescription.setInteractive(interactive);
 
-            if (interactive) {
-                jobDescription.setStderrStream(System.err);
-                jobDescription.setStdoutStream(System.out);
-                jobDescription.setStdinStream(System.in);
-            } else {
-                if (stdin != null) {
-                    jobDescription.setStdinFile(stdin);
-                }
-                jobDescription.setStdoutFile(stdout);
-                jobDescription.setStderrFile(stderr);
+            if (stdin != null) {
+                jobDescription.setStdinFile(stdin);
             }
+            jobDescription.setStdoutFile(stdout);
+            jobDescription.setStderrFile(stderr);
 
             if (verbose) {
                 System.out.println("*** submitting job ***");
@@ -339,6 +331,11 @@ public final class Zubmit {
                     System.out.println("** interactive job **");
                 }
 
+                
+                new OutputForwarder(nodeSocketAddress, jobID, System.out, false).startAsDaemon();
+                new OutputForwarder(nodeSocketAddress, jobID, System.err, true).startAsDaemon();
+                new InputForwarder(nodeSocketAddress, jobID, System.in).startAsDaemon();
+                
                 // register shutdown hook to cancel job..
                 try {
                     Runtime.getRuntime().addShutdownHook(

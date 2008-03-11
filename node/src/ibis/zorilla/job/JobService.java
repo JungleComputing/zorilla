@@ -4,7 +4,6 @@ import ibis.util.ThreadPool;
 import ibis.zorilla.Node;
 import ibis.zorilla.Config;
 import ibis.zorilla.Service;
-import ibis.zorilla.job.primaryCopy.Primary;
 import ibis.zorilla.util.Resources;
 import ibis.zorilla.zoni.JobDescription;
 

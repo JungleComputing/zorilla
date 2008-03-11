@@ -2,7 +2,9 @@ package ibis.zorilla.net;
 
 import ibis.zorilla.Node;
 import ibis.zorilla.job.Job;
+import ibis.zorilla.job.OutputFile;
 import ibis.zorilla.zoni.ZoniInputStream;
+import ibis.zorilla.zoni.ZoniOutputFile;
 import ibis.zorilla.zoni.ZoniOutputStream;
 import ibis.zorilla.zoni.ZoniProtocol;
 import ibis.zorilla.zoni.JobDescription;
@@ -37,12 +39,10 @@ final class ZoniServiceConnection implements Runnable {
         logger.debug("new connection handler from: " + socket.getInetAddress()
                 + ":" + socket.getPort());
 
-        in =
-            new ZoniInputStream(
-                    new BufferedInputStream(socket.getInputStream()));
-        out =
-            new ZoniOutputStream(new BufferedOutputStream(
-                    socket.getOutputStream()));
+        in = new ZoniInputStream(new BufferedInputStream(socket
+                .getInputStream()));
+        out = new ZoniOutputStream(new BufferedOutputStream(socket
+                .getOutputStream()));
 
         new Thread(this).start();
     }
@@ -56,8 +56,7 @@ final class ZoniServiceConnection implements Runnable {
             callback = new ZoniCallback(in.readInetSocketAddresses());
         }
 
-        Job job =
-            node.jobService().submitJob(jobDescription, callback);
+        Job job = node.jobService().submitJob(jobDescription, callback);
         if (callback != null) {
             callback.setJob(job);
         }
@@ -168,6 +167,68 @@ final class ZoniServiceConnection implements Runnable {
         throw new Exception("cannot set node attributes");
     }
 
+    private void getOutputFiles() throws Exception {
+        String jobIDString = in.readString();
+        UUID jobID = UUID.fromString(jobIDString);
+        Job job = node.jobService().getJob(jobID);
+        
+        out.writeInt(ZoniProtocol.STATUS_OK);
+        out.writeString("OK");
+        
+        OutputFile[] files = job.getOutputFiles();
+        
+        out.writeInt(files.length);
+        for (OutputFile file: files) {
+            file.writeTo(out);
+        }
+        
+        out.flush();
+    }
+
+    private void putStdin() throws Exception {
+        String jobIDString = in.readString();
+        UUID jobID = UUID.fromString(jobIDString);
+        Job job = node.jobService().getJob(jobID);
+        
+        out.writeInt(ZoniProtocol.STATUS_OK);
+        out.writeString("OK");
+        out.flush();
+
+        job.writeStdin(in);
+        close();
+    }
+
+    private void getStdout() throws Exception {
+        String jobIDString = in.readString();
+        UUID jobID = UUID.fromString(jobIDString);
+        Job job = node.jobService().getJob(jobID);
+        
+        out.writeInt(ZoniProtocol.STATUS_OK);
+        out.writeString("OK");
+        out.flush();
+
+        job.readStdout(out);
+        close();
+    }
+
+    private void getStderr() throws Exception {
+        String jobIDString = in.readString();
+        UUID jobID = UUID.fromString(jobIDString);
+        Job job = node.jobService().getJob(jobID);
+        
+        out.writeInt(ZoniProtocol.STATUS_OK);
+        out.writeString("OK");
+        out.flush();
+
+        job.readStderr(out);
+        close();
+    }
+
+    private void getFile() {
+        // TODO Auto-generated method stub
+
+    }
+
     public void run() {
         logger.debug("received new callback connection");
 
@@ -234,6 +295,21 @@ final class ZoniServiceConnection implements Runnable {
                     break;
                 case ZoniProtocol.OPCODE_KILL_NODE:
                     killNode();
+                    break;
+                case ZoniProtocol.OPCODE_GET_OUTPUT_FILES:
+                    getOutputFiles();
+                    break;
+                case ZoniProtocol.OPCODE_PUT_STDIN:
+                    putStdin();
+                    break;
+                case ZoniProtocol.OPCODE_GET_STDOUT:
+                    getStdout();
+                    break;
+                case ZoniProtocol.OPCODE_GET_STDERR:
+                    getStderr();
+                    break;
+                case ZoniProtocol.OPCODE_GET_FILE:
+                    getFile();
                     break;
                 default:
                     throw new IOException("unknown/unsupported opcode: "

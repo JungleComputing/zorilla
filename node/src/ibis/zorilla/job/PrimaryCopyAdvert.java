@@ -1,9 +1,8 @@
-package ibis.zorilla.job.primaryCopy;
+package ibis.zorilla.job;
 
 import java.util.UUID;
 
 import ibis.ipl.ReceivePortIdentifier;
-import ibis.zorilla.job.Advert;
 
 public class PrimaryCopyAdvert extends Advert {
 

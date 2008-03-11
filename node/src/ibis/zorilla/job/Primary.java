@@ -1,4 +1,4 @@
-package ibis.zorilla.job.primaryCopy;
+package ibis.zorilla.job;
 
 import ibis.ipl.Ibis;
 import ibis.ipl.IbisIdentifier;
@@ -10,8 +10,6 @@ import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.io.ObjectOutput;
 import ibis.zorilla.io.ZorillaPrintStream;
-import ibis.zorilla.job.Callback;
-import ibis.zorilla.job.Worker;
 import ibis.zorilla.job.Worker.Status;
 import ibis.zorilla.job.net.Call;
 import ibis.zorilla.job.net.EndPoint;
@@ -224,17 +222,32 @@ public final class Primary extends Job implements Runnable, Receiver {
                         .getSandboxPath(), file.getFile(), this);
             }
 
-            stdout = new PrimaryOutputStream("##stdout##", description
-                    .getStdoutFile(), this);
+            if (description.isInteractive()) {
+                stdout = new PrimaryOutputStream("##stdout##", File
+                        .createTempFile(id.toString(), "stdout", node
+                                .getTmpDir()), this);
 
-            stderr = new PrimaryOutputStream("##stderr##", description
-                    .getStderrFile(), this);
+                stderr = new PrimaryOutputStream("##stderr##", File
+                        .createTempFile(id.toString(), "stdout", node
+                                .getTmpDir()), this);
 
-            if (description.getStdinFile() == null) {
+                // TODO: support standard in too :)
                 stdin = null;
+
             } else {
-                stdin = new InputFile(description.getStdinFile(),
-                        "<<stdin>>", this);
+                stdout = new PrimaryOutputStream("##stdout##", description
+                        .getStdoutFile(), this);
+
+                stderr = new PrimaryOutputStream("##stderr##", description
+                        .getStderrFile(), this);
+
+                if (description.getStdinFile() == null) {
+                    stdin = null;
+                } else {
+                    stdin = new InputFile(description.getStdinFile(),
+                            "<<stdin>>", this);
+                }
+
             }
 
             advertCount = (int) Math.round(Math.log10(maxNrOfWorkers()));
@@ -399,10 +412,10 @@ public final class Primary extends Job implements Runnable, Receiver {
         }
 
         if (stdout != null) {
-            result.put("stout", stdout.path());
+            result.put("stout", stdout.sandboxPath());
         }
         if (stderr != null) {
-            result.put("sterr", stderr.path());
+            result.put("sterr", stderr.sandboxPath());
         }
         if (stdin != null) {
             result.put("stdin", stdin.sandboxPath());
@@ -441,7 +454,7 @@ public final class Primary extends Job implements Runnable, Receiver {
     protected String[] getPostStageFiles() {
         String[] result = new String[postStageFiles.length];
         for (int i = 0; i < postStageFiles.length; i++) {
-            result[i] = postStageFiles[i].path();
+            result[i] = postStageFiles[i].sandboxPath();
         }
         return result;
     }
@@ -942,7 +955,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
         invocation.writeInt(postStageFiles.length);
         for (PrimaryOutputStream file : postStageFiles) {
-            invocation.writeString(file.path());
+            invocation.writeString(file.sandboxPath());
         }
 
         invocation.writeBoolean(stdout != null);
@@ -998,7 +1011,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         String path = invocation.readString();
 
         for (int i = 0; i < postStageFiles.length; i++) {
-            if (path.equals(postStageFiles[i].path())) {
+            if (path.equals(postStageFiles[i].sandboxPath())) {
                 postStageFiles[i].writeBootStrap(invocation);
                 return;
             }
@@ -1375,7 +1388,7 @@ public final class Primary extends Job implements Runnable, Receiver {
     protected PrimaryOutputStream createOutputFile(String virtualFilePath)
             throws Exception, IOException {
         for (int i = 0; i < postStageFiles.length; i++) {
-            if (virtualFilePath.equals(postStageFiles[i].path())) {
+            if (virtualFilePath.equals(postStageFiles[i].sandboxPath())) {
                 return postStageFiles[i];
             }
         }
@@ -1388,6 +1401,36 @@ public final class Primary extends Job implements Runnable, Receiver {
         PrimaryOutputStream out = createOutputFile(virtualFilePath);
 
         out.readFrom(data);
+    }
+
+    @Override
+    public void readStderr(OutputStream out) throws Exception {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void readStdout(OutputStream out) throws Exception {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void writeStdin(InputStream in) throws Exception {
+        // TODO: implement stdin forwarding
+    }
+
+    @Override
+    public OutputFile[] getOutputFiles() throws Exception {
+        OutputFile[] result = new OutputFile[postStageFiles.length];
+
+        for (int i = 0; i < postStageFiles.length; i++) {
+            result[i] = new OutputFile(postStageFiles[i].sandboxPath(), false,
+                    new OutputFile[0]);
+        }
+
+        return result;
+
     }
 
 }

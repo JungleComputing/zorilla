@@ -12,8 +12,6 @@ public class ZoniOutputFile {
     //variables used to retrieve output files from the zorilla node when the
     //job has finished
     
-    private final boolean exists;
-
     private final boolean isDirectory;
 
     private final ZoniOutputFile[] children;
@@ -31,7 +29,6 @@ public class ZoniOutputFile {
         this.sandboxPath = sandboxPath;
         
         file = null;
-        exists = false;
         isDirectory = false;
         children = new ZoniOutputFile[0];
     }
@@ -49,14 +46,12 @@ public class ZoniOutputFile {
         this.file = file.getAbsoluteFile();
 
         isDirectory = false;
-        exists = false;
         children = new ZoniOutputFile[0];
     }
 
     ZoniOutputFile(ZoniInputStream in) throws IOException {
         sandboxPath = in.readString();
         file = in.readFile();
-        exists = in.readBoolean();
         isDirectory = in.readBoolean();
         children = new ZoniOutputFile[in.readInt()];
 
@@ -66,10 +61,10 @@ public class ZoniOutputFile {
         }
     }
 
+    //format equal to zorilla.job.OutputFile
     void writeTo(ZoniOutputStream out) throws IOException {
         out.writeString(sandboxPath);
         out.writeFile(file);
-        out.writeBoolean(exists);
         out.writeBoolean(isDirectory);
 
         out.writeInt(children.length);
@@ -77,10 +72,6 @@ public class ZoniOutputFile {
         for (ZoniOutputFile file : children) {
             file.writeTo(out);
         }
-    }
-
-    public boolean exists() {
-        return exists;
     }
 
     public boolean isDirectory() {

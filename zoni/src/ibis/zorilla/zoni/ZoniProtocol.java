@@ -33,12 +33,14 @@ public final class ZoniProtocol {
     public static final int OPCODE_KILL_NODE = 9;
 
     public static final int OPCODE_GET_OUTPUT_FILES = 10;
+
+    public static final int OPCODE_PUT_STDIN = 11;
     
-    public static final int OPCODE_GET_STDOUT_FILE = 11;
+    public static final int OPCODE_GET_STDOUT = 12;
 
-    public static final int OPCODE_GET_STDERR_FILE = 12;
+    public static final int OPCODE_GET_STDERR = 13;
 
-    public static final int OPCODE_GET_FILE = 13;
+    public static final int OPCODE_GET_FILE = 14;
     
     // callbacks
 

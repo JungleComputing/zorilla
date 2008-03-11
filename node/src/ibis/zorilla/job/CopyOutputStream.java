@@ -1,4 +1,4 @@
-package ibis.zorilla.job.primaryCopy;
+package ibis.zorilla.job;
 
 import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
