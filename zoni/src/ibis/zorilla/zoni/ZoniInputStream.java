@@ -56,8 +56,8 @@ public class ZoniInputStream extends DataInputStream {
 
             readFully(bytes);
 
-            result[i] =
-                new InetSocketAddress(InetAddress.getByAddress(bytes), port);
+            result[i] = new InetSocketAddress(InetAddress.getByAddress(bytes),
+                    port);
         }
 
         return result;
@@ -71,7 +71,6 @@ public class ZoniInputStream extends DataInputStream {
         }
 
         return new File(string);
-
     }
 
 }

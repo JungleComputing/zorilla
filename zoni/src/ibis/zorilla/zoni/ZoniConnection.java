@@ -194,10 +194,10 @@ public final class ZoniConnection {
         return info;
     }
     
-    public ZoniOutputFile[] getFiles(String jobID) throws IOException {
+    public ZoniOutputFile[] getOutputFiles(String jobID) throws IOException {
         logger.debug("getting file info");
 
-        out.writeInt(ZoniProtocol.OPCODE_GET_FILE_INFO);
+        out.writeInt(ZoniProtocol.OPCODE_GET_OUTPUT_FILES);
         out.flush();
 
         int status = in.readInt();
@@ -217,6 +217,44 @@ public final class ZoniConnection {
 
         return result;
     }
+    
+    
+    public ZoniOutputFile getStdout(String jobID) throws IOException {
+        logger.debug("getting stdout file info");
+
+        out.writeInt(ZoniProtocol.OPCODE_GET_STDOUT_FILE);
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readString();
+
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on getting peer info: "
+                    + message);
+        }
+        
+        return new ZoniOutputFile(in);
+    }
+    
+    public ZoniOutputFile getStderr(String jobID) throws IOException {
+        logger.debug("getting stdout file info");
+
+        out.writeInt(ZoniProtocol.OPCODE_GET_STDERR_FILE);
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readString();
+
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on getting peer info: "
+                    + message);
+        }
+        
+        return new ZoniOutputFile(in);
+    }
+
     
     /**
      * Writes an output file to the given stream.

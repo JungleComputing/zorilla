@@ -37,7 +37,7 @@ public class ZoniOutputFile {
     }
 
     /**
-     * Output file which is automatically copied to the given file
+     * Output file which can be automatically copied to the given file
      * 
      * @param sandboxPath
      *            location of this file within the sandbox
@@ -46,7 +46,7 @@ public class ZoniOutputFile {
      */
     public ZoniOutputFile(String sandboxPath, File file) {
         this.sandboxPath = sandboxPath;
-        this.file = file;
+        this.file = file.getAbsoluteFile();
 
         isDirectory = false;
         exists = false;
@@ -93,6 +93,10 @@ public class ZoniOutputFile {
     
     public String getSandboxPath() {
         return sandboxPath;
+    }
+
+    public ZoniOutputFile[] getChildren() {
+        return children.clone();
     }
 
 }

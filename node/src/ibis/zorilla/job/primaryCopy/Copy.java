@@ -473,7 +473,7 @@ public final class Copy extends Job implements Receiver, Runnable {
                 // claim resources, do not start worker yet.
                 localWorkers.put(workerID, worker);
                 node.jobService().setResourcesUsed(getID(),
-                    workerResources.mult(localWorkers.size()));
+                        workerResources.mult(localWorkers.size()));
             }
 
         }
@@ -510,9 +510,8 @@ public final class Copy extends Job implements Receiver, Runnable {
                 }
 
             } else {
-                Exception e =
-                    new Exception("unknown incoming invocation to copy: "
-                            + opcode);
+                Exception e = new Exception(
+                        "unknown incoming invocation to copy: " + opcode);
                 log(e.getMessage(), e);
                 throw e;
             }
@@ -613,8 +612,8 @@ public final class Copy extends Job implements Receiver, Runnable {
             resources = new Resources(workerResources);
         }
 
-        int nrOfWorkers =
-            node.jobService().nrOfResourceSetsAvailable(workerResources);
+        int nrOfWorkers = node.jobService().nrOfResourceSetsAvailable(
+                workerResources);
 
         logger.debug("possible number of NEW workers: " + nrOfWorkers);
 
@@ -635,13 +634,16 @@ public final class Copy extends Job implements Receiver, Runnable {
             logger.debug("total possible number of workers: " + nrOfWorkers);
 
             if (nrOfWorkers == sendMaxNrOfWorkers) {
-                logger.debug("no need to update nr of workers, primary already has the correct number");
+                logger
+                        .debug("no need to update nr of workers, primary already has the correct number");
                 return;
             }
 
         }
 
-        logger.debug("telling primary we can start " + nrOfWorkers + " workers");
+        logger
+                .debug("telling primary we can start " + nrOfWorkers
+                        + " workers");
 
         Call call = endPoint.call(primary);
 
@@ -707,7 +709,8 @@ public final class Copy extends Job implements Receiver, Runnable {
             }
 
             synchronized (this) {
-                if (node.jobService().nrOfResourceSetsAvailable(workerResources) < 1) {
+                if (node.jobService()
+                        .nrOfResourceSetsAvailable(workerResources) < 1) {
                     log("cannot claim resources");
                     return true; // might get more resources later
                 }
@@ -718,7 +721,7 @@ public final class Copy extends Job implements Receiver, Runnable {
                 // claim resources, do not start worker yet.
                 localWorkers.put(workerID, worker);
                 node.jobService().setResourcesUsed(getID(),
-                    workerResources.mult(localWorkers.size()));
+                        workerResources.mult(localWorkers.size()));
             }
 
             Call call = endPoint.call(primary);
@@ -836,7 +839,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
                 // update resource usage
                 node.jobService().setResourcesUsed(getID(),
-                    workerResources.mult(getNrOfWorkers()));
+                        workerResources.mult(getNrOfWorkers()));
 
                 if (!getBooleanAttribute("malleable")
                         && getPhase() <= SCHEDULING) {
@@ -886,8 +889,8 @@ public final class Copy extends Job implements Receiver, Runnable {
     }
 
     public synchronized IbisIdentifier getRandomConstituent() {
-        Constituent[] constituents =
-            this.constituents.values().toArray(new Constituent[0]);
+        Constituent[] constituents = this.constituents.values().toArray(
+                new Constituent[0]);
 
         int constituentNr = Node.randomInt(constituents.length);
 

@@ -48,6 +48,23 @@ public class ZoniOutputStream extends DataOutputStream {
         }
     }
     
+//    public void writeOutputFile(ZoniOutputFile file) throws IOException {
+//        writeBoolean(file == null);
+//        
+//        if (file == null) {
+//            file.writeTo(this);
+//        }
+//    }
+//    
+//    public void writeInputFile(ZoniInputFile file, boolean writeContent) throws IOException {
+//        writeBoolean(file == null);
+//        
+//        if (file == null) {
+//            file.writeTo(this, writeContent);
+//        }
+//    }
+
+    
     public void writeInetSocketAddresses(InetSocketAddress[] addresses) throws IOException {
         writeInt(addresses.length);
         for (InetSocketAddress address: addresses) {

@@ -8,6 +8,9 @@ import ibis.zorilla.zoni.ZoniConnection;
 import ibis.zorilla.zoni.ZoniProtocol;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -22,15 +25,15 @@ public final class Zubmit {
     private static final Logger logger = Logger.getLogger(Zubmit.class);
 
     private static void addInputFile(String sandboxPath, File file,
-            JobDescipr) {
+            JobDescription job) {
         if (file.isDirectory()) {
             for (File child : file.listFiles()) {
                 // recursive
-                addInputFile(sandboxPath + "/" + child.getName(), file, files);
+                addInputFile(sandboxPath + "/" + child.getName(), file, job);
             }
         } else {
             try {
-                files.add(new ZoniInputFile(sandboxPath, file));
+                job.addInputFile(new ZoniInputFile(sandboxPath, file));
             } catch (Exception e) {
                 System.err.println("cannot add input file to job: " + file
                         + " error = " + e.getMessage());
@@ -39,8 +42,8 @@ public final class Zubmit {
         }
     }
 
-    private static void parseInputFile(String string,
-            JobDescription job) throws Exception {
+    private static void parseInputFile(String string, JobDescription job)
+            throws Exception {
         logger.debug("string = " + string);
 
         String[] equalSplit = string.split("=", 2);
@@ -58,7 +61,7 @@ public final class Zubmit {
 
     }
 
-    private static ZoniOutputFile parseOutputFile(String string)
+    private static void parseOutputFile(String string, JobDescription job)
             throws Exception {
         logger.debug("string = " + string);
 
@@ -73,7 +76,7 @@ public final class Zubmit {
             file = new File(sandboxPath);
         }
 
-        return new ZoniOutputFile(sandboxPath, file);
+        job.addOutputFile(new ZoniOutputFile(sandboxPath, file));
     }
 
     private static int parsePort(String string) {
@@ -117,6 +120,23 @@ public final class Zubmit {
         return new InetSocketAddress(address, port);
     }
 
+    private static void copyOutputFile(ZoniOutputFile file,
+            ZoniConnection connection, String jobID) throws IOException {
+        if (file.isDirectory()) {
+            for (ZoniOutputFile child : file.getChildren()) {
+                copyOutputFile(child, connection, jobID);
+            }
+        } else {
+            File javaFile = file.getFile();
+            javaFile.getParentFile().mkdirs();
+            FileOutputStream fileStream = new FileOutputStream(javaFile);
+
+            connection.getOutputFile(file, fileStream, jobID);
+
+            fileStream.close();
+        }
+    }
+
     private static void usage() {
         System.out
                 .println("usage: zubmit [OPTION].. EXECUTABLE_URI [JOB_ARGUMENTS]"
@@ -150,15 +170,12 @@ public final class Zubmit {
         boolean waitUntilRunning = false;
         boolean interactive = false;
         boolean verbose = false;
-        boolean splitOutput = false;
 
         try {
             InetSocketAddress nodeSocketAddress = new InetSocketAddress(
                     InetAddress.getByName(null), ZoniProtocol.DEFAULT_PORT);
 
             JobDescription jobDescription = new JobDescription();
-            ArrayList<String> inputFiles = new ArrayList<String>();
-            ArrayList<String> outputFiles = new ArrayList<String>();
             File stdin = null;
             File stdout = new File("job.out");
             File stderr = new File("job.err");
@@ -190,11 +207,11 @@ public final class Zubmit {
                 } else if (command[i].equals("-i")
                         || command[i].equals("--input")) {
                     i++;
-                    inputFiles.add(command[i]);
+                    parseInputFile(command[i], jobDescription);
                 } else if (command[i].equals("-o")
                         || command[i].equals("--output")) {
                     i++;
-                    outputFiles.add(command[i]);
+                    parseOutputFile(command[i], jobDescription);
                 } else if (command[i].equals("-c")
                         || command[i].equals("--cores")) {
                     i++;
@@ -259,6 +276,7 @@ public final class Zubmit {
             }
 
             String executable = command[executableIndex];
+            jobDescription.setExecutable(executable);
 
             String[] arguments = new String[(command.length - (executableIndex + 1))];
             int j = 0;
@@ -266,24 +284,21 @@ public final class Zubmit {
                 arguments[j] = command[i];
                 j++;
             }
-            
+            jobDescription.setArguments(arguments);
+
+            jobDescription.setInteractive(interactive);
+
             if (interactive) {
-                
-                
-                
+                jobDescription.setStderrStream(System.err);
+                jobDescription.setStdoutStream(System.out);
+                jobDescription.setStdinStream(System.in);
             } else {
-                for(String file: inputFiles) {
-                    parseInputFile(file, jobDescription);
+                if (stdin != null) {
+                    jobDescription.setStdinFile(stdin);
                 }
-                
-                
-                jobDescription.setStdinFile(stdin);
                 jobDescription.setStdoutFile(stdout);
                 jobDescription.setStderrFile(stderr);
-                
-                
             }
-            
 
             if (verbose) {
                 System.out.println("*** submitting job ***");
@@ -295,6 +310,11 @@ public final class Zubmit {
 
             String jobID;
             jobID = connection.submitJob(jobDescription, null);
+
+            // close input streams of files (if applicable)
+            for (ZoniInputFile file : jobDescription.getInputFiles()) {
+                file.closeStream();
+            }
 
             System.err.println("submitted job, id = " + jobID);
 
@@ -312,15 +332,12 @@ public final class Zubmit {
 
                     Thread.sleep(500);
                 }
-            } else if (interactive) {
-                if (verbose) {
-                    System.out.println("waiting until job is done");
-                }
+            }
 
-                FileReader stdoutReader = new FileReader(stdout.getFile(),
-                        System.out);
-                FileReader stderrReader = new FileReader(stderr.getFile(),
-                        System.err);
+            if (interactive) {
+                if (verbose) {
+                    System.out.println("** interactive job **");
+                }
 
                 // register shutdown hook to cancel job..
                 try {
@@ -344,9 +361,10 @@ public final class Zubmit {
                     Thread.sleep(1000);
                 }
 
-                stdoutReader.end();
-                stderrReader.end();
-
+                // copy output files
+                for (ZoniOutputFile file : connection.getOutputFiles(jobID)) {
+                    copyOutputFile(file, connection, jobID);
+                }
             }
 
             connection.close();

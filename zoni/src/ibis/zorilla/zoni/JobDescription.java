@@ -34,12 +34,16 @@ public class JobDescription {
     private File stderrFile;
 
     private OutputStream stderrStream;
+    
+    private boolean interactive;
 
     public JobDescription() {
         environment = new HashMap<String, String>();
         attributes = new HashMap<String, String>();
         inputFiles = new ArrayList<ZoniInputFile>();
         outputFiles = new ArrayList<ZoniOutputFile>();
+        
+        interactive = false;
     }
 
     public JobDescription(ZoniInputStream in, File tmpDir) throws IOException {
@@ -48,16 +52,16 @@ public class JobDescription {
 
         environment = in.readStringMap();
         attributes = in.readStringMap();
+        
+        interactive = in.readBoolean();
 
         inputFiles = new ArrayList<ZoniInputFile>();
-
         int nrOfInputFiles = in.readInt();
         for (int i = 0; i < nrOfInputFiles; i++) {
             inputFiles.add(new ZoniInputFile(in, tmpDir));
         }
 
         outputFiles = new ArrayList<ZoniOutputFile>();
-
         int nrOfOutputFiles = in.readInt();
         for (int i = 0; i < nrOfOutputFiles; i++) {
             outputFiles.add(new ZoniOutputFile(in));
@@ -74,10 +78,12 @@ public class JobDescription {
 
         out.writeStringMap(environment);
         out.writeStringMap(attributes);
+        
+        out.writeBoolean(interactive);
 
         out.writeInt(inputFiles.size());
         for (ZoniInputFile file : inputFiles) {
-            file.writeTo(out);
+            file.writeTo(out, interactive);
         }
 
         out.writeInt(outputFiles.size());
@@ -143,7 +149,7 @@ public class JobDescription {
     }
 
     public void setStderrFile(File file) {
-        this.stderrFile = file;
+        this.stderrFile = file.getAbsoluteFile();
         this.stderrStream = null;
     }
 
@@ -161,7 +167,7 @@ public class JobDescription {
     }
 
     public void setStdinFile(File file) {
-        this.stdinFile = file;
+        this.stdinFile = file.getAbsoluteFile();
         this.stdinStream = null;
     }
 
@@ -179,7 +185,7 @@ public class JobDescription {
     }
 
     public void setStdoutFile(File file) {
-        this.stdoutFile = file;
+        this.stdoutFile = file.getAbsoluteFile();
         this.stdinStream = null;
     }
 
@@ -190,6 +196,10 @@ public class JobDescription {
     public void setStdoutStream(OutputStream stdoutStream) {
         this.stdoutFile = null;
         this.stdoutStream = stdoutStream;
+    }
+    
+    public void setInteractive(boolean interactive) {
+        this.interactive = interactive;
     }
 
 }

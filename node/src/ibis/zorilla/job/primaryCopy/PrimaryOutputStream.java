@@ -85,7 +85,7 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         }
         
         if (!file.isAbsolute()) {
-            throw new Exception("file must be absolute");
+            throw new Exception("file must be absolute: " + file);
         }
 
         if (file.isDirectory()) {
@@ -95,14 +95,14 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         file.delete();
 
         if (file.exists()) {
-            throw new Exception("could not purge output file");
+            throw new Exception("could not purge output file: " + file);
         }
 
         // (re) create file
         file.createNewFile();
 
         if (!file.canWrite()) {
-            throw new Exception("cannot write to file");
+            throw new Exception("cannot write to file: " + file);
         }
 
         logger.debug("creating primary output file for path " + sandboxPath

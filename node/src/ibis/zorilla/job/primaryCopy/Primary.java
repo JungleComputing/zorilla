@@ -225,15 +225,15 @@ public final class Primary extends Job implements Runnable, Receiver {
             }
 
             stdout = new PrimaryOutputStream("##stdout##", description
-                    .getStdout().getFile(), this);
+                    .getStdoutFile(), this);
 
             stderr = new PrimaryOutputStream("##stderr##", description
-                    .getStderr().getFile(), this);
+                    .getStderrFile(), this);
 
-            if (description.getStdin() == null) {
+            if (description.getStdinFile() == null) {
                 stdin = null;
             } else {
-                stdin = new InputFile(description.getStdin().getFile(),
+                stdin = new InputFile(description.getStdinFile(),
                         "<<stdin>>", this);
             }
 

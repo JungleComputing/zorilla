@@ -1,7 +1,6 @@
 package ibis.zorilla.zoni;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,7 +10,7 @@ public class ZoniInputFile {
     private final String sandboxPath;
 
     // size of file
-    private long size;
+    private final long size;
 
     // file on local disk
     private final File file;
@@ -33,12 +32,16 @@ public class ZoniInputFile {
 
     /**
      * Input file described by an actual file on disk. This file is read by the
-     * zorilla node after the job has been submitted.
+     * zorilla node after the job has been submitted. Alternatively, it can also
+     * be streamed to the zorilla node by setting the "interactive" flag of the
+     * job
      */
     public ZoniInputFile(String sandboxPath, File file) throws Exception {
         this.sandboxPath = sandboxPath;
-        this.file = file;
+
+        this.file = file.getAbsoluteFile();
         this.inputStream = null;
+        this.size = file.length();
     }
 
     /**
@@ -48,9 +51,10 @@ public class ZoniInputFile {
         sandboxPath = in.readString();
         size = in.readLong();
         File file = in.readFile();
+        boolean contentIncluded = in.readBoolean();
 
         // file send by value, not by reference
-        if (file == null) {
+        if (contentIncluded) {
             file = File.createTempFile("input-file", null, tmpDir);
             FileOutputStream out = new FileOutputStream(file);
 
@@ -82,13 +86,19 @@ public class ZoniInputFile {
     /**
      * Write an input file to a stream
      */
-    void writeTo(ZoniOutputStream out) throws IOException {
+    void writeTo(ZoniOutputStream out, boolean writeContent) throws IOException {
         out.writeString(sandboxPath);
         out.writeLong(size);
         out.writeFile(file);
+        out.writeBoolean(writeContent);
 
-        //file send by value, not send-by-reference
-        if (file == null) {
+        // file send by value, not send-by-reference
+        if (writeContent) {
+            if (inputStream == null) {
+                throw new IOException("cannot write content, "
+                        + "no inputstream given");
+            }
+
             long bytesLeft = size;
             byte[] buffer = new byte[1024];
 
@@ -113,7 +123,9 @@ public class ZoniInputFile {
     }
 
     public void closeStream() throws IOException {
-        inputStream.close();
+        if (inputStream != null) {
+            inputStream.close();
+        }
     }
 
     public String getSandboxPath() {
