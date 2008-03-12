@@ -194,11 +194,12 @@ public final class ZoniConnection {
         return info;
     }
 
-    public ZoniOutputFile[] getOutputFiles(String jobID) throws IOException {
+    public ZoniFileInfo getFileInfo(String sandboxPath, String jobID) throws IOException {
         logger.debug("getting file info");
 
-        out.writeInt(ZoniProtocol.OPCODE_GET_OUTPUT_FILES);
+        out.writeInt(ZoniProtocol.OPCODE_GET_FILE_INFO);
         out.writeString(jobID);
+        out.writeString(sandboxPath);
         out.flush();
 
         int status = in.readInt();
@@ -209,13 +210,7 @@ public final class ZoniConnection {
             throw new IOException("exception on getting output files: " + message);
         }
 
-        ZoniOutputFile[] result = new ZoniOutputFile[in.readInt()];
-
-        for (int i = 0; i < result.length; i++) {
-            result[i] = new ZoniOutputFile(in);
-        }
-
-        return result;
+        return new ZoniFileInfo(in);
     }
 
     /**
@@ -296,15 +291,14 @@ public final class ZoniConnection {
      * @throws IOException
      *             in case of trouble
      */
-    public void getOutputFile(ZoniOutputFile file, OutputStream stream,
+    public void getOutputFile(OutputStream stream, String sandboxPath,
             String jobID) throws IOException {
         logger.debug("getting file");
 
         out.writeInt(ZoniProtocol.OPCODE_GET_FILE);
 
         out.writeString(jobID);
-        file.writeTo(out);
-
+        out.writeString(sandboxPath);
         out.flush();
 
         int status = in.readInt();
@@ -312,10 +306,12 @@ public final class ZoniConnection {
 
         if (status != ZoniProtocol.STATUS_OK) {
             close();
-            throw new IOException("exception on getting peer info: " + message);
+            throw new IOException("exception on getting output file: " + message);
         }
 
-        int size = in.readInt();
+        long size = in.readLong();
+        logger.debug("getting file " + sandboxPath + " of size " + size);
+        
         byte[] buffer = new byte[1024];
 
         while (size > 0) {

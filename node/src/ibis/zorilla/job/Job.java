@@ -8,7 +8,9 @@ import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Receiver;
 import ibis.zorilla.util.PropertyUndefinedException;
+import ibis.zorilla.zoni.ZoniFileInfo;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -254,7 +256,7 @@ public abstract class Job {
      */
     protected abstract String[] getPostStageFiles() throws Exception;
 
-    public abstract OutputFile[] getOutputFiles() throws Exception;
+    public abstract ZoniFileInfo getFileInfo(String sandboxPath) throws Exception;
     
     /**
      * Returns a stream suitable to write standard out to. Do not close stream
@@ -275,6 +277,12 @@ public abstract class Job {
     public abstract void readStderr(OutputStream out) throws Exception;
 
     /**
+     * Write the given file to the given output stream. Blocks until this job
+     * has finished
+     */
+    public abstract void readOutputFile(String sandboxPath, DataOutputStream out) throws Exception;
+    
+    /**
      * Read data from the given stream and hand it to the stdin of all workers.
      * Blocks until the job is done.
      */
@@ -294,7 +302,7 @@ public abstract class Job {
     /**
      * Creates an output stream to write to the given virtual file
      */
-    protected abstract OutputStream createOutputFile(String virtualFilePath)
+    protected abstract OutputStream getOutputFile(String sandboxPath)
             throws Exception, IOException;
 
     /**

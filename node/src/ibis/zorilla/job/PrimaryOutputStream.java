@@ -6,13 +6,17 @@ import ibis.zorilla.io.ObjectOutput;
 import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Invocation;
 import ibis.zorilla.job.net.Receiver;
+import ibis.zorilla.zoni.ZoniFileInfo;
 
 import java.io.File;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -38,6 +42,10 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
     private final Primary primary;
 
     private final EndPoint endPoint;
+
+    private boolean done = false;
+    
+    private long size = 0;
 
     /**
      * Creates a stream which appends to the given file.
@@ -70,8 +78,8 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
      * 
      * @throws IOException
      */
-    public PrimaryOutputStream(String sandboxPath, File file, Primary primary
-            ) throws Exception, IOException {
+    public PrimaryOutputStream(String sandboxPath, File file, Primary primary)
+            throws Exception, IOException {
         this.sandboxPath = sandboxPath;
         this.primary = primary;
         this.file = file;
@@ -79,11 +87,11 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         if (sandboxPath == null) {
             throw new Exception("sandbox path cannot be null");
         }
-        
+
         if (file == null) {
             throw new Exception("file cannot be null");
         }
-        
+
         if (!file.isAbsolute()) {
             throw new Exception("file must be absolute: " + file);
         }
@@ -113,7 +121,6 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         endPoint = primary.newEndPoint(id.toString(), this);
     }
 
-  
     public String sandboxPath() {
         return sandboxPath;
     }
@@ -128,6 +135,10 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         out.write(data, offset, length);
 
         out.close();
+
+        size += length;
+        
+        notifyAll();
     }
 
     @Override
@@ -156,7 +167,10 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
     }
 
     // the _real_ close
-    void unexport() throws Exception {
+    synchronized void unexport() throws Exception {
+        done = true;
+        notifyAll();
+
         if (endPoint != null) {
             try {
                 endPoint.close();
@@ -180,11 +194,6 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         try {
             logger.debug("writing to file from message");
 
-            OutputStream out;
-
-            // append to local file
-            out = new FileOutputStream(file, true);
-
             byte[] buffer = new byte[BUFFER_SIZE];
 
             while (true) {
@@ -193,12 +202,11 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
                 if (length == -1) {
                     // done
                     message.finish();
-                    out.close();
                     return;
                 }
 
                 message.readArray(buffer, 0, length);
-                out.write(buffer, 0, length);
+                write(buffer, 0, length);
             }
         } catch (Exception e) {
             primary.log("error on reading output from message", e);
@@ -210,9 +218,7 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
 
     }
 
-    synchronized void readFrom(InputStream data) throws IOException {
-        OutputStream out = new FileOutputStream(file, true);
-
+    void readFrom(InputStream data) throws IOException {
         // stream data to other side
         byte[] buffer = new byte[BUFFER_SIZE];
         while (true) {
@@ -220,17 +226,78 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
 
             if (read == -1) {
                 data.close();
-                out.close();
                 logger.debug("writing done");
                 return;
             }
 
-            out.write(buffer, 0, read);
+            write(buffer, 0, read);
         }
     }
 
     public String toString() {
-        return "sandbox path = " + sandboxPath + ", file = " + file ;
+        return "sandbox path = " + sandboxPath + ", file = " + file;
+    }
+
+    //fetch data from the output file
+    private synchronized int getData(long offset, byte[] buffer)
+            throws IOException {
+        logger.debug("getting data");
+
+        while (true) {
+            FileInputStream in = new FileInputStream(file);
+            
+            logger.debug(file + " available = " + in.available());
+            
+            if (in.skip(offset) == offset && in.available() > 0) {
+                int result = in.read(buffer);
+
+                in.close();
+                
+                return result;
+            }
+            
+            in.close();
+
+            if (done) {
+                logger.debug("no more data");
+                // no more data
+                return -1;
+            }
+
+            logger.debug("waiting for more data");
+            
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                //IGNORE
+            }
+
+        }
+
+    }
+
+    public void streamTo(OutputStream out) throws IOException {
+        long offset = 0;
+        byte[] buffer = new byte[1024];
+
+        while (true) {
+            int read = getData(offset, buffer);
+
+            if (read == -1) {
+                // EOF :)
+                return;
+            }
+
+            out.write(buffer, 0, read);
+            out.flush();
+
+            offset = offset + read;
+        }
+
+    }
+
+    public synchronized long length() throws IOException {
+        return size;
     }
 
 }

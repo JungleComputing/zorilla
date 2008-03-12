@@ -29,8 +29,9 @@ public class InputForwarder extends Thread {
         try {
             connection.putInputStream(stream, jobID);
         } catch (IOException e) {
-            System.err.println("error in getting output for " + jobID + ": "
+            System.err.println("error while forwarding stdin to job " + jobID + ": "
                     + e.getMessage());
+            e.printStackTrace(System.err);
         }
     }
 

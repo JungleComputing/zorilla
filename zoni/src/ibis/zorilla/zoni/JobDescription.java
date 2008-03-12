@@ -19,7 +19,8 @@ public class JobDescription {
 
     private final List<ZoniInputFile> inputFiles;
 
-    private final List<ZoniOutputFile> outputFiles;
+    //sandboxPath, file on hdd (file only used in batch files)
+    private final Map<String, File> outputFiles;
 
     private File stdinFile;
 
@@ -34,7 +35,7 @@ public class JobDescription {
         environment = new HashMap<String, String>();
         attributes = new HashMap<String, String>();
         inputFiles = new ArrayList<ZoniInputFile>();
-        outputFiles = new ArrayList<ZoniOutputFile>();
+        outputFiles = new HashMap<String, File>();
 
         interactive = false;
     }
@@ -54,10 +55,10 @@ public class JobDescription {
             inputFiles.add(new ZoniInputFile(in, tmpDir));
         }
 
-        outputFiles = new ArrayList<ZoniOutputFile>();
+        outputFiles = new HashMap<String, File>();
         int nrOfOutputFiles = in.readInt();
         for (int i = 0; i < nrOfOutputFiles; i++) {
-            outputFiles.add(new ZoniOutputFile(in));
+            outputFiles.put(in.readString(), in.readFile());
         }
 
         stdinFile = in.readFile();
@@ -80,8 +81,9 @@ public class JobDescription {
         }
 
         out.writeInt(outputFiles.size());
-        for (ZoniOutputFile file : outputFiles) {
-            file.writeTo(out);
+        for (Map.Entry<String, File> entry : outputFiles.entrySet()) {
+            out.writeString(entry.getKey());
+            out.writeFile(entry.getValue());
         }
 
         out.writeFile(stdinFile);
@@ -97,12 +99,12 @@ public class JobDescription {
         return inputFiles.toArray(new ZoniInputFile[0]);
     }
 
-    public void addOutputFile(ZoniOutputFile file) {
-        outputFiles.add(file);
+    public void addOutputFile(String sandboxPath, File file) {
+        outputFiles.put(sandboxPath, file);
     }
 
-    public ZoniOutputFile[] getOutputFiles() {
-        return outputFiles.toArray(new ZoniOutputFile[0]);
+    public Map<String, File> getOutputFiles() {
+        return outputFiles;
     }
 
     public String[] getArguments() {

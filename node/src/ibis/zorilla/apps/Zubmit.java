@@ -1,11 +1,10 @@
 package ibis.zorilla.apps;
 
-import ibis.zorilla.zoni.InputForwarder;
 import ibis.zorilla.zoni.JobDescription;
 import ibis.zorilla.zoni.OutputForwarder;
 import ibis.zorilla.zoni.ZoniInputFile;
 import ibis.zorilla.zoni.JobInfo;
-import ibis.zorilla.zoni.ZoniOutputFile;
+import ibis.zorilla.zoni.ZoniFileInfo;
 import ibis.zorilla.zoni.ZoniConnection;
 import ibis.zorilla.zoni.ZoniProtocol;
 
@@ -15,6 +14,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -69,12 +70,12 @@ public final class Zubmit {
 
         File file;
         if (equalSplit.length == 2) {
-            file = new File(equalSplit[1]);
+            file = new File(equalSplit[1]).getAbsoluteFile();
         } else {
-            file = new File(sandboxPath);
+            file = new File(sandboxPath).getAbsoluteFile();
         }
 
-        job.addOutputFile(new ZoniOutputFile(sandboxPath, file));
+        job.addOutputFile(sandboxPath, file);
     }
 
     private static int parsePort(String string) {
@@ -118,50 +119,56 @@ public final class Zubmit {
         return new InetSocketAddress(address, port);
     }
 
-    private static void copyOutputFile(ZoniOutputFile file,
+    private static void copyOutputFile(String sandboxPath, File file,
             ZoniConnection connection, String jobID) throws IOException {
-        if (file.isDirectory()) {
-            for (ZoniOutputFile child : file.getChildren()) {
-                copyOutputFile(child, connection, jobID);
+
+        logger.debug("copying: " + sandboxPath + " to file " + file);
+        
+        ZoniFileInfo info = connection.getFileInfo(sandboxPath, jobID);
+        
+        logger.debug("info = " + info);
+
+        if (info.isDirectory()) {
+            for (ZoniFileInfo child : info.getChildren()) {
+                copyOutputFile(sandboxPath + "/" + child.getName(), new File(
+                        file, child.getName()), connection, jobID);
             }
         } else {
-            File javaFile = file.getFile();
-            javaFile.getParentFile().mkdirs();
-            FileOutputStream fileStream = new FileOutputStream(javaFile);
+            file.getParentFile().mkdirs();
+            FileOutputStream fileStream = new FileOutputStream(file);
 
-            connection.getOutputFile(file, fileStream, jobID);
+            connection.getOutputFile(fileStream, sandboxPath, jobID);
 
             fileStream.close();
         }
     }
 
     private static void usage() {
-        System.out
-                .println("usage: zubmit [OPTION].. EXECUTABLE_URI [JOB_ARGUMENTS]"
-                        + "\n\nOptions:"
-                        + "\n-na,  --node_address IP:PORT        address of node to submit job to"
-                        + "\n-a,  --attribute KEY=VALUE          add key value pair to attributes of job"
-                        + "\n-e,  --environment KEY=VALUE        add key value pair to environment of job"
-                        + "\n-c,  --cores N                      specify initial nr of cores used "
-                        + "\n                                    (sets nr.of.workers attribute)"
-                        + "\n-w,  --wait_until_running           wait until the job starts before exiting"
-                        + "\n-I,  --interactive                  wait until the job is done before exiting"
-                        + "\n                                    also prints stdout and stderr to the"
-                        + "\n                                    console, streams stdin to the job,"
-                        + "\n                                    cancels the job when zubmit"
-                        + "\n                                    is interrupted by Ctrl-C, and retrieves"
-                        + "\n                                    output when the job finishes"
-                        + "\n-v,  --verbose                      print some more info"
+        System.out.println("usage: zubmit [OPTION].. EXECUTABLE_URI [JOB_ARGUMENTS]"
+                + "\n\nOptions:"
+                + "\n-na,  --node_address IP:PORT        address of node to submit job to"
+                + "\n-a,  --attribute KEY=VALUE          add key value pair to attributes of job"
+                + "\n-e,  --environment KEY=VALUE        add key value pair to environment of job"
+                + "\n-c,  --cores N                      specify initial nr of cores used "
+                + "\n                                    (sets nr.of.workers attribute)"
+                + "\n-w,  --wait_until_running           wait until the job starts before exiting"
+                + "\n-I,  --interactive                  wait until the job is done before exiting"
+                + "\n                                    also prints stdout and stderr to the"
+                + "\n                                    console, streams stdin to the job,"
+                + "\n                                    cancels the job when zubmit"
+                + "\n                                    is interrupted by Ctrl-C, and retrieves"
+                + "\n                                    output when the job finishes"
+                + "\n-v,  --verbose                      print some more info"
 
-                        + "\n\nFiles options:"
-                        + "\n-i,  --input [VIRTUAL_PATH=]PATH    add input file"
-                        + "\n-o,  --output [VIRTUAL_PATH=]PATH   add output file"
-                        + "\n-so, --stdout PATH                  set standard out file"
-                        + "\n-si, --stdin PATH                   set standard in file"
-                        + "\n-se, --stderr PATH                  set standard error file"
-                        + "\n-s,  --split-output                 use a seperate output/error file per worker"
+                + "\n\nFiles options:"
+                + "\n-i,  --input [VIRTUAL_PATH=]PATH    add input file"
+                + "\n-o,  --output [VIRTUAL_PATH=]PATH   add output file"
+                + "\n-so, --stdout PATH                  set standard out file"
+                + "\n-si, --stdin PATH                   set standard in file"
+                + "\n-se, --stderr PATH                  set standard error file"
+                + "\n-s,  --split-output                 use a seperate output/error file per worker"
 
-                );
+        );
     }
 
     public static void main(String[] command) {
@@ -170,8 +177,9 @@ public final class Zubmit {
         boolean verbose = false;
 
         try {
-            InetSocketAddress nodeSocketAddress = new InetSocketAddress(
-                    InetAddress.getByName(null), ZoniProtocol.DEFAULT_PORT);
+            InetSocketAddress nodeSocketAddress =
+                new InetSocketAddress(InetAddress.getByName(null),
+                        ZoniProtocol.DEFAULT_PORT);
 
             JobDescription jobDescription = new JobDescription();
             File stdin = null;
@@ -236,9 +244,8 @@ public final class Zubmit {
                     i++;
                     String[] parts = command[i].split("=");
                     if (parts.length != 2) {
-                        System.err
-                                .println("attribute should be defined as VARIABLE=VALUE (not "
-                                        + command[i] + ")");
+                        System.err.println("attribute should be defined as VARIABLE=VALUE (not "
+                                + command[i] + ")");
                         System.exit(1);
                     }
                     jobDescription.setAttribute(parts[0], parts[1]);
@@ -247,9 +254,8 @@ public final class Zubmit {
                     i++;
                     String[] parts = command[i].split("=");
                     if (parts.length != 2) {
-                        System.err
-                                .println("environment variable should be defined as VARIABLE=VALUE (not "
-                                        + command[i] + ")");
+                        System.err.println("environment variable should be defined as VARIABLE=VALUE (not "
+                                + command[i] + ")");
                         System.exit(1);
                     }
                     jobDescription.setEnvironment(parts[0], parts[1]);
@@ -258,8 +264,7 @@ public final class Zubmit {
                     return;
                 } else {
                     if (command[i].startsWith("-")) {
-                        System.err
-                                .println("unrecognized option: " + command[i]);
+                        System.err.println("unrecognized option: " + command[i]);
                         usage();
                         System.exit(1);
                     }
@@ -276,7 +281,8 @@ public final class Zubmit {
             String executable = command[executableIndex];
             jobDescription.setExecutable(executable);
 
-            String[] arguments = new String[(command.length - (executableIndex + 1))];
+            String[] arguments =
+                new String[(command.length - (executableIndex + 1))];
             int j = 0;
             for (int i = executableIndex + 1; i < command.length; i++) {
                 arguments[j] = command[i];
@@ -297,8 +303,9 @@ public final class Zubmit {
                 System.out.println(jobDescription);
             }
 
-            ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
-                    null, ZoniProtocol.TYPE_CLIENT);
+            ZoniConnection connection =
+                new ZoniConnection(nodeSocketAddress, null,
+                        ZoniProtocol.TYPE_CLIENT);
 
             String jobID;
             jobID = connection.submitJob(jobDescription, null);
@@ -308,7 +315,9 @@ public final class Zubmit {
                 file.closeStream();
             }
 
-            System.err.println("submitted job, id = " + jobID);
+            if (verbose || !interactive) {
+                System.err.println("submitted job, id = " + jobID);
+            }
 
             if (waitUntilRunning) {
                 if (verbose) {
@@ -331,15 +340,15 @@ public final class Zubmit {
                     System.out.println("** interactive job **");
                 }
 
-                
                 new OutputForwarder(nodeSocketAddress, jobID, System.out, false).startAsDaemon();
                 new OutputForwarder(nodeSocketAddress, jobID, System.err, true).startAsDaemon();
-                new InputForwarder(nodeSocketAddress, jobID, System.in).startAsDaemon();
-                
+                // new InputForwarder(nodeSocketAddress, jobID,
+                // System.in).startAsDaemon();
+
                 // register shutdown hook to cancel job..
                 try {
                     Runtime.getRuntime().addShutdownHook(
-                            new Shutdown(connection, jobID));
+                        new Shutdown(connection, jobID));
                 } catch (Exception e) {
                     // IGNORE
                 }
@@ -358,9 +367,12 @@ public final class Zubmit {
                     Thread.sleep(1000);
                 }
 
+                logger.debug("copying " + jobDescription.getOutputFiles().size() + " files");
+                
                 // copy output files
-                for (ZoniOutputFile file : connection.getOutputFiles(jobID)) {
-                    copyOutputFile(file, connection, jobID);
+                for (Map.Entry<String, File> entry : jobDescription.getOutputFiles().entrySet()) {
+                    copyOutputFile(entry.getKey(), entry.getValue(),
+                        connection, jobID);
                 }
             }
 

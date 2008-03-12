@@ -20,8 +20,9 @@ import ibis.zorilla.job.net.WriteMessage;
 import ibis.zorilla.util.Resources;
 import ibis.zorilla.zoni.JobDescription;
 import ibis.zorilla.zoni.ZoniInputFile;
-import ibis.zorilla.zoni.ZoniOutputFile;
+import ibis.zorilla.zoni.ZoniFileInfo;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -174,8 +175,7 @@ public final class Primary extends Job implements Runnable, Receiver {
             boolean javaJob = executable.startsWith("java");
 
             attributes = new TypedProperties();
-            for (Map.Entry<String, String> entry : description.getAttributes()
-                    .entrySet()) {
+            for (Map.Entry<String, String> entry : description.getAttributes().entrySet()) {
                 attributes.setProperty(entry.getKey(), entry.getValue());
             }
 
@@ -183,8 +183,8 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             checkAttributes(attributes);
 
-            environment = new HashMap<String, String>(description
-                    .getEnvironment());
+            environment =
+                new HashMap<String, String>(description.getEnvironment());
 
             long lifetime = attributes.getLongProperty("lifetime");
             if (lifetime > MAX_JOB_LIFETIME) {
@@ -208,44 +208,46 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             for (int i = 0; i < preStageFiles.length; i++) {
                 ZoniInputFile file = zoniInputFiles[i];
-                preStageFiles[i] = new InputFile(file.getFile(), file
-                        .getSandboxPath(), this);
+                preStageFiles[i] =
+                    new InputFile(file.getFile(), file.getSandboxPath(), this);
             }
 
-            ZoniOutputFile[] zoniOutputFiles = description.getOutputFiles();
-
-            postStageFiles = new PrimaryOutputStream[zoniOutputFiles.length];
-
-            for (int i = 0; i < postStageFiles.length; i++) {
-                ZoniOutputFile file = zoniOutputFiles[i];
-                postStageFiles[i] = new PrimaryOutputStream(file
-                        .getSandboxPath(), file.getFile(), this);
+            ArrayList<PrimaryOutputStream> postStageFiles =
+                new ArrayList<PrimaryOutputStream>();
+            for (Map.Entry<String, File> entry : description.getOutputFiles().entrySet()) {
+                postStageFiles.add(new PrimaryOutputStream(entry.getKey(),
+                        entry.getValue(), this));
             }
+            this.postStageFiles =
+                postStageFiles.toArray(new PrimaryOutputStream[0]);
 
             if (description.isInteractive()) {
-                stdout = new PrimaryOutputStream("##stdout##", File
-                        .createTempFile(id.toString(), "stdout", node
-                                .getTmpDir()), this);
+                stdout =
+                    new PrimaryOutputStream("##stdout##", File.createTempFile(
+                        id.toString(), "stdout", node.getTmpDir()), this);
 
-                stderr = new PrimaryOutputStream("##stderr##", File
-                        .createTempFile(id.toString(), "stdout", node
-                                .getTmpDir()), this);
+                stderr =
+                    new PrimaryOutputStream("##stderr##", File.createTempFile(
+                        id.toString(), "stderr", node.getTmpDir()), this);
 
                 // TODO: support standard in too :)
                 stdin = null;
 
             } else {
-                stdout = new PrimaryOutputStream("##stdout##", description
-                        .getStdoutFile(), this);
+                stdout =
+                    new PrimaryOutputStream("##stdout##",
+                            description.getStdoutFile(), this);
 
-                stderr = new PrimaryOutputStream("##stderr##", description
-                        .getStderrFile(), this);
+                stderr =
+                    new PrimaryOutputStream("##stderr##",
+                            description.getStderrFile(), this);
 
                 if (description.getStdinFile() == null) {
                     stdin = null;
                 } else {
-                    stdin = new InputFile(description.getStdinFile(),
-                            "<<stdin>>", this);
+                    stdin =
+                        new InputFile(description.getStdinFile(), "<<stdin>>",
+                                this);
                 }
 
             }
@@ -267,10 +269,10 @@ public final class Primary extends Job implements Runnable, Receiver {
                 nodes = 1;
             }
 
-            workerResources = new Resources(nodes,
-                    getIntegerAttribute("worker.processors"),
-                    getSizeAttribute("worker.memory"),
-                    getSizeAttribute("worker.diskspace"));
+            workerResources =
+                new Resources(nodes, getIntegerAttribute("worker.processors"),
+                        getSizeAttribute("worker.memory"),
+                        getSizeAttribute("worker.diskspace"));
 
             constituents = new HashMap<UUID, Constituent>();
             // register self
@@ -497,7 +499,8 @@ public final class Primary extends Job implements Runnable, Receiver {
             boolean export) throws IOException, Exception {
         File file = new File(logDir, fileName);
 
-        PrimaryOutputStream result = new PrimaryOutputStream(file, this, export);
+        PrimaryOutputStream result =
+            new PrimaryOutputStream(file, this, export);
 
         logFiles.add(result);
 
@@ -617,26 +620,26 @@ public final class Primary extends Job implements Runnable, Receiver {
         setExitStatus(exitStatus);
 
         if (phase == RUNNING) {
-            if ((status == Status.DONE && getStringAttribute("on.user.exit")
-                    .equalsIgnoreCase("close.world"))
+            if ((status == Status.DONE && getStringAttribute("on.user.exit").equalsIgnoreCase(
+                "close.world"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            "on.user.error").equalsIgnoreCase("close.world"))) {
+                        "on.user.error").equalsIgnoreCase("close.world"))) {
 
                 setPhase(CLOSED);
             }
 
-            if ((status == Status.DONE && getStringAttribute("on.user.exit")
-                    .equalsIgnoreCase("cancel.job"))
+            if ((status == Status.DONE && getStringAttribute("on.user.exit").equalsIgnoreCase(
+                "cancel.job"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            "on.user.error").equalsIgnoreCase("cancel.job"))) {
+                        "on.user.error").equalsIgnoreCase("cancel.job"))) {
 
                 setPhase(CANCELLED);
             }
 
-            if ((status == Status.DONE && getStringAttribute("on.user.exit")
-                    .equalsIgnoreCase("job.error"))
+            if ((status == Status.DONE && getStringAttribute("on.user.exit").equalsIgnoreCase(
+                "job.error"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            "on.user.error").equalsIgnoreCase("job.error"))) {
+                        "on.user.error").equalsIgnoreCase("job.error"))) {
 
                 setPhase(ERROR);
             }
@@ -644,18 +647,18 @@ public final class Primary extends Job implements Runnable, Receiver {
         }
 
         if (phase == CLOSED) {
-            if ((status == Status.DONE && getStringAttribute("on.user.exit")
-                    .equalsIgnoreCase("cancel.job"))
+            if ((status == Status.DONE && getStringAttribute("on.user.exit").equalsIgnoreCase(
+                "cancel.job"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            "on.user.error").equalsIgnoreCase("cancel.job"))) {
+                        "on.user.error").equalsIgnoreCase("cancel.job"))) {
 
                 setPhase(CANCELLED);
             }
 
-            if ((status == Status.DONE && getStringAttribute("on.user.exit")
-                    .equalsIgnoreCase("job.error"))
+            if ((status == Status.DONE && getStringAttribute("on.user.exit").equalsIgnoreCase(
+                "job.error"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            "on.user.error").equalsIgnoreCase("job.error"))) {
+                        "on.user.error").equalsIgnoreCase("job.error"))) {
 
                 setPhase(ERROR);
             }
@@ -670,8 +673,8 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     private synchronized void removeFinishedLocalWorkers() {
         // clean dead workers
-        Iterator<Entry<UUID, Worker>> iterator = localWorkers.entrySet()
-                .iterator();
+        Iterator<Entry<UUID, Worker>> iterator =
+            localWorkers.entrySet().iterator();
         while (iterator.hasNext()) {
             Entry<UUID, Worker> entry = iterator.next();
             Worker worker = entry.getValue();
@@ -681,14 +684,14 @@ public final class Primary extends Job implements Runnable, Receiver {
                 Constituent constituent = constituents.get(id);
 
                 if (constituent == null) {
-                    Exception e = new Exception(
-                            "cannot find ourselves in constituents!");
+                    Exception e =
+                        new Exception("cannot find ourselves in constituents!");
                     log(e.getMessage(), e);
                     return;
                 }
 
-                removeWorker(worker.id(), constituent, worker.status(), worker
-                        .exitStatus());
+                removeWorker(worker.id(), constituent, worker.status(),
+                    worker.exitStatus());
             }
         }
 
@@ -728,8 +731,8 @@ public final class Primary extends Job implements Runnable, Receiver {
             if (!dirty) {
                 return;
             }
-            constituents = this.constituents.values().toArray(
-                    new Constituent[0]);
+            constituents =
+                this.constituents.values().toArray(new Constituent[0]);
         }
 
         // initiate a callback
@@ -744,14 +747,14 @@ public final class Primary extends Job implements Runnable, Receiver {
             }
 
             try {
-                WriteMessage m = endPoint
-                        .send(constituents[i].getReceivePort());
+                WriteMessage m =
+                    endPoint.send(constituents[i].getReceivePort());
                 m.writeInt(Copy.STATE_UPDATE);
                 writeDynamicState(m);
                 m.finish();
             } catch (IOException e) {
                 log("could not send update to constituent: " + constituents[i],
-                        e);
+                    e);
             }
         }
         synchronized (this) {
@@ -805,7 +808,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
         try {
             node.floodService().advertise(
-                    new PrimaryCopyAdvert(id, metric, count, endPoint.getID()));
+                new PrimaryCopyAdvert(id, metric, count, endPoint.getID()));
 
         } catch (Exception e) {
             log("could not send advertizement", e);
@@ -867,7 +870,7 @@ public final class Primary extends Job implements Runnable, Receiver {
             Worker worker = new Worker(this, workerID, node, deadline);
             localWorkers.put(workerID, worker);
             node.jobService().setResourcesUsed(getID(),
-                    workerResources.mult(localWorkers.size()));
+                workerResources.mult(localWorkers.size()));
 
             worker.start();
         }
@@ -917,8 +920,8 @@ public final class Primary extends Job implements Runnable, Receiver {
     private void handleRegister(Invocation invocation) throws IOException,
             Exception, ClassNotFoundException {
         UUID constituentID = (UUID) invocation.readObject();
-        ReceivePortIdentifier receivePort = (ReceivePortIdentifier) invocation
-                .readObject();
+        ReceivePortIdentifier receivePort =
+            (ReceivePortIdentifier) invocation.readObject();
         invocation.finishRead();
 
         Constituent constituent = new Constituent(constituentID, receivePort);
@@ -1140,7 +1143,7 @@ public final class Primary extends Job implements Runnable, Receiver {
             // claim resources, do not start worker yet.
             localWorkers.put(workerID, worker);
             node.jobService().setResourcesUsed(getID(),
-                    workerResources.mult(localWorkers.size()));
+                workerResources.mult(localWorkers.size()));
 
         }
 
@@ -1154,8 +1157,8 @@ public final class Primary extends Job implements Runnable, Receiver {
             resources = new Resources(workerResources);
         }
 
-        int maxNrOfWorkers = node.jobService().nrOfResourceSetsAvailable(
-                resources);
+        int maxNrOfWorkers =
+            node.jobService().nrOfResourceSetsAvailable(resources);
 
         synchronized (this) {
             Constituent constituent = constituents.get(id);
@@ -1221,8 +1224,8 @@ public final class Primary extends Job implements Runnable, Receiver {
             try {
                 if (constituent.getID().equals(id)) {
                     // that's us :)
-                    UUID[] workers = createWorkers(neededNrOfWorkers
-                            - currentNrOfWorkers);
+                    UUID[] workers =
+                        createWorkers(neededNrOfWorkers - currentNrOfWorkers);
                     constituent.setWorkers(workers);
                     currentNrOfWorkers += workers.length;
                     log(workers.length + " created at " + constituent);
@@ -1331,7 +1334,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             // update resource usage
             node.jobService().setResourcesUsed(getID(),
-                    workerResources.mult(localWorkers.size()));
+                workerResources.mult(localWorkers.size()));
 
             if (getPhase() == SCHEDULING && !getBooleanAttribute("malleable")) {
                 updateLocalMaxWorkers();
@@ -1385,34 +1388,42 @@ public final class Primary extends Job implements Runnable, Receiver {
     }
 
     @Override
-    protected PrimaryOutputStream createOutputFile(String virtualFilePath)
+    protected PrimaryOutputStream getOutputFile(String sandboxPath)
             throws Exception, IOException {
         for (int i = 0; i < postStageFiles.length; i++) {
-            if (virtualFilePath.equals(postStageFiles[i].sandboxPath())) {
+            if (sandboxPath.equals(postStageFiles[i].sandboxPath())) {
                 return postStageFiles[i];
             }
         }
-        throw new Exception("cannot find output file: " + virtualFilePath);
+        throw new Exception("cannot find output file: " + sandboxPath);
     }
 
     @Override
     protected void writeOutputFile(String virtualFilePath, InputStream data)
             throws Exception, IOException {
-        PrimaryOutputStream out = createOutputFile(virtualFilePath);
+        PrimaryOutputStream out = getOutputFile(virtualFilePath);
 
         out.readFrom(data);
     }
 
     @Override
     public void readStderr(OutputStream out) throws Exception {
-        // TODO Auto-generated method stub
-
+        stderr.streamTo(out);
     }
 
     @Override
     public void readStdout(OutputStream out) throws Exception {
-        // TODO Auto-generated method stub
+        stdout.streamTo(out);
+    }
 
+    public void readOutputFile(String sandboxPath, DataOutputStream out)
+            throws Exception {
+        PrimaryOutputStream file = getOutputFile(sandboxPath);
+
+        logger.debug("size of output file " + sandboxPath + " = " + file.length());
+        
+        out.writeLong(file.length());
+        file.streamTo(out);
     }
 
     @Override
@@ -1421,15 +1432,16 @@ public final class Primary extends Job implements Runnable, Receiver {
     }
 
     @Override
-    public OutputFile[] getOutputFiles() throws Exception {
-        OutputFile[] result = new OutputFile[postStageFiles.length];
-
-        for (int i = 0; i < postStageFiles.length; i++) {
-            result[i] = new OutputFile(postStageFiles[i].sandboxPath(), false,
-                    new OutputFile[0]);
+    public ZoniFileInfo getFileInfo(String sandboxPath) throws Exception {
+        PrimaryOutputStream file = getOutputFile(sandboxPath);
+        
+        if (file == null) {
+            throw new Exception(sandboxPath + " does not exist");
         }
 
-        return result;
+        String name = new File(sandboxPath).getName();
+
+        return new ZoniFileInfo(sandboxPath, name, false, new ZoniFileInfo[0]);
 
     }
 

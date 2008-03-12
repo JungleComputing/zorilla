@@ -16,7 +16,9 @@ import ibis.zorilla.job.net.Factory;
 import ibis.zorilla.job.net.Invocation;
 import ibis.zorilla.job.net.Receiver;
 import ibis.zorilla.util.Resources;
+import ibis.zorilla.zoni.ZoniFileInfo;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -332,7 +334,7 @@ public final class Copy extends Job implements Receiver, Runnable {
         return new ZorillaPrintStream(result);
     }
 
-    protected CopyOutputStream createOutputFile(String virtualFilePath)
+    protected CopyOutputStream getOutputFile(String virtualFilePath)
             throws Exception, IOException {
         synchronized (this) {
             if (!initialized) {
@@ -359,7 +361,7 @@ public final class Copy extends Job implements Receiver, Runnable {
     @Override
     protected void writeOutputFile(String virtualFilePath, InputStream data)
             throws Exception, IOException {
-        CopyOutputStream out = createOutputFile(virtualFilePath);
+        CopyOutputStream out = getOutputFile(virtualFilePath);
 
         out.readFrom(data);
         out.close();
@@ -923,7 +925,12 @@ public final class Copy extends Job implements Receiver, Runnable {
     }
 
     @Override
-    public OutputFile[] getOutputFiles() throws Exception {
+    public ZoniFileInfo getFileInfo(String sandboxPath) throws Exception {
+        throw new Exception("can only get output files where job was submitted");
+    }
+
+    @Override
+    public void readOutputFile(String sandboxPath, DataOutputStream out) throws Exception {
         throw new Exception("can only get output files where job was submitted");
     }
 

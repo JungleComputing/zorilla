@@ -2,9 +2,8 @@ package ibis.zorilla.net;
 
 import ibis.zorilla.Node;
 import ibis.zorilla.job.Job;
-import ibis.zorilla.job.OutputFile;
 import ibis.zorilla.zoni.ZoniInputStream;
-import ibis.zorilla.zoni.ZoniOutputFile;
+import ibis.zorilla.zoni.ZoniFileInfo;
 import ibis.zorilla.zoni.ZoniOutputStream;
 import ibis.zorilla.zoni.ZoniProtocol;
 import ibis.zorilla.zoni.JobDescription;
@@ -167,20 +166,18 @@ final class ZoniServiceConnection implements Runnable {
         throw new Exception("cannot set node attributes");
     }
 
-    private void getOutputFiles() throws Exception {
+    private void getFileInfo() throws Exception {
         String jobIDString = in.readString();
         UUID jobID = UUID.fromString(jobIDString);
         Job job = node.jobService().getJob(jobID);
+        String sandboxPath = in.readString();
+
+        ZoniFileInfo info = job.getFileInfo(sandboxPath);
         
         out.writeInt(ZoniProtocol.STATUS_OK);
         out.writeString("OK");
         
-        OutputFile[] files = job.getOutputFiles();
-        
-        out.writeInt(files.length);
-        for (OutputFile file: files) {
-            file.writeTo(out);
-        }
+        info.writeTo(out);
         
         out.flush();
     }
@@ -224,9 +221,20 @@ final class ZoniServiceConnection implements Runnable {
         close();
     }
 
-    private void getFile() {
-        // TODO Auto-generated method stub
+    private void getFile() throws Exception {
+        String jobIDString = in.readString();
+        String sandboxPath = in.readString();
+        
+        UUID jobID = UUID.fromString(jobIDString);
+        Job job = node.jobService().getJob(jobID);
+        
+        out.writeInt(ZoniProtocol.STATUS_OK);
+        out.writeString("OK");
+        out.flush();
 
+        job.readOutputFile(sandboxPath, out);
+        
+        out.flush();
     }
 
     public void run() {
@@ -296,8 +304,8 @@ final class ZoniServiceConnection implements Runnable {
                 case ZoniProtocol.OPCODE_KILL_NODE:
                     killNode();
                     break;
-                case ZoniProtocol.OPCODE_GET_OUTPUT_FILES:
-                    getOutputFiles();
+                case ZoniProtocol.OPCODE_GET_FILE_INFO:
+                    getFileInfo();
                     break;
                 case ZoniProtocol.OPCODE_PUT_STDIN:
                     putStdin();

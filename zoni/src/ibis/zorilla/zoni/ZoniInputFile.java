@@ -1,6 +1,7 @@
 package ibis.zorilla.zoni;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -94,9 +95,11 @@ public class ZoniInputFile {
 
         // file send by value, not send-by-reference
         if (writeContent) {
+            InputStream in;
             if (inputStream == null) {
-                throw new IOException("cannot write content, "
-                        + "no inputstream given");
+                in = new FileInputStream(file);
+            } else {
+                in = inputStream;
             }
 
             long bytesLeft = size;
@@ -105,7 +108,7 @@ public class ZoniInputFile {
             while (bytesLeft > 0) {
                 int tryRead = (int) Math.min(bytesLeft, buffer.length);
 
-                int read = inputStream.read(buffer, 0, tryRead);
+                int read = in.read(buffer, 0, tryRead);
 
                 if (read == -1) {
                     throw new IOException("EOF on reading input file");
@@ -114,6 +117,9 @@ public class ZoniInputFile {
                 out.write(buffer, 0, read);
 
                 bytesLeft = bytesLeft - read;
+            }
+            if (inputStream == null) {
+                in.close();
             }
         }
     }
