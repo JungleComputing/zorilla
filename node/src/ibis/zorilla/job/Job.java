@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 /**
  * A job in the zorilla system. May be created either from a description of the
  * job and all the needed files, or from a serialized from of another
- * JobDescription object
+ * ZorillaJobDescription object
  */
 public abstract class Job {
 

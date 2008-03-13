@@ -34,5 +34,13 @@ public class InputForwarder extends Thread {
             e.printStackTrace(System.err);
         }
     }
+    
+    public void close() {
+        try {
+            stream.close();
+        } catch (IOException e) {
+            //IGNORE
+        }
+    }
 
 }

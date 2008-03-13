@@ -6,7 +6,7 @@ import ibis.zorilla.zoni.ZoniInputStream;
 import ibis.zorilla.zoni.ZoniFileInfo;
 import ibis.zorilla.zoni.ZoniOutputStream;
 import ibis.zorilla.zoni.ZoniProtocol;
-import ibis.zorilla.zoni.JobDescription;
+import ibis.zorilla.zoni.ZorillaJobDescription;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -47,7 +47,7 @@ final class ZoniServiceConnection implements Runnable {
     }
 
     private void submitJob() throws IOException, Exception {
-        JobDescription jobDescription = new JobDescription(in, node.getTmpDir());
+        ZorillaJobDescription jobDescription = new ZorillaJobDescription(in, node.getTmpDir());
 
         ZoniCallback callback = null;
 

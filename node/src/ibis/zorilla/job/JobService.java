@@ -5,7 +5,7 @@ import ibis.zorilla.Node;
 import ibis.zorilla.Config;
 import ibis.zorilla.Service;
 import ibis.zorilla.util.Resources;
-import ibis.zorilla.zoni.JobDescription;
+import ibis.zorilla.zoni.ZorillaJobDescription;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -104,7 +104,7 @@ public final class JobService implements Service, Runnable {
      * returns the job with the given ID
      * 
      * @throws Exception
-     *             if there is no JobDescription for the given ID
+     *             if there is no ZorillaJobDescription for the given ID
      */
     public synchronized Job getJob(UUID jobID) throws Exception {
         Job result = jobs.get(jobID);
@@ -120,7 +120,7 @@ public final class JobService implements Service, Runnable {
         return jobs.values().toArray(new Job[0]);
     }
 
-    public Job submitJob(JobDescription description, Callback callback)
+    public Job submitJob(ZorillaJobDescription description, Callback callback)
             throws Exception {
 
         synchronized (this) {
@@ -207,7 +207,7 @@ public final class JobService implements Service, Runnable {
 
     public void start() {
         ThreadPool.createNew(this, "job service");
-        logger.info("Started JobDescription service");
+        logger.info("Started ZorillaJobDescription service");
     }
 
     public void handleConnection(DirectSocket socket) {

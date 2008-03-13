@@ -61,7 +61,7 @@ public final class ZoniConnection {
         return peerID;
     }
 
-    public String submitJob(JobDescription job,
+    public String submitJob(ZorillaJobDescription job,
             CallbackReceiver callbackReceiver) throws IOException {
         logger.debug("submitting job");
 

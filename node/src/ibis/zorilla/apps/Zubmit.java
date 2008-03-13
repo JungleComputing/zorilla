@@ -1,6 +1,6 @@
 package ibis.zorilla.apps;
 
-import ibis.zorilla.zoni.JobDescription;
+import ibis.zorilla.zoni.ZorillaJobDescription;
 import ibis.zorilla.zoni.OutputForwarder;
 import ibis.zorilla.zoni.ZoniInputFile;
 import ibis.zorilla.zoni.JobInfo;
@@ -24,7 +24,7 @@ public final class Zubmit {
     private static final Logger logger = Logger.getLogger(Zubmit.class);
 
     private static void addInputFile(String sandboxPath, File file,
-            JobDescription job) {
+            ZorillaJobDescription job) {
         if (file.isDirectory()) {
             for (File child : file.listFiles()) {
                 // recursive
@@ -41,7 +41,7 @@ public final class Zubmit {
         }
     }
 
-    private static void parseInputFile(String string, JobDescription job)
+    private static void parseInputFile(String string, ZorillaJobDescription job)
             throws Exception {
         logger.debug("string = " + string);
 
@@ -60,7 +60,7 @@ public final class Zubmit {
 
     }
 
-    private static void parseOutputFile(String string, JobDescription job)
+    private static void parseOutputFile(String string, ZorillaJobDescription job)
             throws Exception {
         logger.debug("string = " + string);
 
@@ -181,7 +181,7 @@ public final class Zubmit {
                 new InetSocketAddress(InetAddress.getByName(null),
                         ZoniProtocol.DEFAULT_PORT);
 
-            JobDescription jobDescription = new JobDescription();
+            ZorillaJobDescription jobDescription = new ZorillaJobDescription();
             File stdin = null;
             File stdout = new File("job.out");
             File stderr = new File("job.err");

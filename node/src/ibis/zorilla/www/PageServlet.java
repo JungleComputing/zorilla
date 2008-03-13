@@ -281,17 +281,17 @@ public final class PageServlet extends HttpServlet {
     }
 
     private void writeJobDetailPage(PrintWriter out, String jobID) {
-        out.println("<h2>JobDescription " + jobID + "</h2>");
+        out.println("<h2>ZorillaJobDescription " + jobID + "</h2>");
 
         Job job;
         try {
             UUID uuid = UUID.fromString(jobID);
             job = node.jobService().getJob(uuid);
         } catch (IllegalArgumentException e) {
-            out.println("Unknown JobDescription");
+            out.println("Unknown ZorillaJobDescription");
             return;
         } catch (Exception e) {
-            out.println("Unknown JobDescription");
+            out.println("Unknown ZorillaJobDescription");
             return;
         }
 

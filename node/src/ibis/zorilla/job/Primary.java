@@ -18,7 +18,7 @@ import ibis.zorilla.job.net.Invocation;
 import ibis.zorilla.job.net.Receiver;
 import ibis.zorilla.job.net.WriteMessage;
 import ibis.zorilla.util.Resources;
-import ibis.zorilla.zoni.JobDescription;
+import ibis.zorilla.zoni.ZorillaJobDescription;
 import ibis.zorilla.zoni.ZoniInputFile;
 import ibis.zorilla.zoni.ZoniFileInfo;
 
@@ -148,7 +148,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     Random random = new Random();
 
-    public Primary(JobDescription description, Callback callback, Node node)
+    public Primary(ZorillaJobDescription description, Callback callback, Node node)
             throws Exception, IOException {
 
         this.node = node;

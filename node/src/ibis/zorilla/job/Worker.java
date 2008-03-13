@@ -57,7 +57,7 @@ public final class Worker implements Runnable {
     private int exitStatus;
 
     /**
-     * creates a new child for a given JobDescription.
+     * creates a new child for a given ZorillaJobDescription.
      * 
      */
     public Worker(Job job, UUID id, Node node, long deadline) {
