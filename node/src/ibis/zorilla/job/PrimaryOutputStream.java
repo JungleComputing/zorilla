@@ -6,17 +6,14 @@ import ibis.zorilla.io.ObjectOutput;
 import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Invocation;
 import ibis.zorilla.job.net.Receiver;
-import ibis.zorilla.zoni.ZoniFileInfo;
 
 import java.io.File;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -27,8 +24,8 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
 
     static final int WRITE_BLOCK = 0;
 
-    private static final Logger logger =
-        Logger.getLogger(PrimaryOutputStream.class);
+    private static final Logger logger = Logger
+            .getLogger(PrimaryOutputStream.class);
 
     // private static final Logger logger = Logger
     // .getLogger(PrimaryOutputFile.class);
@@ -44,7 +41,7 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
     private final EndPoint endPoint;
 
     private boolean done = false;
-    
+
     private long size = 0;
 
     /**
@@ -133,11 +130,17 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         FileOutputStream out = new FileOutputStream(file, true);
 
         out.write(data, offset, length);
+        out.flush();
 
         out.close();
 
         size += length;
-        
+
+        if (file.length() != size) {
+            logger.warn("write: warning: file of length " + file.length()
+                    + " should be of size " + size);
+        }
+
         notifyAll();
     }
 
@@ -238,24 +241,24 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         return "sandbox path = " + sandboxPath + ", file = " + file;
     }
 
-    //fetch data from the output file
+    // fetch data from the output file
     private synchronized int getData(long offset, byte[] buffer)
             throws IOException {
         logger.debug("getting data");
 
         while (true) {
             FileInputStream in = new FileInputStream(file);
-            
+
             logger.debug(file + " available = " + in.available());
-            
+
             if (in.skip(offset) == offset && in.available() > 0) {
                 int result = in.read(buffer);
 
                 in.close();
-                
+
                 return result;
             }
-            
+
             in.close();
 
             if (done) {
@@ -265,11 +268,11 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
             }
 
             logger.debug("waiting for more data");
-            
+
             try {
                 wait();
             } catch (InterruptedException e) {
-                //IGNORE
+                // IGNORE
             }
 
         }
@@ -280,11 +283,20 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         long offset = 0;
         byte[] buffer = new byte[1024];
 
+        synchronized (this) {
+            if (file.length() != size) {
+                logger.warn("streamto: warning: file of length " + file.length()
+                        + " should be of size " + size);
+            }
+        }
+
         while (true) {
             int read = getData(offset, buffer);
 
             if (read == -1) {
                 // EOF :)
+                logger.debug("done streaming file, streamed " + offset
+                        + " bytes");
                 return;
             }
 
@@ -297,6 +309,12 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
     }
 
     public synchronized long length() throws IOException {
+        if (file.length() != size) {
+            logger.warn("length(): warning: file " + file + " of length " + file.length()
+                    + " should be of size " + size);
+        }
+        
+        
         return size;
     }
 

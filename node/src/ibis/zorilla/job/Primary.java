@@ -214,25 +214,23 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             ArrayList<PrimaryOutputStream> postStageFiles =
                 new ArrayList<PrimaryOutputStream>();
-            for (Map.Entry<String, File> entry : description.getOutputFiles().entrySet()) {
-                postStageFiles.add(new PrimaryOutputStream(entry.getKey(),
-                        entry.getValue(), this));
-            }
-            this.postStageFiles =
-                postStageFiles.toArray(new PrimaryOutputStream[0]);
 
             if (description.isInteractive()) {
                 stdout =
                     new PrimaryOutputStream("##stdout##", File.createTempFile(
-                        id.toString(), "stdout", node.getTmpDir()), this);
+                        id.toString(), ".stdout", node.getTmpDir()), this);
 
                 stderr =
                     new PrimaryOutputStream("##stderr##", File.createTempFile(
-                        id.toString(), "stderr", node.getTmpDir()), this);
+                        id.toString(), ".stderr", node.getTmpDir()), this);
 
                 // TODO: support standard in too :)
                 stdin = null;
 
+                for (Map.Entry<String, File> entry : description.getOutputFiles().entrySet()) {
+                    postStageFiles.add(new PrimaryOutputStream(entry.getKey(),
+                            File.createTempFile(id.toString(), ".output", node.getTmpDir()), this));
+                }
             } else {
                 stdout =
                     new PrimaryOutputStream("##stdout##",
@@ -249,8 +247,16 @@ public final class Primary extends Job implements Runnable, Receiver {
                         new InputFile(description.getStdinFile(), "<<stdin>>",
                                 this);
                 }
-
+                
+                for (Map.Entry<String, File> entry : description.getOutputFiles().entrySet()) {
+                    postStageFiles.add(new PrimaryOutputStream(entry.getKey(),
+                            entry.getValue(), this));
+                }
             }
+            
+            this.postStageFiles =
+                postStageFiles.toArray(new PrimaryOutputStream[0]);
+
 
             advertCount = (int) Math.round(Math.log10(maxNrOfWorkers()));
             advertTimeout = MIN_ADVERT_TIMEOUT;
