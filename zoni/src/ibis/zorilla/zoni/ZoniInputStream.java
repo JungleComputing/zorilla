@@ -37,9 +37,15 @@ public class ZoniInputStream extends DataInputStream {
     }
 
     public String[] readStringArray() throws IOException {
-        String[] result = new String[readInt()];
+        int length = readInt();
+        
+        if (length == -1) {
+            return null;
+        }
+        
+        String[] result = new String[length];
 
-        for (int i = 0; i < result.length; i++) {
+        for (int i = 0; i < length; i++) {
             result[i] = readString();
         }
 

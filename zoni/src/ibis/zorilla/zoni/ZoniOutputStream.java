@@ -33,6 +33,11 @@ public class ZoniOutputStream extends DataOutputStream {
     }
 
     public void writeStringArray(String[] strings) throws IOException {
+        if (strings == null) {
+            writeInt(-1);
+            return;
+        }
+        
         writeInt(strings.length);
 
         for (int i = 0; i < strings.length; i++) {
