@@ -21,7 +21,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-public class InputFile implements ibis.zorilla.io.InputFile, Receiver {
+public class InputFile implements Receiver {
 
     public static final int BLOCK_SIZE = 256 * 1024;
     public static final int DOWNLOAD_ATTEMPTS = 10;
@@ -86,7 +86,11 @@ public class InputFile implements ibis.zorilla.io.InputFile, Receiver {
         this.sandboxPath = sandboxPath;
         this.id = Node.generateUUID();
         this.job = p;
-
+        
+        if (sandboxPath.startsWith("/")) {
+            throw new Exception("File sanbox path (" + sandboxPath + ") cannot start with a \"\\\"");
+        }
+        
         if (!file.isAbsolute()) {
             throw new Exception("File (" + file + ") not absolute");
         }

@@ -3,12 +3,12 @@ package ibis.zorilla.job;
 import ibis.ipl.IbisIdentifier;
 import ibis.util.TypedProperties;
 import ibis.zorilla.Node;
-import ibis.zorilla.io.InputFile;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Receiver;
 import ibis.zorilla.util.PropertyUndefinedException;
 import ibis.zorilla.zoni.ZoniFileInfo;
+import ibis.zorilla.zoni.ZorillaJobDescription;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -244,8 +244,6 @@ public abstract class Job {
      */
     public abstract Map<String, String> getStats();
 
-    public abstract String getExecutable() throws Exception;
-
     /**
      * Returns the input files in the virtual file system.
      */
@@ -315,14 +313,12 @@ public abstract class Job {
     protected abstract ZorillaPrintStream createLogFile(String fileName)
             throws Exception, IOException;
 
-    protected abstract String[] getArguments() throws Exception;
-
+    public abstract ZorillaJobDescription getDescription();
+    
     /**
      * Returns the cluster this node is in in this job.
      */
     protected abstract String cluster() throws Exception;
-
-    protected abstract Map<String, String> getEnvironment() throws Exception;
 
     /**
      * Hint that this might be a good time to flush any changes to the state.

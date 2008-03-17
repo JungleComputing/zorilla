@@ -84,7 +84,7 @@ public class ZoniCallback implements Runnable, Callback {
             out.writeInt(ZoniProtocol.VERSION);
             out.writeInt(ZoniProtocol.CALLBACK_JOBINFO);
             out.writeString(job.getID().toString());
-            out.writeString(job.getExecutable().toString());
+            out.writeString(job.getDescription().getExecutable().toString());
             out.writeStringMap(job.getAttributes());
             out.writeStringMap(job.getStats());
             out.writeInt(phase);

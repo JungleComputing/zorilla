@@ -3,6 +3,7 @@ package ibis.zorilla.zoni;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -236,6 +237,61 @@ public class ZorillaJobDescription {
         out.writeFile(stdinFile);
         out.writeFile(stdoutFile);
         out.writeFile(stderrFile);
+    }
+
+    private String toString(Map<String, String> map) {
+        if (map == null || map.size() == 0) {
+            return "\n\t-";
+        }
+
+        String result = "";
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            result += "\n\t" + entry.getKey() + " = " + entry.getValue();
+        }
+        return result;
+    }
+    
+    private String toString(String[] array) {
+        if (array == null) {
+            return "";
+        }
+        
+        String result = "";
+        for (String element : array) {
+            result += element + " ";
+        }
+        return result;
+    }
+
+
+    public String toString() {
+        String result = "";
+
+        result += "\nExecutable = " + executable;
+        result += "\nArguments = " + toString(arguments);
+        result += "\nEnvironment:" + toString(environment);
+        result += "\nAttributes:" + toString(attributes);
+        result += "\nJava Options = " + toString(javaOptions);
+        result += "\nJava System Properties:" + toString(javaSystemProperties);
+        result += "\nJava Main = " + javaMain;
+        result += "\nJava Arguments = " + toString(javaArguments);
+        result += "\nInteractive = " + interactive;
+        
+        result += "\nInput files:";
+        for(ZoniInputFile file: inputFiles) {
+            result += "\n\t" + file;
+        }
+
+        result += "\nOutput files:";
+        for (Map.Entry<String, File> entry : outputFiles.entrySet()) {
+            result += "\n\t" + entry.getKey() + " = " + entry.getValue();
+        }
+        
+        result += "\nStdin = " + stdinFile;
+        result += "\nStdout = " + stdoutFile;
+        result += "\nStderr = " + stderrFile;
+        
+        return result;
     }
 
 }

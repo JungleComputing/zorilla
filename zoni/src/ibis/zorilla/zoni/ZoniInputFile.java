@@ -137,5 +137,9 @@ public class ZoniInputFile {
     public String getSandboxPath() {
         return sandboxPath;
     }
+    
+    public String toString() {
+        return sandboxPath + " (" + file + ")";
+    }
 
 }

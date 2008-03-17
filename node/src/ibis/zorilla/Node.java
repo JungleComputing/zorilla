@@ -152,7 +152,7 @@ public final class Node implements Runnable {
 
         File systemTmpDir = new File(System.getProperty("java.io.tmpdir"));
 
-        tmpDir = new File(systemTmpDir, id.toString());
+        tmpDir = new File(systemTmpDir, "zorilla-" + id.toString());
         tmpDir.mkdirs();
         tmpDir.deleteOnExit();
 

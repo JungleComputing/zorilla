@@ -71,9 +71,11 @@ public final class JobService implements Service, Runnable {
 
             writer
                     .write("// Zorilla worker security file. All applications will be limited\n"
-                            + "// to these permissions when running...\n"
+                            + "// to these permissions when running. To print a list of all permissions used\n"
+                            + "// by an application set the java.security.debug property to \"access\"\n"
                             + "grant {\n"
                             + "\tpermission java.io.FilePermission \"-\", \"read, write, execute, delete\";\n"
+                            + "\tpermission java.io.FilePermission \".\", \"read, write, execute, delete\";\n"
                             + "\tpermission java.net.SocketPermission \"*\", \"resolve,accept,connect,listen\";\n"
                             + "\n"
                             + "\t//for System.getProperties()\n"

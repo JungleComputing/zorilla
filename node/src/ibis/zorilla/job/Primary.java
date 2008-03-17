@@ -72,11 +72,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     private final UUID id;
 
-    private final String[] arguments;
-
-    private final Map<String, String> environment;
-
-    private final String executable;
+    private final ZorillaJobDescription jobDescription;
 
     // *** FILES *** \\
 
@@ -156,8 +152,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         cluster = node.config().getProperty(Config.CLUSTER_NAME);
 
         id = Node.generateUUID();
-        arguments = description.getArguments();
-        executable = description.getExecutable();
+        this.jobDescription = description;
 
         this.callback = callback;
 
@@ -172,7 +167,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
         try {
 
-            boolean javaJob = executable.startsWith("java");
+            boolean javaJob = description.isJava();
 
             attributes = new TypedProperties();
             for (Map.Entry<String, String> entry : description.getAttributes().entrySet()) {
@@ -182,9 +177,6 @@ public final class Primary extends Job implements Runnable, Receiver {
             appendAttributes(attributes, javaJob);
 
             checkAttributes(attributes);
-
-            environment =
-                new HashMap<String, String>(description.getEnvironment());
 
             long lifetime = attributes.getLongProperty("lifetime");
             if (lifetime > MAX_JOB_LIFETIME) {
@@ -318,7 +310,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     @Override
     public boolean isJava() {
-        return executable.startsWith("java");
+        return jobDescription.isJava();
     }
 
     @Override
@@ -411,7 +403,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         result.put("submission.time", new Date(submissiontime).toString());
         result.put("start.time", new Date(starttime).toString());
         result.put("stop.time", new Date(stoptime).toString());
-        result.put("executable", executable.toString());
+        result.put("executable", jobDescription.getExecutable().toString());
 
         if (isJava()) {
             result.put("java", "yes");
@@ -449,11 +441,6 @@ public final class Primary extends Job implements Runnable, Receiver {
     }
 
     @Override
-    public String getExecutable() {
-        return executable;
-    }
-
-    @Override
     protected InputFile[] getPreStageFiles() {
         return preStageFiles.clone();
     }
@@ -480,20 +467,10 @@ public final class Primary extends Job implements Runnable, Receiver {
     }
 
     @Override
-    public String[] getArguments() {
-        return arguments.clone();
-    }
-
-    @Override
     protected String cluster() {
         return cluster;
     }
 
-    @Override
-    public Map<String, String> getEnvironment() {
-        // unmodifiable map
-        return environment;
-    }
 
     @Override
     protected ZorillaPrintStream createLogFile(String fileName)
@@ -949,11 +926,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         // write static part of state
         invocation.writeObject(id);
 
-        invocation.writeObject(arguments);
-
-        invocation.writeObject(environment);
-
-        invocation.writeString(executable);
+        invocation.writeObject(jobDescription);
 
         // write file info
 
@@ -1449,6 +1422,11 @@ public final class Primary extends Job implements Runnable, Receiver {
 
         return new ZoniFileInfo(sandboxPath, name, false, new ZoniFileInfo[0]);
 
+    }
+
+    @Override
+    public ZorillaJobDescription getDescription() {
+        return jobDescription;
     }
 
 }

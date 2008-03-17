@@ -1,7 +1,7 @@
 package ibis.zorilla.util;
 
 import ibis.util.ThreadPool;
-import ibis.zorilla.io.InputFile;
+import ibis.zorilla.job.InputFile;
 
 import java.io.IOException;
 import java.io.OutputStream;

@@ -17,6 +17,7 @@ import ibis.zorilla.job.net.Invocation;
 import ibis.zorilla.job.net.Receiver;
 import ibis.zorilla.util.Resources;
 import ibis.zorilla.zoni.ZoniFileInfo;
+import ibis.zorilla.zoni.ZorillaJobDescription;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -53,12 +54,8 @@ public final class Copy extends Job implements Receiver, Runnable {
 
     // *** STATIC INFO ON JOB *** \\
 
-    private String[] arguments;
-
-    private Map<String, String> environment;
-
-    private String executable;
-
+    private ZorillaJobDescription jobDescription;
+    
     // *** FILES *** \\
 
     private InputFile[] preStageFiles;
@@ -136,9 +133,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
         // PUT DEFAULT VALUES FOR VARIABLES IN STATE
 
-        arguments = new String[0];
-        environment = new HashMap<String, String>();
-        executable = null;
+        jobDescription = null;
         preStageFiles = new InputFile[0];
         postStageFiles = new String[0];
         stdout = null;
@@ -270,18 +265,10 @@ public final class Copy extends Job implements Receiver, Runnable {
             } else {
                 result.put("java", "no");
             }
-            result.put("executable", executable.toString());
+            result.put("executable", jobDescription.getExecutable().toString());
         }
 
         return result;
-    }
-
-    @Override
-    public synchronized String getExecutable() throws Exception {
-        if (!initialized) {
-            throw new Exception("copy not initialized");
-        }
-        return executable;
     }
 
     @Override
@@ -295,18 +282,8 @@ public final class Copy extends Job implements Receiver, Runnable {
     }
 
     @Override
-    public synchronized String[] getArguments() {
-        return arguments.clone();
-    }
-
-    @Override
     protected synchronized String cluster() {
         return cluster;
-    }
-
-    @Override
-    public synchronized Map<String, String> getEnvironment() {
-        return new HashMap<String, String>(environment);
     }
 
     @Override
@@ -555,11 +532,7 @@ public final class Copy extends Job implements Receiver, Runnable {
                             + "in initialization of copy");
                 }
 
-                arguments = (String[]) call.readObject();
-
-                environment = (Map<String, String>) call.readObject();
-
-                executable = call.readString();
+                jobDescription = (ZorillaJobDescription) call.readObject();
 
                 preStageFiles = new InputFile[call.readInt()];
                 for (int i = 0; i < preStageFiles.length; i++) {
@@ -593,7 +566,7 @@ public final class Copy extends Job implements Receiver, Runnable {
             readDynamicState(call);
             call.finish();
 
-            if (executable.startsWith("java")
+            if (!jobDescription.isJava()
                     && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
                 throw new Exception("running of non-java job not allowed");
             }
@@ -681,7 +654,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
     @Override
     public synchronized boolean isJava() {
-        return executable.startsWith("java");
+        return jobDescription.isJava();
     }
 
     /**
@@ -932,6 +905,11 @@ public final class Copy extends Job implements Receiver, Runnable {
     @Override
     public void readOutputFile(String sandboxPath, DataOutputStream out) throws Exception {
         throw new Exception("can only get output files where job was submitted");
+    }
+    
+    @Override
+    public ZorillaJobDescription getDescription() {
+        return jobDescription;
     }
 
 }

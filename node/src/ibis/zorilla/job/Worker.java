@@ -4,7 +4,6 @@ import ibis.util.RunProcess;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
-import ibis.zorilla.io.InputFile;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.util.FileReader;
 import ibis.zorilla.util.StreamWriter;
@@ -37,8 +36,8 @@ public final class Worker implements Runnable {
 
     private static final long POLL_INTERVAL = 1000; // 1 second
 
-    private static final Logger logger =
-        Logger.getLogger(Worker.class.getName());
+    private static final Logger logger = Logger.getLogger(Worker.class
+            .getName());
 
     private final UUID id;
 
@@ -53,7 +52,7 @@ public final class Worker implements Runnable {
     private final Job job;
 
     private Status status;
-    
+
     private int exitStatus;
 
     /**
@@ -83,7 +82,7 @@ public final class Worker implements Runnable {
     private ProcessBuilder nativeCommand(File workingDir) throws Exception {
         ProcessBuilder result = new ProcessBuilder();
 
-        String location = job.getExecutable();
+        String location = job.getDescription().getExecutable();
 
         File executableFile = new File(location);
 
@@ -95,22 +94,23 @@ public final class Worker implements Runnable {
         if (!executableFile.isAbsolute()) {
             File sandboxExeFile = new File(workingDir, location);
 
-            logger.debug("executable location (in sandbox) = " + sandboxExeFile);
+            logger
+                    .debug("executable location (in sandbox) = "
+                            + sandboxExeFile);
 
             if (sandboxExeFile.exists()) {
                 logger.debug("exe file " + sandboxExeFile
                         + " exists in sandbox!");
 
                 // set exe bit (first try)
-                String[] command =
-                    { "/bin/chmod", "u+x", sandboxExeFile.getAbsolutePath() };
+                String[] command = { "/bin/chmod", "u+x",
+                        sandboxExeFile.getAbsolutePath() };
 
                 new RunProcess(command, new String[0], workingDir);
-                
+
                 // set exe bit (second try)
-                String[] command2 =
-                    { "/usr/bin/chmod", "u+x",
-                            sandboxExeFile.getAbsolutePath() };
+                String[] command2 = { "/usr/bin/chmod", "u+x",
+                        sandboxExeFile.getAbsolutePath() };
 
                 new RunProcess(command2, new String[0], workingDir);
 
@@ -121,12 +121,12 @@ public final class Worker implements Runnable {
         result.command().add(location);
 
         // add arguments
-        String[] arguments = job.getArguments();
+        String[] arguments = job.getDescription().getArguments();
         for (int i = 0; i < arguments.length; i++) {
             result.command().add(arguments[i]);
         }
 
-        result.environment().putAll(job.getEnvironment());
+        result.environment().putAll(job.getDescription().getEnvironment());
 
         result.directory(workingDir);
 
@@ -140,18 +140,19 @@ public final class Worker implements Runnable {
         String javaHome = System.getProperty("java.home");
         // String pathSeparator = System.getProperty("path.separator");
 
-        File securityFile =
-            new File(node.config().getConfigDir(), "worker.security.policy");
+        File securityFile = new File(node.config().getConfigDir(),
+                "worker.security.policy");
 
         // java executable
         result.command().add(
-            javaHome + File.separator + "bin" + File.separator + "java");
+                javaHome + File.separator + "bin" + File.separator + "java");
 
         // security stuff
         // result.add("-Djava.security.debug=access");
         result.command().add("-Djava.security.manager");
         result.command().add(
-            "-Djava.security.policy==file:" + securityFile.getAbsolutePath());
+                "-Djava.security.policy==file:"
+                        + securityFile.getAbsolutePath());
 
         result.command().add("-Xmx" + job.getStringAttribute("worker.memory"));
 
@@ -160,8 +161,8 @@ public final class Worker implements Runnable {
 
         if (!job.getBooleanAttribute("malleable")) {
             result.command().add(
-                "-Dzorilla.nr.of.workers="
-                        + job.getIntegerAttribute("nr.of.workers"));
+                    "-Dzorilla.nr.of.workers="
+                            + job.getIntegerAttribute("nr.of.workers"));
         }
 
         result.command().add("-Dzorilla.cluster=" + job.cluster());
@@ -172,8 +173,8 @@ public final class Worker implements Runnable {
 
             if (!job.getBooleanAttribute("malleable")) {
                 result.command().add(
-                    "-Dibis.pool.size="
-                            + job.getIntegerAttribute("nr.of.workers"));
+                        "-Dibis.pool.size="
+                                + job.getIntegerAttribute("nr.of.workers"));
             }
 
             // result.command().add("-Dibis.pool.cluster=" + job.cluster());
@@ -184,6 +185,7 @@ public final class Worker implements Runnable {
         } else {
             // add root of job to classpath
             appClassPath = "." + File.pathSeparator;
+            //appClassPath = "";
 
             InputFile[] inputs = job.getPreStageFiles();
 
@@ -191,9 +193,9 @@ public final class Worker implements Runnable {
                 // path of jar is workingDir + path of jar file in virtual fs
                 if (inputs[i].sandboxPath().endsWith(".jar")) {
 
-                    appClassPath =
-                        appClassPath + workingDir.getAbsolutePath()
-                                + inputs[i].sandboxPath() + File.pathSeparator;
+                    appClassPath = appClassPath + workingDir.getAbsolutePath()
+                            + File.separator + inputs[i].sandboxPath()
+                            + File.pathSeparator;
                 }
             }
         }
@@ -203,15 +205,17 @@ public final class Worker implements Runnable {
         result.command().add(appClassPath);
 
         // user specified environment options
-        for (Map.Entry<String, String> entry : job.getEnvironment().entrySet()) {
-            result.command().add("-D" + entry.getKey() + "=" + entry.getValue());
+        for (Map.Entry<String, String> entry : job.getDescription()
+                .getJavaSystemProperties().entrySet()) {
+            result.command()
+                    .add("-D" + entry.getKey() + "=" + entry.getValue());
         }
 
         // add main class
-        result.command().add(job.getExecutable().replaceFirst("java:", ""));
+        result.command().add(job.getDescription().getJavaMain());
 
         // arguments
-        String[] arguments = job.getArguments();
+        String[] arguments = job.getDescription().getJavaArguments();
         for (int i = 0; i < arguments.length; i++) {
             result.command().add(arguments[i]);
         }
@@ -254,7 +258,7 @@ public final class Worker implements Runnable {
         this.status = status;
         notifyAll();
     }
-    
+
     private synchronized void setExitStatus(int exitStatus) {
         this.exitStatus = exitStatus;
     }
@@ -274,9 +278,7 @@ public final class Worker implements Runnable {
     }
 
     private File createScratchDir(UUID id) throws IOException, Exception {
-        File scratchDir =
-            new File(System.getProperty("java.io.tmpdir") + File.separator
-                    + id.toString());
+        File scratchDir = new File(node.getTmpDir(),id.toString()).getAbsoluteFile();
 
         scratchDir.mkdirs();
         scratchDir.deleteOnExit();
@@ -349,7 +351,7 @@ public final class Worker implements Runnable {
             setStatus(Status.PRE_STAGE);
             workingDir = createScratchDir(id);
 
-            if (job.getExecutable().startsWith("java")) {
+            if (job.getDescription().isJava()) {
                 processBuilder = javaCommand(workingDir);
             } else {
                 processBuilder = nativeCommand(workingDir);
@@ -361,6 +363,11 @@ public final class Worker implements Runnable {
             }
             logger.debug("running command: " + cmd);
             log.printlog("running command: " + cmd);
+
+            log.printlog("working directory for worker = "
+                    + processBuilder.directory());
+            logger.debug("working directory for worker = "
+                    + processBuilder.directory());
 
             Process process;
             try {
@@ -384,13 +391,13 @@ public final class Worker implements Runnable {
                 return;
             }
 
-            outWriter =
-                new StreamWriter(process.getInputStream(), job.getStdout());
-            errWriter =
-                new StreamWriter(process.getErrorStream(), job.getStderr());
+            outWriter = new StreamWriter(process.getInputStream(), job
+                    .getStdout());
+            errWriter = new StreamWriter(process.getErrorStream(), job
+                    .getStderr());
 
-            FileReader fileReader =
-                new FileReader(job.getStdin(), process.getOutputStream());
+            FileReader fileReader = new FileReader(job.getStdin(), process
+                    .getOutputStream());
 
             logger.debug("created stream writers, waiting for"
                     + " process to finish");
@@ -411,7 +418,7 @@ public final class Worker implements Runnable {
                     fileReader.close();
 
                     setExitStatus(result);
-                    
+
                     log.printlog("flushing files");
                     setStatus(Status.POST_STAGE);
                     postStage(workingDir);
@@ -436,8 +443,7 @@ public final class Worker implements Runnable {
                             killed = true;
                         } else {
                             try {
-                                long timeout =
-                                    Math.min(deadline - currentTime,
+                                long timeout = Math.min(deadline - currentTime,
                                         POLL_INTERVAL);
                                 wait(timeout);
                             } catch (InterruptedException e2) {
@@ -459,10 +465,8 @@ public final class Worker implements Runnable {
         }
     }
 
-    
     public String toString() {
         return id.toString().substring(0, 8);
     }
-
 
 }
