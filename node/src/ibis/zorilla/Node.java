@@ -295,6 +295,7 @@ public final class Node implements Runnable {
 
         result.put("Address", network.getAddress().toString());
         result.put("Coordinate", vivaldiService().getCoordinates().toString());
+        result.put("Max.workers", Integer.toString(jobService().getMaxWorkers()));
 
         return result;
     }

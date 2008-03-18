@@ -32,6 +32,8 @@ public final class JobService implements Service, Runnable {
     private boolean killed = false;
 
     private final Resources availableResources;
+    
+    private final int maxWorkers;
 
     private final Map<UUID, Resources> usedResources;
 
@@ -42,8 +44,8 @@ public final class JobService implements Service, Runnable {
         createWorkerSecurityFile(new File(node.config().getConfigDir(),
                 "worker.security.policy"));
 
-        int defaultWorkers = Runtime.getRuntime().availableProcessors() + 1;
-        int maxWorkers = node.config().getIntProperty(Config.MAX_WORKERS,
+        int defaultWorkers = Runtime.getRuntime().availableProcessors();
+        maxWorkers = node.config().getIntProperty(Config.MAX_WORKERS,
                 defaultWorkers);
 
         logger.info("Maximum of " + maxWorkers + " workers on this node");
@@ -51,6 +53,10 @@ public final class JobService implements Service, Runnable {
         availableResources = new Resources(1, maxWorkers, 1024 * 1024 * 1024,
                 1024 * 1024 * 1024);
         usedResources = new HashMap<UUID, Resources>();
+    }
+    
+    public int getMaxWorkers() {
+        return maxWorkers;
     }
 
     private static void createWorkerSecurityFile(File file) throws Exception {

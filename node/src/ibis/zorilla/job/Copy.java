@@ -265,7 +265,7 @@ public final class Copy extends Job implements Receiver, Runnable {
             } else {
                 result.put("java", "no");
             }
-            result.put("executable", jobDescription.getExecutable().toString());
+            result.put("executable", jobDescription.getExecutable());
         }
 
         return result;

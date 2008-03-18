@@ -2,13 +2,15 @@ package ibis.zorilla.zoni;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ZorillaJobDescription {
+public class ZorillaJobDescription implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String executable;
 

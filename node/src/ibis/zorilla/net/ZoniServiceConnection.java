@@ -79,7 +79,7 @@ final class ZoniServiceConnection implements Runnable {
         out.writeInt(ZoniProtocol.STATUS_OK);
         out.writeString("OK");
         out.writeString(job.getID().toString());
-        out.writeString(job.getDescription().getExecutable().toString());
+        out.writeString(job.getDescription().getExecutable());
         out.writeStringMap(job.getAttributes());
         out.writeStringMap(job.getStats());
         out.writeInt(job.getPhase());

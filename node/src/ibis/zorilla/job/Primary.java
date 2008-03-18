@@ -403,7 +403,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         result.put("submission.time", new Date(submissiontime).toString());
         result.put("start.time", new Date(starttime).toString());
         result.put("stop.time", new Date(stoptime).toString());
-        result.put("executable", jobDescription.getExecutable().toString());
+        result.put("executable", jobDescription.getExecutable());
 
         if (isJava()) {
             result.put("java", "yes");

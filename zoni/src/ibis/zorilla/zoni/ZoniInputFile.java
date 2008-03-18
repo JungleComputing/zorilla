@@ -5,8 +5,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 
-public class ZoniInputFile {
+public class ZoniInputFile implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     // location of this file in the sandbox
     private final String sandboxPath;
 
@@ -17,7 +21,7 @@ public class ZoniInputFile {
     private final File file;
 
     // input stream (send over connection when job submitted)
-    private final InputStream inputStream;
+    private transient final InputStream inputStream;
 
     /**
      * Input file offered as stream. It is send over to the zorilla node when
@@ -137,7 +141,7 @@ public class ZoniInputFile {
     public String getSandboxPath() {
         return sandboxPath;
     }
-    
+
     public String toString() {
         return sandboxPath + " (" + file + ")";
     }
