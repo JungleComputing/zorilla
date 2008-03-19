@@ -5,7 +5,6 @@ import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.io.ZorillaPrintStream;
-import ibis.zorilla.util.FileReader;
 import ibis.zorilla.util.StreamWriter;
 
 import java.io.File;
@@ -396,8 +395,9 @@ public final class Worker implements Runnable {
             errWriter = new StreamWriter(process.getErrorStream(), job
                     .getStderr());
 
-            FileReader fileReader = new FileReader(job.getStdin(), process
-                    .getOutputStream());
+            //TODO reimplement stdin
+//            FileReader fileReader = new FileReader(job.getStdin(), process
+//                    .getOutputStream());
 
             logger.debug("created stream writers, waiting for"
                     + " process to finish");
@@ -415,7 +415,7 @@ public final class Worker implements Runnable {
                     logger.debug("worker " + this + " done, exit code "
                             + result);
 
-                    fileReader.close();
+//                    fileReader.close();
 
                     setExitStatus(result);
 

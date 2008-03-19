@@ -173,8 +173,8 @@ public final class Copy extends Job implements Receiver, Runnable {
             } catch (IOException e2) {
                 logger.warn("could not write message to log file", e);
             }
-            logger.debug(this.toString() + ": " + message, e);
         }
+        logger.warn(this.toString() + ": " + message, e);
     }
 
     @SuppressWarnings("unchecked")
@@ -536,7 +536,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
                 preStageFiles = new InputFile[call.readInt()];
                 for (int i = 0; i < preStageFiles.length; i++) {
-                    preStageFiles[i] = new InputFile(call, this);
+                    preStageFiles[i] = new InputFile(call, this, node.getTmpDir());
                 }
 
                 postStageFiles = new String[call.readInt()];
@@ -553,7 +553,7 @@ public final class Copy extends Job implements Receiver, Runnable {
                 }
 
                 if (call.readBoolean()) {
-                    stdin = new InputFile(call, this);
+                    stdin = new InputFile(call, this, node.getTmpDir());
                 }
 
                 workerResources = (Resources) call.readObject();
@@ -581,11 +581,6 @@ public final class Copy extends Job implements Receiver, Runnable {
     }
 
     private void sendMaxNrOfWorkers() throws IOException, Exception {
-        Resources resources;
-        synchronized (this) {
-            resources = new Resources(workerResources);
-        }
-
         int nrOfWorkers = node.jobService().nrOfResourceSetsAvailable(
                 workerResources);
 
@@ -722,7 +717,8 @@ public final class Copy extends Job implements Receiver, Runnable {
         }
     }
 
-    private void removeFinishedLocalWorkers() throws IOException, Exception {
+    private boolean removeFinishedLocalWorkers() throws IOException, Exception {
+        boolean error = false;
         Worker[] workers;
 
         synchronized (this) {
@@ -731,6 +727,9 @@ public final class Copy extends Job implements Receiver, Runnable {
 
         for (Worker worker : workers) {
             if (worker.finished()) {
+                if (worker.failed()) {
+                    error = true;
+                }
                 synchronized (this) {
                     localWorkers.remove(worker.id());
                 }
@@ -750,6 +749,7 @@ public final class Copy extends Job implements Receiver, Runnable {
                 call.finish();
             }
         }
+        return error;
     }
 
     private synchronized void killWorkers() {
@@ -804,8 +804,18 @@ public final class Copy extends Job implements Receiver, Runnable {
         }
 
         try {
+            //dowbload input files
+            for(InputFile file: preStageFiles) {
+                file.download();
+            }
+
             while (true) {
-                removeFinishedLocalWorkers();
+                if(removeFinishedLocalWorkers()) {
+                    //a worker ended in an error, stop creating new workers
+                    //for this job
+                    moreWorkersPossible = false;
+                }
+                        
 
                 if (moreWorkersPossible) {
                     moreWorkersPossible = createNewLocalWorkers();

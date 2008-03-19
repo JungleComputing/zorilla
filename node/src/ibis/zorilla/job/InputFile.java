@@ -13,55 +13,24 @@ import ibis.zorilla.job.net.Invocation;
 import ibis.zorilla.job.net.Receiver;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.util.BitSet;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
 public class InputFile implements Receiver {
 
-    public static final int BLOCK_SIZE = 256 * 1024;
-    public static final int DOWNLOAD_ATTEMPTS = 10;
+    public static final int DOWNLOAD_ATTEMPTS = 1;
     public static final int PRIMARY_DOWNLOAD_TRESHOLD = 2;
 
-    private static final int REQUEST_BLOCKS = 0;
+    private static final int BUFFER_SIZE = 31000;
 
     private static final Logger logger = Logger.getLogger(InputFile.class);
 
-    private static int blockPosition(long position) {
-        return (int) (position / BLOCK_SIZE);
-    }
-
-    // returns the index of the first block AFTER or ON this position
-    private static int blockLimit(long limit) {
-        int result = (int) (limit / BLOCK_SIZE);
-        if ((limit % BLOCK_SIZE) > 0) {
-            result += 1;
-        }
-        return result;
-    }
-
-    private static long position(int blockNr) {
-        return blockNr * BLOCK_SIZE;
-    }
-
-    private static long limit(int blockNr) {
-        return position(blockNr) + BLOCK_SIZE;
-    }
-
-    private static FileChannel createFileChannel(java.io.File file)
-            throws IOException {
-
-        return new java.io.RandomAccessFile(file, "rw").getChannel();
-    }
-
     private final String sandboxPath;
 
- //   private final URI uri;
-    
     private final File file;
 
     private final UUID id;
@@ -72,13 +41,12 @@ public class InputFile implements Receiver {
 
     private final long size;
 
-    private final Hash[] hashes;
+    private final Hash hash;
 
     private final ReceivePortIdentifier primary;
 
-    // available blocks, Config.FILE_BLOCK_SIZE chunks
-    private BitSet availableBlocks;
-    
+    private boolean downloaded;
+
     // create a primary input file
     public InputFile(File file, String sandboxPath, Primary p)
             throws Exception, IOException {
@@ -86,11 +54,14 @@ public class InputFile implements Receiver {
         this.sandboxPath = sandboxPath;
         this.id = Node.generateUUID();
         this.job = p;
-        
+
+        downloaded = true;
+
         if (sandboxPath.startsWith("/")) {
-            throw new Exception("File sanbox path (" + sandboxPath + ") cannot start with a \"\\\"");
+            throw new Exception("File sandbox path (" + sandboxPath
+                    + ") cannot start with a \"\\\"");
         }
-        
+
         if (!file.isAbsolute()) {
             throw new Exception("File (" + file + ") not absolute");
         }
@@ -101,29 +72,15 @@ public class InputFile implements Receiver {
 
         if (!file.canRead()) {
             throw new Exception("cannot read from file (" + file + ")");
-        }  
-        
-        logger.debug("new input file: " + file + " sandbox path = " + sandboxPath);
-
-        FileChannel channel = createFileChannel(file);
-        size = channel.size();
-
-        // create hashes
-        int nrOfBlocks = blockLimit(size);
-        hashes = new Hash[nrOfBlocks];
-
-        for (int i = 0; i < nrOfBlocks; i++) {
-            long position = position(i);
-            long limit = limit(i);
-            if (limit > size) {
-                limit = size;
-            }
-            hashes[i] = new Hash(channel, position, limit);
         }
-        channel.close();
 
-        availableBlocks = new BitSet();
-        availableBlocks.set(0, nrOfBlocks);
+        logger.debug("new input file: " + file + " sandbox path = "
+                + sandboxPath);
+
+        size = file.length();
+
+        // calculate hash for this file
+        hash = new Hash(file);
 
         endPoint = job.newEndPoint(id.toString(), this);
 
@@ -131,28 +88,27 @@ public class InputFile implements Receiver {
     }
 
     // create a copy input file
-    public InputFile(ObjectInput in, Copy copy) throws IOException, Exception {
+    public InputFile(ObjectInput in, Copy copy, File tmpDir)
+            throws IOException, Exception {
 
         this.job = copy;
+
+        downloaded = false;
 
         try {
             sandboxPath = in.readString();
             id = (UUID) in.readObject();
             size = in.readLong();
             primary = (ReceivePortIdentifier) in.readObject();
-            hashes = (Hash[]) in.readObject();
+            hash = (Hash) in.readObject();
 
         } catch (ClassNotFoundException e) {
             throw new Exception("could not read bootstrap", e);
         }
 
-        // nothing available, create empty list
-        availableBlocks = new BitSet();
-
-        file = File.createTempFile("zorilla", ".tmp");
+        file = File.createTempFile("zorilla", ".input", tmpDir);
 
         endPoint = job.newEndPoint(id.toString(), this);
-
     }
 
     public long size() {
@@ -160,11 +116,11 @@ public class InputFile implements Receiver {
     }
 
     public void writeBootStrap(ObjectOutput output) throws IOException {
-        output.writeString(sandboxPath());
-        output.writeObject(id());
+        output.writeString(sandboxPath);
+        output.writeObject(id);
         output.writeLong(size);
         output.writeObject(primary);
-        output.writeObject(hashes);
+        output.writeObject(hash);
     }
 
     public String sandboxPath() {
@@ -175,43 +131,20 @@ public class InputFile implements Receiver {
         return id;
     }
 
-    public int read(long fileOffset, byte[] data, int offset, int length)
-            throws Exception {
-        try {
-            if (fileOffset >= size()) {
-                return -1;
-            } else if ((fileOffset + length) > size()) {
-                length = (int) (size() - fileOffset);
-            }
-
-            FileChannel channel = createFileChannel(file);
-
-            download(fileOffset, length, channel);
-
-            channel.position(fileOffset);
-            ByteBuffer buffer = ByteBuffer.wrap(data, offset, length);
-
-            while (buffer.hasRemaining()) {
-                channel.read(buffer);
-            }
-            channel.close();
-
-        } catch (IOException e) {
-            throw new Exception("error reading from file");
-        }
-
-        return length;
-    }
-
     public File copyTo(File dir) throws Exception {
 
         logger.debug("copying " + file + " to " + dir);
+        
+        if (!isDownloaded()) {
+            throw new Exception("file not downloaded");
+        }
 
         if (sandboxPath == null) {
             throw new Exception("cannot copy input file without virtual path");
         }
 
-        File destFile = new File(dir.getAbsoluteFile(),sandboxPath);
+        File destFile = new File(dir.getAbsolutePath() + File.separator
+                + sandboxPath);
         destFile.getParentFile().mkdirs();
 
         if (!destFile.getParentFile().isDirectory()) {
@@ -223,33 +156,26 @@ public class InputFile implements Receiver {
 
         try {
 
-            FileChannel source = createFileChannel(file);
+            byte[] buffer = new byte[BUFFER_SIZE];
 
-            // make sure the file is complete
-            download(0, size(), source);
+            FileInputStream in = new FileInputStream(file);
+            FileOutputStream out = new FileOutputStream(destFile);
 
-            source.position(0);
+            while (true) {
+                int read = in.read(buffer);
 
-            FileChannel destination = createFileChannel(destFile);
-            destination.position(0);
+                if (read == -1) {
+                    logger.debug("done copying file " + destFile);
+                    return destFile;
+                }
 
-            long remaining = source.size();
-            long offset = 0;
-
-            while (remaining > 0) {
-                long count = source.transferTo(offset, remaining, destination);
-                remaining -= count;
-                offset += count;
+                out.write(buffer, 0, read);
             }
-
-            source.close();
-            destination.close();
 
         } catch (IOException e) {
             throw new Exception("could not copy file", e);
         }
 
-        return destFile;
     }
 
     public void receive(ReadMessage message) {
@@ -257,175 +183,150 @@ public class InputFile implements Receiver {
                 "message received in file"));
     }
 
-    private void readFromMessage(ObjectInput in, FileChannel channel,
-            long position, long limit) throws IOException {
-        byte[] bytes = new byte[32 * 1000];
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    private void readFrom(ObjectInput in) throws IOException {
+        logger.debug("reading " + sandboxPath);
 
-        if (limit > size()) {
-            throw new IOException("cannot write past end of file");
-        }
+        byte[] buffer = new byte[BUFFER_SIZE];
 
-        while (position < limit) {
-            int read = (int) Math.min((limit - position), bytes.length);
+        FileOutputStream out = new FileOutputStream(file);
 
-            in.readArray(bytes, 0, read);
-            buffer.position(0);
-            buffer.limit(read);
-
-            while (buffer.hasRemaining()) {
-                channel.write(buffer, position);
+        while (true) {
+            int size = in.readInt();
+            
+            if (size == -1) {
+                // EOF
+                out.flush();
+                out.close();
+                return;
             }
-            position += read;
+
+            in.readArray(buffer, 0, size);
+            
+            out.write(buffer, 0, size);
         }
     }
 
-    private void writeToMessage(ObjectOutput out, FileChannel channel,
-            long position, long limit) throws IOException {
-        byte[] bytes = new byte[32 * 1000];
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    private void writeTo(Invocation invocation) throws IOException {
+        logger.debug("writing " + sandboxPath + " from " + file);
+                        
 
-        if (limit > size()) {
-            throw new IOException("cannot write past end of file");
+        logger.debug("checking current value of hash of " + sandboxPath);
+        Hash hash = new Hash(file);
+
+        if (!hash.equals(this.hash)) {
+            throw new IOException("current value of hash not equal to initial hash");
         }
 
-        while (position < limit) {
-            int maxRead = (int) Math.min((limit - position), bytes.length);
+        logger.debug("done checking hash, writing file "
+                + sandboxPath + " with hash " + hash);
 
-            buffer.position(0);
-            buffer.limit(maxRead);
 
-            channel.read(buffer, position);
-            int read = buffer.position();
+        byte[] buffer = new byte[BUFFER_SIZE];
 
-            out.writeArray(bytes, 0, read);
-            position += read;
+        FileInputStream in = new FileInputStream(file);
+        
+        if (in.available() != size) {
+            logger.error("file size " + in.available() + " not equal to " + size);
+        }
+
+        while (true) {
+            int read = in.read(buffer);
+
+            if (read == -1) {
+                // EOF
+                invocation.writeInt(-1);
+                in.close();
+                return;
+            }
+            
+            invocation.writeInt(read);
+            invocation.writeArray(buffer, 0, read);
+            invocation.flush();
         }
     }
 
-    protected void download(long position, long limit, FileChannel channel) {
-        int blockPosition = blockPosition(position);
-        int blockLimit = blockLimit(limit);
+    private synchronized boolean isDownloaded() {
+        return downloaded;
+    }
+
+    private synchronized void setDownloaded() {
+        downloaded = true;
+    }
+
+    protected void download() throws Exception {
+        if (isDownloaded()) {
+            return;
+        }
+
+        logger.debug("dowloading " + sandboxPath);
 
         int triesLeft = DOWNLOAD_ATTEMPTS;
 
         while (triesLeft > 0) {
             Call call;
-            BitSet requestedBlocks = new BitSet();
-
-            requestedBlocks.set(blockPosition, blockLimit);
-            synchronized (this) {
-                requestedBlocks.andNot(availableBlocks);
-            }
-
-            // always the case at the primary node
-            if (requestedBlocks.isEmpty()) {
-                return;
-            }
 
             try {
-                // if (triesLeft < Config.FILE_PRIMARY_DOWNLOAD_TRESHOLD) {
-                if (true) {
+                if (triesLeft < PRIMARY_DOWNLOAD_TRESHOLD) {
                     call = endPoint.call(primary);
                 } else {
                     IbisIdentifier victim = job.getRandomConstituent();
                     call = endPoint.call(victim, id().toString());
                 }
 
-                call.writeInt(REQUEST_BLOCKS);
-                call.writeObject(requestedBlocks);
+                logger.debug("written request, waiting for reply");
+
                 call.call();
 
-                int block = call.readInt();
+                boolean ok = call.readBoolean();
 
-                if (block == -1) {
-                    // block not found at peer
+                if (!ok) {
+                    logger.debug("file not available at peer, trying another");
                     call.finish();
                     triesLeft--;
                     continue;
                 }
 
-                long filePosition = position(block);
-                long fileLimit = limit(block);
+                // delete existing file (if any)
+                file.delete();
 
-                if (fileLimit > size) {
-                    fileLimit = size;
+                readFrom(call);
+
+                Hash hash = new Hash(file);
+
+                if (hash.equals(this.hash)) {
+                    logger.debug("done downloading " + sandboxPath);
+                    setDownloaded();
+                    return;
+                } else {
+                    logger.warn("hash does not match, trying again");
+                    triesLeft--;
                 }
-
-                readFromMessage(call, channel, filePosition, fileLimit);
-                call.finish();
-
-                if (checkBlock(block, channel, filePosition, fileLimit)) {
-                    synchronized (this) {
-                        availableBlocks.set(block);
-                        requestedBlocks.clear(block);
-                    }
-                }
-
             } catch (Exception e) {
                 job.log("exeption on downloading file", e);
                 triesLeft--;
             }
         }
-    }
-
-    private boolean checkBlock(int block, FileChannel channel,
-            long filePosition, long fileLimit) throws IOException {
-
-        Hash hash = new Hash(channel, filePosition, fileLimit);
-
-        return hash.equals(hashes[block]);
+        throw new Exception("could not download file " + sandboxPath + " to " + file);
     }
 
     public void invoke(Invocation invocation) throws Exception, IOException {
-        int opcode = invocation.readInt();
-        BitSet requestedBlocks;
 
-        if (opcode != REQUEST_BLOCKS) {
-            throw new Exception("unknown opcode in file request: " + opcode);
-        }
-
-        try {
-            requestedBlocks = (BitSet) invocation.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new Exception("class not found on reading request");
-        }
-
+        //nothing to read
         invocation.finishRead();
 
-        synchronized (this) {
-            // fileter out unavailable blocks
-            requestedBlocks.and(availableBlocks);
-        }
-
-        if (requestedBlocks.isEmpty()) {
-            // requested block(s) not found
-            invocation.writeInt(-1);
+        if (!isDownloaded()) {
+            //we don't have the file ourselves
+            invocation.writeBoolean(false);
+            invocation.finish();
             return;
-
         }
 
-        int block = -1;
-        while (block == -1) {
-            block = Node.randomInt(requestedBlocks.length());
-            if (!requestedBlocks.get(block)) {
-                block = -1;
-            }
-        }
+        invocation.writeBoolean(true);
 
-        invocation.writeInt(block);
+        writeTo(invocation);
 
-        long position = position(block);
-        long limit = limit(block);
-        if (limit > size()) {
-            limit = size();
-        }
-
-        FileChannel channel = createFileChannel(file);
-
-        writeToMessage(invocation, channel, position, limit);
-
-        channel.close();
+        logger.debug("done writing input");
+        invocation.finish();
     }
 
     public void close() throws Exception {

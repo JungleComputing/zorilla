@@ -111,11 +111,12 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
 
         reply.finish();
         reply = null;
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            logger.debug("sleep interrupted");
-        }
+        //FIXME: why was there a sleep here?
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            logger.debug("sleep interrupted");
+//        }
         sendPort.close();
         sendPort = null;
         state = DONE;
@@ -420,6 +421,10 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
 
     public void writeArray(double[] source) throws IOException {
         getReply().writeArray(source);
+    }
+    
+    public void flush() throws IOException {
+        getReply().sync(0);
     }
     
     public String toString() {

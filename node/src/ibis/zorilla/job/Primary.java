@@ -1299,12 +1299,14 @@ public final class Primary extends Job implements Runnable, Receiver {
     }
 
     public void run() {
+        boolean done = false;
+        
         setPhase(PRE_STAGE);
         // no work needed for pre-stage
 
         setPhase(SCHEDULING);
 
-        while (true) {
+        while (!done) {
             purgeExpiredConstituents();
             removeFinishedLocalWorkers();
             createNewLocalWorkers();
@@ -1337,11 +1339,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
                     if (constituents.size() == 0) {
                         log("job done, nobody left but us, turning of the light");
-                        log("job finished");
-                        // issue final state update callbacks
-                        sendStateUpdate();
-                        finish();
-                        return;
+                        done = true;
                     }
                 }
 
@@ -1354,6 +1352,10 @@ public final class Primary extends Job implements Runnable, Receiver {
                 }
             }
         }
+        // issue final state update callbacks
+        sendStateUpdate();
+        finish();
+        log("job finished");
     }
 
     @Override

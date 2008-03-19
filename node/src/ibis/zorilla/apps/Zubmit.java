@@ -368,7 +368,7 @@ public final class Zubmit {
                 // register shutdown hook to cancel job..
                 try {
                     Runtime.getRuntime().addShutdownHook(
-                            new Shutdown(connection, jobID));
+                            new Shutdown(nodeSocketAddress, jobID));
                 } catch (Exception e) {
                     // IGNORE
                 }
@@ -408,23 +408,24 @@ public final class Zubmit {
     }
 
     private static class Shutdown extends Thread {
-        private final ZoniConnection connection;
+        private final  InetSocketAddress nodeSocketAddress;
 
         private final String jobID;
 
-        Shutdown(ZoniConnection connection, String jobID) {
-            this.connection = connection;
+        Shutdown(InetSocketAddress nodeSocketAddress, String jobID) {
+            this.nodeSocketAddress = nodeSocketAddress;
             this.jobID = jobID;
         }
 
         public void run() {
             try {
-                if (!connection.isClosed()) {
+                    ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
+                            null, ZoniProtocol.TYPE_CLIENT);
                     logger.debug("shutdown hook triggered, cancelling job");
+                    
                     connection.cancelJob(jobID);
                     connection.close();
                     System.err.println("job " + jobID + " cancelled");
-                }
             } catch (Exception e) {
                 System.err.println("could not cancel job: " + e);
             }

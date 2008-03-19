@@ -1,9 +1,10 @@
 package ibis.zorilla.io;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -19,10 +20,12 @@ public final class Hash implements Serializable {
     private static final Logger logger = Logger.getLogger(Hash.class);
 
     private final byte[] hash;
-
-    public Hash(FileChannel channel, long position, long limit)
+    
+    public Hash(File file)
         throws IOException {
         MessageDigest digest;
+        
+        FileInputStream in = new FileInputStream(file);
 
         try {
             digest = MessageDigest.getInstance("SHA-1");
@@ -30,18 +33,17 @@ public final class Hash implements Serializable {
             throw new IOException("could not load SHA-1 algorithmn");
         }
 
-        byte[] buffer = new byte[(int) (limit - position)];
-
-        ByteBuffer nioBuffer = ByteBuffer.wrap(buffer);
-
-        while (nioBuffer.hasRemaining()) {
-            int read = channel.read(nioBuffer, position);
+        byte[] buffer = new byte[1024];
+        
+        while (true) {
+            int read = in.read(buffer);
             if (read == -1) {
-                throw new IOException("could not read file");
+                //EOF
+                hash = digest.digest();
+                return;
             }
-            position += read;
+            digest.update(buffer, 0, read);
         }
-        hash = digest.digest(buffer);
     }
 
     public boolean equals(Object object) {
@@ -62,6 +64,10 @@ public final class Hash implements Serializable {
             }
         }
         return true;
+    }
+    
+    public String toString() {
+        return new BigInteger(hash).toString(16);
     }
 
 }

@@ -13,7 +13,7 @@
         <fileset dir="external">
             <include name="*.jar" />
         </fileset>
-        <fileset dir="external/ibis">
+        <fileset dir="external/ipl">
             <include name="*.jar" />
         </fileset>
         <fileset dir="../zoni/lib">
@@ -66,7 +66,7 @@
               fork="true">
             <arg line="." />
             <classpath refid="class_path" />
-        </java>
+    	</java> 
 
 
         <copy todir="tmp">
