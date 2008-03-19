@@ -15,7 +15,6 @@ import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Factory;
 import ibis.zorilla.job.net.Invocation;
 import ibis.zorilla.job.net.Receiver;
-import ibis.zorilla.util.Resources;
 import ibis.zorilla.zoni.ZoniFileInfo;
 import ibis.zorilla.zoni.ZorillaJobDescription;
 

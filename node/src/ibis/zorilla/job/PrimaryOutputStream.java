@@ -249,8 +249,6 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         while (true) {
             FileInputStream in = new FileInputStream(file);
 
-            logger.debug(file + " available = " + in.available());
-
             if (in.skip(offset) == offset && in.available() > 0) {
                 int result = in.read(buffer);
 
@@ -266,8 +264,6 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
                 // no more data
                 return -1;
             }
-
-            logger.debug("waiting for more data");
 
             try {
                 wait();

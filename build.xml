@@ -5,27 +5,41 @@
     	
     <!-- set a timestamp -->
     <tstamp>
-        <format property="TIMESTAMP" pattern="yyyyMMdd-HHmm-ss"/>
+        <format property="timestamp" pattern="yyyyMMdd-HHmm-ss"/>
     </tstamp>
 
     <!-- empty version by default -->
-    <property name="VERSION" value="-1.0beta6"/>
+    <property name="version" value="-1.0beta6"/>
 	
     <target name="build" description="build everything">
         <ant dir="zoni"/>
         <ant dir="node"/>
+        <ant dir="starter"/>
     </target>
 
     <target name="clean" description="clean everything">
         <ant dir="zoni" target="clean"/>
         <ant dir="node" target="clean"/>
+        <ant dir="starter" target="clean"/>
     	
     	<delete dir="dist" />
     </target>
 	
     <target name="javadoc" description="create javadoc documentation">
         <ant dir="zoni" target="javadoc"/>
-    </target>
+	</target>
+
+
+
+	<target name="dist-jars" description="create a distribution of the zorilla jars">
+		<zip destfile="zorilla-jars.zip">
+			<zipfileset dir="node/lib"/>
+			<zipfileset dir="zoni/lib"/>
+			<zipfileset dir="." includes="log4j.properties"/>
+		</zip>
+		<echo message="${timestamp}" file="timestamp"/>
+	</target>
+
 
     <target name="dist" 
         depends="build, javadoc" 

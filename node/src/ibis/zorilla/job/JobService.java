@@ -4,16 +4,25 @@ import ibis.util.ThreadPool;
 import ibis.zorilla.Node;
 import ibis.zorilla.Config;
 import ibis.zorilla.Service;
-import ibis.zorilla.util.Resources;
 import ibis.zorilla.zoni.ZorillaJobDescription;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+
+import javax.management.AttributeNotFoundException;
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerConnection;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
 
 import org.apache.log4j.Logger;
 
@@ -22,6 +31,8 @@ import ibis.smartsockets.direct.DirectSocket;
 public final class JobService implements Service, Runnable {
 
     public static final int JOB_MAINTENANCE_INTERVAL = 60 * 1000;
+
+    public static final long ONE_GB = 1024 * 1024 * 1024;
 
     private static final Logger logger = Logger.getLogger(JobService.class);
 
@@ -32,10 +43,27 @@ public final class JobService implements Service, Runnable {
     private boolean killed = false;
 
     private final Resources availableResources;
-    
+
     private final int maxWorkers;
 
     private final Map<UUID, Resources> usedResources;
+
+    private static long totalMemory() {
+        try {
+            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+            long result = (Long) server.getAttribute(new ObjectName(
+                    "java.lang:type=OperatingSystem"),
+                    "TotalPhysicalMemorySize");
+            logger.debug("total system memory = " + result);
+            return result;
+        } catch (Throwable t) {
+            logger
+                    .error(
+                            "could not determin total memory of this machine, using 1Gb",
+                            t);
+            return ONE_GB;
+        }
+    }
 
     public JobService(Node node) throws Exception {
         this.node = node;
@@ -50,11 +78,11 @@ public final class JobService implements Service, Runnable {
 
         logger.info("Maximum of " + maxWorkers + " workers on this node");
 
-        availableResources = new Resources(1, maxWorkers, 1024 * 1024 * 1024,
+        availableResources = new Resources(1, maxWorkers, totalMemory(),
                 1024 * 1024 * 1024);
         usedResources = new HashMap<UUID, Resources>();
     }
-    
+
     public int getMaxWorkers() {
         return maxWorkers;
     }

@@ -11,7 +11,6 @@ SET ZORILLA_CLASSPATH=
 
 FOR %%i IN ("%ZORILLA_HOME%\zoni\lib\*.jar") DO CALL "%ZORILLA_HOME%\bin\AddToClassPath.bat" %%i
 FOR %%i IN ("%ZORILLA_HOME%\node\lib\*.jar") DO CALL "%ZORILLA_HOME%\bin\AddToClassPath.bat" %%i
-FOR %%i IN ("%ZORILLA_HOME%\node\lib\ipl\*.jar") DO CALL "%ZORILLA_HOME%\bin\AddToClassPath.bat" %%i
 
 
 %JAVA_HOME%\bin\java -cp %CLASSPATH%;%ZORILLA_CLASSPATH% -Dlog4j.configuration=file:"%ZORILLA_HOME%"\log4j.properties ibis.zorilla.apps.Zap %*

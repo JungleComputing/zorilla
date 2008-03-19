@@ -1,5 +1,5 @@
 <project 
-    name="zoni" 
+    name="zorilla-starter" 
     default="build" 
     basedir=".">
 
@@ -8,13 +8,6 @@
     <description>
         Build file for Zorilla Node Interface (ZoNI)
     </description>
-
-    <!-- create the class path. Consists of all external jars -->
-    <path id="class_path">
-        <fileset dir="external">
-            <include name="*.jar" />
-        </fileset>
-    </path>
 
     <target name="build" depends="clean, compile">
     </target>
@@ -46,9 +39,8 @@
         <javac srcdir="src" 
                destdir="tmp" 
                debug="on"
-               source="1.5"
-               target="1.5"
-               classpathref="class_path">
+               source="1.6"
+               target="1.6">
 		<compilerarg value="-Xlint:unchecked" />
 	</javac>
 
@@ -56,11 +48,6 @@
             basedir="tmp" 
             includes="**/*.class">
         </jar>
-
-        <!-- add external stuff to lib -->
-        <copy todir="lib">
-            <fileset dir="external" />
-        </copy>
 
         <delete dir="tmp" />
     </target>

@@ -5,7 +5,8 @@
     </description>
 
     <!-- import environment properties -->
-    <property environment="env" />
+
+    <property name="version" value=""/>
 
     <!-- create the class path. Consists of all external jars,
     zoni and bamboo -->
@@ -51,8 +52,8 @@
         <javac srcdir="src"
                destdir="tmp"
                debug="on"
-               source="1.5"
-               target="1.5"
+               source="1.6"
+               target="1.6"
                classpathref="class_path">
             <compilerarg value="-Xlint:unchecked" />
         </javac>
@@ -73,20 +74,15 @@
             <fileset dir="." includes="resources/*" />
         </copy>
 
-        <jar destfile="lib/${ant.project.name}${VERSION}.jar" basedir="tmp">
+        <jar destfile="lib/${ant.project.name}${version}.jar" basedir="tmp">
             <manifest>
-                <attribute name="Implementation-Version" value="${TIMESTAMP}" />
+                <attribute name="Implementation-Version" value="${timestamp}" />
             </manifest>
         </jar>
 
 
-
-
-
-
         <!-- add external stuff to lib -->
-        <copy todir="lib">
-
+        <copy todir="lib" flatten="true" includeEmptyDirs="false">
             <fileset dir="external" />
         </copy>
 

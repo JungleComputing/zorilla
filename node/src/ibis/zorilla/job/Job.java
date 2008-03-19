@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class Job {
 
-    public static final long DEFAULT_WORKER_MEM = 512 * 1024 * 1024; // 512Mb
+    public static final long DEFAULT_WORKER_MEM = 128 * 1024 * 1024; // 128Mb
 
     public static final long DEFAULT_WORKER_DISKSPACE = 10 * 1024 * 1024; // 10Mb
 

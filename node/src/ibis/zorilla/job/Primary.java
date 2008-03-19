@@ -17,7 +17,6 @@ import ibis.zorilla.job.net.Factory;
 import ibis.zorilla.job.net.Invocation;
 import ibis.zorilla.job.net.Receiver;
 import ibis.zorilla.job.net.WriteMessage;
-import ibis.zorilla.util.Resources;
 import ibis.zorilla.zoni.ZorillaJobDescription;
 import ibis.zorilla.zoni.ZoniInputFile;
 import ibis.zorilla.zoni.ZoniFileInfo;

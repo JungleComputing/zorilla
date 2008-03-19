@@ -26,7 +26,11 @@ public final class ZoniConnection {
     public ZoniConnection(InetSocketAddress address, String id, int sourceType)
             throws IOException {
         socket = new Socket();
+        try {
         socket.connect(address);
+        } catch (IOException e) {
+            throw new IOException("could not connect to " + address, e);
+        }
 
         logger.debug("connected");
 
