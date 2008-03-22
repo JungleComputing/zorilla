@@ -148,7 +148,7 @@ public class ZorillaJobDescription implements Serializable {
     }
 
     public boolean isJava() {
-        return javaMain != null && !javaMain.isEmpty();
+        return javaMain != null && javaMain.length() != 0;
     }
 
     public void setArguments(String[] arguments) {

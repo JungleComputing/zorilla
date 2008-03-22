@@ -29,7 +29,7 @@ public final class ZoniConnection {
         try {
         socket.connect(address);
         } catch (IOException e) {
-            throw new IOException("could not connect to " + address, e);
+            throw new IOException("could not connect to " + address);
         }
 
         logger.debug("connected");
