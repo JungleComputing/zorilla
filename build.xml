@@ -38,7 +38,6 @@
 			<zipfileset dir="." includes="log4j.properties"/>
 			<zipfileset dir="." includes="zorilla.properties"/>
 		</zip>
-		<echo message="${timestamp}" file="timestamp"/>
 	</target>
 
 
