@@ -57,7 +57,7 @@ public class Neighbour implements Runnable {
 
         this.pingTimes = new LinkedList<Double>();
 
-        ThreadPool.createNew(this, "neighbour bootstrap thread");
+        ThreadPool.createNew(this, "neighbour thread");
     }
 
     public synchronized NodeInfo getInfo() {
@@ -89,8 +89,10 @@ public class Neighbour implements Runnable {
             }
 
             if (!oldInfo.sameNodeAs(newInfo)) {
-                logger.error("got pong from the wrong node: " + newInfo
+                logger.debug("got pong from the wrong node: " + newInfo
                         + " vs " + oldInfo);
+                failures++;
+                return;
             }
 
             // uses a new connection to the peer node
@@ -112,7 +114,7 @@ public class Neighbour implements Runnable {
                 failures = 0;
             }
         } catch (Exception e) {
-            logger.warn("failed to update neighbour " + getInfo());
+            //logger.warn("failed to update neighbour " + getInfo());
             logger.debug("failed to update neighbour " + getInfo(), e);
 
             synchronized (this) {

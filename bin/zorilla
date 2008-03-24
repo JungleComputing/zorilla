@@ -8,7 +8,7 @@ fi
 #add zorilla home dir to classpath for log4j.properties file
 LIBCLASSPATH=""
 add_to_libclasspath () {
-    JARFILES=`cd "$1" && ls *.jar 2>/dev/null`
+    JARFILES=`cd "$1" && ls * 2>/dev/null`
     for i in ${JARFILES} ; do
         if [ -z "$LIBCLASSPATH" ] ; then
             LIBCLASSPATH="$1/$i"

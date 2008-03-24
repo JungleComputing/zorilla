@@ -3,8 +3,6 @@
     default="build" 
     basedir=".">
 
-    <property name="version" value=""/>
-
     <description>
         Build file for Zorilla Node Interface (ZoNI)
     </description>
@@ -44,7 +42,7 @@
 		<compilerarg value="-Xlint:unchecked" />
 	</javac>
 
-        <jar destfile="lib/${ant.project.name}${version}.jar" 
+        <jar destfile="lib/${ant.project.name}.jar" 
             basedir="tmp" 
             includes="**/*.class">
         </jar>

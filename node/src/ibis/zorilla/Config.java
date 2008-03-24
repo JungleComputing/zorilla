@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -34,6 +35,8 @@ public class Config extends TypedProperties {
     public static final String PREFIX = "zorilla.";
 
     public static final String CONFIG_DIR = PREFIX + "config.dir";
+
+    public static final String PROPERTIES = PREFIX + "properties";
 
     public static final String NODE_ID = PREFIX + "node.id";
 
@@ -121,7 +124,10 @@ public class Config extends TypedProperties {
                 { MAX_RUNTIME, null,
                         "Maximum runtime (in seconds) of this node" },
 
-                { MAX_WORKERS, null, "Maximum number of workers on this node (defaults to number of processors available)" },
+                {
+                        MAX_WORKERS,
+                        null,
+                        "Maximum number of workers on this node (defaults to number of processors available)" },
 
                 { FIREWALL, "false",
                         "if set to \"true\" this node will not accept incoming connections" },
@@ -203,6 +209,19 @@ public class Config extends TypedProperties {
 
         // add user properties to top-level properties
         putAll(userProperties);
+
+        // load from classpath
+        try {
+            ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+            InputStream inputStream =
+                classLoader.getResourceAsStream(PROPERTIES);
+            if (inputStream != null) {
+                fileProperties.load(inputStream);
+                logger.debug("loaded " + fileProperties.size() + " properties from classpath");
+            }
+        } catch (IOException e) {
+            logger.warn("could not load properties from classpath", e);
+        }
 
         File configDir = getFileProperty(Config.CONFIG_DIR);
         if (!configDir.isAbsolute()) {

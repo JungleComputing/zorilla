@@ -9,7 +9,7 @@
     </tstamp>
 
     <!-- empty version by default -->
-    <property name="version" value="-1.0beta6"/>
+    <property name="version" value=""/>
 	
     <target name="build" description="build everything">
         <ant dir="zoni"/>
@@ -31,11 +31,12 @@
 
 
 
-	<target name="dist-jars" description="create a distribution of the zorilla jars">
-		<zip destfile="zorilla-jars.zip">
+	<target name="dist-lib" depends="build" description="create a distribution of the zorilla jars">
+		<zip destfile="zorilla-lib.zip">
 			<zipfileset dir="node/lib"/>
 			<zipfileset dir="zoni/lib"/>
 			<zipfileset dir="." includes="log4j.properties"/>
+			<zipfileset dir="." includes="zorilla.properties"/>
 		</zip>
 		<echo message="${timestamp}" file="timestamp"/>
 	</target>
