@@ -1,1 +1,2 @@
-java -cp lib/zorilla-starter.jar ibis.zorilla.starter.Starter $@
+#!/bin/bash
+exec java -cp lib/zorilla-starter.jar ibis.zorilla.starter.Starter $@

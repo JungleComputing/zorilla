@@ -34,21 +34,28 @@ public class ZoniService implements Service, Runnable {
     public ZoniService(Node node) throws IOException {
         this.node = node;
 
-
         int port = node.config().getIntProperty(Config.ZONI_PORT);
 
-        serverSocket = new ServerSocket(port);
-        
+        if (port == -1) {
+            serverSocket = null;
+        } else {
+            serverSocket = new ServerSocket(port);
+        }
+
         // InetAddress localHost = InetAddress.getByName(null);
         // serverSocket.bind(new InetSocketAddress(localHost, port));
 
     }
 
     public void start() {
-        ThreadPool.createNew(this, "Zoni Service");
+        if (serverSocket == null) {
+            logger.info("Zoni Service disabled");
+        } else {
+            ThreadPool.createNew(this, "Zoni Service");
 
-        logger.info("Started Zoni service on port "
-                + serverSocket.getLocalPort());
+            logger.info("Started Zoni service on port "
+                    + serverSocket.getLocalPort());
+        }
     }
 
     public synchronized Map<String, String> getStats() {

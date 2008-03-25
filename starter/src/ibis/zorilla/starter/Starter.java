@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Enumeration;
+import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -179,6 +180,9 @@ public class Starter {
             "-Dlog4j.configuration=file:" + libDir.getAbsolutePath()
                     + File.separator + "log4j.properties");
 
+        //add user home (just in case)
+        builder.command().add("-Duser.home=" + System.getProperty("user.home"));
+        
         builder.command().add("ibis.zorilla.Main");
 
         System.err.print("STARTER: starting process: ");
@@ -259,6 +263,9 @@ public class Starter {
             System.getProperty("java.io.tmpdir") + File.separator
                     + "zorilla-starter";
 
+        System.err.println("system properties: ");
+        System.getProperties().list(System.err);
+        
         for (int i = 0; i < args.length; i++) {
             if (args[i].equalsIgnoreCase("--dir")) {
                 i++;

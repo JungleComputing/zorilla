@@ -39,11 +39,11 @@ public final class JettyLogger implements org.mortbay.log.Logger {
     }
 
     public void warn(String message, Throwable exception) {
-        logger.warn(message, exception);
+        logger.debug(message, exception);
     }
 
     public void warn(String message, Object arg1, Object arg2) {
-        logger.warn(message + ":" + arg1 + " " + arg2);
+        logger.debug(message + ":" + arg1 + " " + arg2);
     }
 
 }
