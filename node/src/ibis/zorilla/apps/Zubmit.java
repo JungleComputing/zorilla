@@ -219,9 +219,9 @@ public final class Zubmit {
                     i++;
                     parseOutputFile(command[i], jobDescription);
                 } else if (command[i].equals("-c")
-                        || command[i].equals("--cores")) {
+                        || command[i].equals("--count")) {
                     i++;
-                    jobDescription.setAttribute("nr.of.workers", command[i]);
+                    jobDescription.setAttribute("count", command[i]);
                 } else if (command[i].equals("-s")
                         || command[i].equals("--split-output")) {
                     i++;

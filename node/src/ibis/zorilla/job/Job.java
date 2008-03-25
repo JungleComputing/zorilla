@@ -27,34 +27,20 @@ import org.apache.log4j.Logger;
  */
 public abstract class Job {
 
-    public static final long DEFAULT_WORKER_MEM = 128 * 1024 * 1024; // 128Mb
+    public static final long DEFAULT_MAX_MEM = 128 * 1024 * 1024; // 128Mb
 
     public static final long DEFAULT_WORKER_DISKSPACE = 10 * 1024 * 1024; // 10Mb
 
-    public static final long DEFAULT_JOB_LIFETIME = 15 * 60 * 1000;
+    public static final long DEFAULT_MAX_WALLTIME = 15 * 60 * 1000;
 
-    public static final String[] validAttributes = { "nr.of.workers",
-            "on.user.exit", "on.user.error", "worker.memory",
-            "worker.diskspace", "worker.processors", "claim.node", "ibis",
-            "ibis.nameserver", "jobstate.type", "malleable", "lifetime",
+    public static final String[] validAttributes = { "directory", "count",
+            "host.count", "time.max", "walltime.max", "cputime.max",
+            "job.type", "project", "dryrun", "memory.min", "memory.max",
+            "savestate", "restart",
+            "on.user.exit", "on.user.error",
+            "share.node", "ibis", "malleable",
             "classpath", "split.stdout", "split.stderr", "copy.output" };
 
-    /*
-     * Attributes
-     * 
-     * nr.of.workers int requested number of workers worker.memory size memory
-     * per worker worker.processors worker.diskspace claim.node
-     * 
-     * on.user.exit "ignore" | "cancel.job" | "close.world" on.user.error
-     * "ignore" | "cancel.job" | "close.world"
-     * 
-     * ibis boolean enable/disable ibis support ibis.name_server boolean start
-     * ibis name server
-     * 
-     * 
-     * jobstate.type "primaryCopy"
-     * 
-     */
 
     // Status of jobs
     private static final Logger logger = Logger.getLogger(Job.class);
@@ -103,16 +89,16 @@ public abstract class Job {
                 validAttributes, null, false);
 
         if (wrong.size() > 0) {
-            throw new Exception("invalid attributes: " + wrong.toString());
+            logger.warn("invalid attributes: " + wrong.toString());
         }
 
-        if (attributes.getIntProperty("nr.of.workers", 1) < 1) {
-            throw new Exception("nr.of.workers must be a positive integer");
+        if (attributes.getIntProperty("count", 1) < 1) {
+            throw new Exception("count must be a positive integer");
         }
 
-        if (attributes.getSizeProperty("worker.memory", 1) < 0) {
-            throw new Exception("worker.memory attribute invalid: "
-                    + attributes.getProperty("worker.memory"));
+        if (attributes.getSizeProperty("max.memory", 1) < 0) {
+            throw new Exception("max.memory attribute invalid: "
+                    + attributes.getProperty("max.memory"));
         }
 
         String onUserExit = attributes.getProperty("on.user.exit");
@@ -155,12 +141,12 @@ public abstract class Job {
             attributes.put("on.user.exit", "close.world");
         }
 
-        if (!attributes.containsKey("worker.memory")) {
-            attributes.put("worker.memory", Long.toString(DEFAULT_WORKER_MEM));
+        if (!attributes.containsKey("max.memory")) {
+            attributes.put("max.memory", Long.toString(DEFAULT_MAX_MEM));
         }
 
-        if (!attributes.containsKey("lifetime")) {
-            attributes.put("lifetime", Long.toString(DEFAULT_JOB_LIFETIME));
+        if (!attributes.containsKey("walltime.max")) {
+            attributes.put("lifetime", Long.toString(DEFAULT_MAX_WALLTIME));
         }
 
         if (!attributes.containsKey("claim.node")) {
@@ -254,8 +240,9 @@ public abstract class Job {
      */
     protected abstract String[] getPostStageFiles() throws Exception;
 
-    public abstract ZoniFileInfo getFileInfo(String sandboxPath) throws Exception;
-    
+    public abstract ZoniFileInfo getFileInfo(String sandboxPath)
+            throws Exception;
+
     /**
      * Returns a stream suitable to write standard out to. Do not close stream
      * when done writing. May return null.
@@ -278,8 +265,9 @@ public abstract class Job {
      * Write the given file to the given output stream. Blocks until this job
      * has finished
      */
-    public abstract void readOutputFile(String sandboxPath, DataOutputStream out) throws Exception;
-    
+    public abstract void readOutputFile(String sandboxPath, DataOutputStream out)
+            throws Exception;
+
     /**
      * Read data from the given stream and hand it to the stdin of all workers.
      * Blocks until the job is done.
@@ -314,7 +302,7 @@ public abstract class Job {
             throws Exception, IOException;
 
     public abstract ZorillaJobDescription getDescription();
-    
+
     /**
      * Returns the cluster this node is in in this job.
      */

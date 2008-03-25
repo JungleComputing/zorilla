@@ -188,10 +188,10 @@ public class Config extends TypedProperties {
     // public static final long JOB_PORT_CONNECT_TIMEOUT = 2 * 1000;
     // public static final long CONSTITUENT_EXPIRATION_TIMEOUT = 1200 * 1000;
     // public static final long CALL_TIMEOUT = 10 * 1000;
-    // public static final long DEFAULT_WORKER_MEM = 512 * 1024 * 1024; // 512Mb
+    // public static final long DEFAULT_MAX_MEM = 512 * 1024 * 1024; // 512Mb
     // public static final long DEFAULT_WORKER_DISKSPACE = 10 * 1024 * 1024; //
     // 10Mb
-    // public static final long DEFAULT_JOB_LIFETIME = 15 * 60 * 1000;
+    // public static final long DEFAULT_MAX_WALLTIME = 15 * 60 * 1000;
     // public static final int BUFFER_SIZE = 100 * 1024;
 
     private final File configDir;

@@ -261,7 +261,7 @@ public final class PageServlet extends HttpServlet {
         out.println("<table border=frame rules=all cellspacing=10>"
                 + "<tr><th>ID</th>" + "<th>Phase</th>" + "<th>Primary</th>"
                 + "<th>Workers</th>" + "<th>Local Workers</th>"
-                + "<th>Native</th>" + "<th>Executable</th>");
+                + "<th>Java</th>" + "<th>Executable</th>");
 
         for (Job job : jobs) {
             Map<String, String> stats = job.getStats();
@@ -272,7 +272,7 @@ public final class PageServlet extends HttpServlet {
             out.println("<td>" + stats.get("primary") + "</td>");
             out.println("<td>" + stats.get("total.workers") + "</td>");
             out.println("<td>" + stats.get("local.workers") + "</td>");
-            out.println("<td>" + stats.get("native") + "</td>");
+            out.println("<td>" + stats.get("java") + "</td>");
             out.println("<td>" + stats.get("executable") + "</td>");
             out.println("</tr>");
         }

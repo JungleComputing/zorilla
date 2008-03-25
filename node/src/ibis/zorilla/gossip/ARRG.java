@@ -127,8 +127,6 @@ class ARRG implements GossipAlgorithm, Runnable {
             }
 
         } catch (IOException e) {
-            logger.warn("gossiping from  " + service.getNodeInfo() + " to "
-                    + peer + " failed");
             logger.debug("gossiping from  " + service.getNodeInfo() + " to "
                     + peer + " failed", e);
 
@@ -142,10 +140,6 @@ class ARRG implements GossipAlgorithm, Runnable {
                 try {
                     doGossip(peer, timeout);
                 } catch (IOException e2) {
-                    logger
-                            .warn("RETRY: gossiping from  "
-                                    + service.getNodeInfo() + " to " + peer
-                                    + " failed");
                     logger.debug(
                             "RETRY: gossiping from  " + service.getNodeInfo()
                                     + " to " + peer + " failed", e);
