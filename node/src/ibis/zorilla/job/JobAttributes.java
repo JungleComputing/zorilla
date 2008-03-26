@@ -53,6 +53,9 @@ public class JobAttributes extends TypedProperties {
     public static final String SPLIT_STDOUT = "split.stdout";
     public static final String SPLIT_STDERR = "split.stderr";
 
+    public static final String ADVERT_METRIC = "advert.metric";
+
+    
     // constants
 
     public static final long MAX_JOB_LIFETIME = 8 * 60; // 8 hours
@@ -87,7 +90,7 @@ public class JobAttributes extends TypedProperties {
                     "if true, stdout is a directory with a file for each worker" }, };
 
     JobAttributes(Map<String, String> values) throws Exception {
-        super();
+        super(getHardcodedProperties());
 
         for (Map.Entry<String, String> entry : values.entrySet()) {
             setProperty(entry.getKey(), entry.getValue());
@@ -120,51 +123,51 @@ public class JobAttributes extends TypedProperties {
         }
 
         //count == hostcount ?
-        if (getProperty(JobAttributes.COUNT) != null
-                && getProperty(JobAttributes.HOST_COUNT) != null) {
-            if (getIntProperty(JobAttributes.COUNT) != getIntProperty(JobAttributes.HOST_COUNT)) {
+        if (getProperty(COUNT) != null
+                && getProperty(HOST_COUNT) != null) {
+            if (getIntProperty(COUNT) != getIntProperty(JobAttributes.HOST_COUNT)) {
                 throw new Exception("if both "
-                        + JobAttributes.COUNT
+                        + COUNT
                         + " and "
-                        + JobAttributes.HOST_COUNT
+                        + HOST_COUNT
                         + " are specified, they must be equal, not "
-                        + getIntProperty(JobAttributes.COUNT + " and "
-                                + getIntProperty(JobAttributes.HOST_COUNT)));
+                        + getIntProperty(COUNT + " and "
+                                + getIntProperty(HOST_COUNT)));
             }
         }
 
-        if (getIntProperty("max.memory", 1) < 0) {
+        if (getIntProperty(MEMORY_MAX, 1) < 0) {
             throw new Exception("max.memory attribute invalid: "
                     + getProperty("max.memory"));
         }
 
-        if (getIntProperty("max.memory", 1) < 0) {
+        if (getIntProperty(MEMORY_MIN, 1) < 0) {
             throw new Exception("max.memory attribute invalid: "
                     + getProperty("max.memory"));
         }
 
-        String onUserExit = getProperty("on.user.exit");
+        String onUserExit = getProperty(ON_USER_EXIT);
 
         if (onUserExit != null
                 && !(onUserExit.equalsIgnoreCase("ignore")
                         || onUserExit.equalsIgnoreCase("cancel.job")
                         || onUserExit.equalsIgnoreCase("close.world") || onUserExit
                         .equalsIgnoreCase("job.error"))) {
-            throw new Exception("invalid value for on.user.exit: " + onUserExit);
+            throw new Exception("invalid value for " + ON_USER_EXIT + " : " + onUserExit);
         }
 
-        String onUserError = getProperty("on.user.error");
+        String onUserError = getProperty(ON_USER_ERROR);
 
         if (onUserError != null
                 && !(onUserError.equalsIgnoreCase("ignore")
                         || onUserError.equalsIgnoreCase("cancel.job")
                         || onUserError.equalsIgnoreCase("close.world") || onUserError
                         .equalsIgnoreCase("job.error"))) {
-            throw new Exception("invalid value for on.user.error: "
+            throw new Exception("invalid value for " + ON_USER_ERROR + ": "
                     + onUserError);
         }
 
-        long lifetime = getLongProperty("lifetime");
+        long lifetime = getLongProperty(WALLTIME_MAX);
         if (lifetime > MAX_JOB_LIFETIME) {
             throw new Exception("job lifetime cannot be more than "
                     + MAX_JOB_LIFETIME);

@@ -299,7 +299,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     private int maxNrOfWorkers() {
         try {
-            return attributes.getIntProperty("nr.of.workers");
+            return attributes.getIntProperty(JobAttributes.COUNT);
         } catch (NumberFormatException e) {
             log("could not find nr of workers", e);
             setPhase(ERROR);
@@ -516,7 +516,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     private synchronized boolean newWorker(Constituent constituent,
             UUID workerID) {
-        if (!getBooleanAttribute("malleable")) {
+        if (!getBooleanAttribute(JobAttributes.MALLEABLE)) {
             // workers started by scheduler
             return false;
         }
@@ -549,7 +549,7 @@ public final class Primary extends Job implements Runnable, Receiver {
     }
 
     private synchronized boolean closedWorld() {
-        return !getBooleanAttribute("malleable");
+        return !getBooleanAttribute(JobAttributes.MALLEABLE);
     }
 
     private synchronized void removeWorker(UUID workerID,
@@ -571,26 +571,26 @@ public final class Primary extends Job implements Runnable, Receiver {
         setExitStatus(exitStatus);
 
         if (phase == RUNNING) {
-            if ((status == Status.DONE && getStringAttribute("on.user.exit")
+            if ((status == Status.DONE && getStringAttribute(JobAttributes.ON_USER_EXIT)
                     .equalsIgnoreCase("close.world"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            "on.user.error").equalsIgnoreCase("close.world"))) {
+                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase("close.world"))) {
 
                 setPhase(CLOSED);
             }
 
-            if ((status == Status.DONE && getStringAttribute("on.user.exit")
+            if ((status == Status.DONE && getStringAttribute(JobAttributes.ON_USER_EXIT)
                     .equalsIgnoreCase("cancel.job"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            "on.user.error").equalsIgnoreCase("cancel.job"))) {
+                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase("cancel.job"))) {
 
                 setPhase(CANCELLED);
             }
 
-            if ((status == Status.DONE && getStringAttribute("on.user.exit")
+            if ((status == Status.DONE && getStringAttribute(JobAttributes.ON_USER_EXIT)
                     .equalsIgnoreCase("job.error"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            "on.user.error").equalsIgnoreCase("job.error"))) {
+                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase("job.error"))) {
 
                 setPhase(ERROR);
             }
@@ -598,24 +598,24 @@ public final class Primary extends Job implements Runnable, Receiver {
         }
 
         if (phase == CLOSED) {
-            if ((status == Status.DONE && getStringAttribute("on.user.exit")
+            if ((status == Status.DONE && getStringAttribute(JobAttributes.ON_USER_EXIT)
                     .equalsIgnoreCase("cancel.job"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            "on.user.error").equalsIgnoreCase("cancel.job"))) {
+                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase("cancel.job"))) {
 
                 setPhase(CANCELLED);
             }
 
-            if ((status == Status.DONE && getStringAttribute("on.user.exit")
+            if ((status == Status.DONE && getStringAttribute(JobAttributes.ON_USER_EXIT)
                     .equalsIgnoreCase("job.error"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            "on.user.error").equalsIgnoreCase("job.error"))) {
+                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase("job.error"))) {
 
                 setPhase(ERROR);
             }
         }
 
-        if (phase == RUNNING && !getBooleanAttribute("malleable")) {
+        if (phase == RUNNING && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
             setPhase(CLOSED);
         }
 
@@ -740,7 +740,7 @@ public final class Primary extends Job implements Runnable, Receiver {
             }
             lastAdvertisement = currentTime;
 
-            metric = attributes.getProperty("advert.metric");
+            metric = attributes.getProperty(JobAttributes.ADVERT_METRIC);
 
             count = advertCount;
 
@@ -1131,7 +1131,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     @SuppressWarnings("unchecked")
     private void claimNodes() {
-        if (getBooleanAttribute("malleable")) {
+        if (getBooleanAttribute(JobAttributes.MALLEABLE)) {
             log("ERROR: claiming nodes for a malleable job", new Exception());
             setPhase(ERROR);
             return;
@@ -1285,7 +1285,7 @@ public final class Primary extends Job implements Runnable, Receiver {
             node.jobService().setResourcesUsed(getID(),
                     workerResources.mult(localWorkers.size()));
 
-            if (getPhase() == SCHEDULING && !getBooleanAttribute("malleable")) {
+            if (getPhase() == SCHEDULING && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
                 updateLocalMaxWorkers();
                 claimNodes();
             }
