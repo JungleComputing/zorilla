@@ -78,8 +78,10 @@ public final class JobService implements Service, Runnable {
 
         logger.info("Maximum of " + maxWorkers + " workers on this node");
 
-        availableResources = new Resources(1, maxWorkers, totalMemory(),
-                1024 * 1024 * 1024);
+        long usableDiskSpace = node.getTmpDir().getUsableSpace() / 1024 / 1024;
+        
+        availableResources = new Resources(false, maxWorkers, totalMemory(),
+                usableDiskSpace);
         usedResources = new HashMap<UUID, Resources>();
     }
 
@@ -235,7 +237,7 @@ public final class JobService implements Service, Runnable {
 
             free = free.subtract(request);
         }
-
+        
         logger.debug("result for resource request: " + result);
 
         return result;

@@ -12,61 +12,63 @@ public final class Resources implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final int node;
-
+    private final boolean claimNode;
+    
     private final int processors;
 
-    private final long memory; // bytes
+    private final long memory; // MB
 
-    private final long diskSpace; // bytes
+    private final long diskSpace; // MB
 
     public Resources() {
-        this.node = 0;
+        this.claimNode = false;
         this.processors = 0;
         this.memory = 0;
         this.diskSpace = 0;
     }
 
-    public Resources(int node, int processors, long memory, long diskSpace) {
-        if (node > 1) {
-            throw new Error (
-                "cannot create negative resources, or have more than one node");
-        }
-        this.node = node;
+    public Resources(boolean claimNode,  int processors, long memory, long diskspace) {
+        this.claimNode = claimNode;
         this.processors = processors;
         this.memory = memory;
-        this.diskSpace = diskSpace;
+        this.diskSpace = diskspace;
+    }
 
+    
+    public Resources(JobAttributes attributes) {
+        claimNode = attributes.getProperty(JobAttributes.HOST_COUNT) != null;
+        processors = 1;
+        memory = attributes.getIntProperty(JobAttributes.MEMORY_MAX);
+        diskSpace = attributes.getIntProperty(JobAttributes.DISK_SPACE);
     }
     
     public Resources(Resources original) {
-        this.node = original.node;
+        this.claimNode = original.claimNode;
         this.processors = original.processors;
         this.memory = original.memory;
         this.diskSpace = original.diskSpace;
     }
 
     public Resources subtract(Resources other) {
-        return new Resources(node - other.node, processors - other.processors,
-            memory - other.memory, diskSpace - other.diskSpace);
+        return new Resources(claimNode, processors - other.processors, memory - other.memory, diskSpace - other.diskSpace);
     }
 
     public Resources add(Resources other) {
-        return new Resources(node + other.node, processors + other.processors,
+        return new Resources(claimNode, processors + other.processors,
             memory + other.memory, diskSpace + other.diskSpace);
     }
 
     public Resources mult(int factor) {
-        return new Resources(node * factor, processors * factor, memory
+        return new Resources(claimNode, processors * factor, memory
             * factor, diskSpace * factor);
     }
 
     public boolean zero() {
-        return node == 0 && processors == 0 && memory == 0 & diskSpace == 0;
+        return processors == 0 && memory == 0 & diskSpace == 0;
     }
 
     public boolean greaterOrEqualZero() {
-        return node >= 0 && processors >= 0 && memory >= 0 && diskSpace >= 0;
+        return processors >= 0 && memory >= 0 && diskSpace >= 0;
     }
     
     public boolean negative() {
@@ -74,16 +76,15 @@ public final class Resources implements Serializable {
     }
 
     public String toString() {
-        return "resources: node=" + node + ", processors=" + processors
+        return "resources: claim node=" + claimNode + ", processors = " + processors
             + ", memory=" + memory + ", diskSpace=" + diskSpace;
     }
     
     public Map<String, String> asStringMap() {
         Map<String, String> result = new HashMap<String, String>();
         
-        result.put("node", Integer.toString(node));
+        result.put("claimNode", "" + claimNode);
         result.put("processors", Integer.toString(processors));
-        
         result.put("memory", Long.toString(memory));
         result.put("disk.space", Long.toString(diskSpace));
         

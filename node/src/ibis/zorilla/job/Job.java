@@ -27,21 +27,6 @@ import org.apache.log4j.Logger;
  */
 public abstract class Job {
 
-    public static final long DEFAULT_MAX_MEM = 128 * 1024 * 1024; // 128Mb
-
-    public static final long DEFAULT_WORKER_DISKSPACE = 10 * 1024 * 1024; // 10Mb
-
-    public static final long DEFAULT_MAX_WALLTIME = 15 * 60 * 1000;
-
-    public static final String[] validAttributes = { "directory", "count",
-            "host.count", "time.max", "walltime.max", "cputime.max",
-            "job.type", "project", "dryrun", "memory.min", "memory.max",
-            "savestate", "restart",
-            "on.user.exit", "on.user.error",
-            "share.node", "ibis", "malleable",
-            "classpath", "split.stdout", "split.stderr", "copy.output" };
-
-
     // Status of jobs
     private static final Logger logger = Logger.getLogger(Job.class);
 
@@ -82,102 +67,9 @@ public abstract class Job {
         }
     }
 
-    protected static void checkAttributes(TypedProperties attributes)
-            throws Exception {
 
-        TypedProperties wrong = attributes.checkProperties(null,
-                validAttributes, null, false);
 
-        if (wrong.size() > 0) {
-            logger.warn("invalid attributes: " + wrong.toString());
-        }
-
-        if (attributes.getIntProperty("count", 1) < 1) {
-            throw new Exception("count must be a positive integer");
-        }
-
-        if (attributes.getSizeProperty("max.memory", 1) < 0) {
-            throw new Exception("max.memory attribute invalid: "
-                    + attributes.getProperty("max.memory"));
-        }
-
-        String onUserExit = attributes.getProperty("on.user.exit");
-
-        if (onUserExit != null
-                && !(onUserExit.equalsIgnoreCase("ignore")
-                        || onUserExit.equalsIgnoreCase("cancel.job")
-                        || onUserExit.equalsIgnoreCase("close.world") || onUserExit
-                        .equalsIgnoreCase("job.error"))) {
-            throw new Exception("invalid value for on.user.exit: " + onUserExit);
-        }
-
-        String onUserError = attributes.getProperty("on.user.error");
-
-        if (onUserError != null
-                && !(onUserError.equalsIgnoreCase("ignore")
-                        || onUserError.equalsIgnoreCase("cancel.job")
-                        || onUserError.equalsIgnoreCase("close.world") || onUserError
-                        .equalsIgnoreCase("job.error"))) {
-            throw new Exception("invalid value for on.user.error: "
-                    + onUserError);
-        }
-    }
-
-    /**
-     * Add any missing attributes
-     */
-    protected static void appendAttributes(TypedProperties attributes,
-            boolean javaJob) {
-
-        // what to do with a job if a worker exits (with exit-code NON ZERO)
-        // ignore, close.world, cancel.job, job.error
-        if (!attributes.containsKey("on.user.error")) {
-            attributes.put("on.user.error", "job.error");
-        }
-
-        // what to do with a job if a worker exits (with exit-code ZERO)
-        // ignore, close.world, cancel.job, job.error
-        if (!attributes.containsKey("on.user.exit")) {
-            attributes.put("on.user.exit", "close.world");
-        }
-
-        if (!attributes.containsKey("max.memory")) {
-            attributes.put("max.memory", Long.toString(DEFAULT_MAX_MEM));
-        }
-
-        if (!attributes.containsKey("walltime.max")) {
-            attributes.put("lifetime", Long.toString(DEFAULT_MAX_WALLTIME));
-        }
-
-        if (!attributes.containsKey("claim.node")) {
-            attributes.put("claim.node", "0");
-        }
-
-        if (!attributes.containsKey("worker.processors")) {
-            attributes.put("worker.processors", "1");
-        }
-
-        if (!attributes.containsKey("worker.diskspace")) {
-            attributes.put("worker.diskspace", "0");
-        }
-
-        if (!attributes.containsKey("nr.of.workers")) {
-            logger.debug("putting in default nr of workers (1)");
-            attributes.put("nr.of.workers", "1");
-        }
-
-        if (!attributes.containsKey("ibis")) {
-            attributes.put("ibis", String.valueOf(javaJob));
-        }
-
-        if (!attributes.containsKey("ibis.nameserver")) {
-            attributes.put("ibis.nameserver", attributes.get("ibis"));
-        }
-
-        if (!attributes.containsKey("malleable")) {
-            attributes.put("malleable", Boolean.toString(javaJob));
-        }
-    }
+  
 
     public String phaseString() {
         int phase = getPhase();

@@ -5,7 +5,6 @@ import ibis.ipl.IbisIdentifier;
 import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
-import ibis.util.TypedProperties;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.io.ObjectOutput;
@@ -38,8 +37,6 @@ import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 
 public final class Primary extends Job implements Runnable, Receiver {
-
-    public static final long MAX_JOB_LIFETIME = 8 * 60 * 60 * 1000;
 
     public static final long MIN_ADVERT_TIMEOUT = 5 * 1000;
 
@@ -89,7 +86,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     // *** DISTRIBUTED STATE *** \\
 
-    private TypedProperties attributes;
+    private JobAttributes attributes;
 
     private int phase;
 
@@ -143,8 +140,8 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     Random random = new Random();
 
-    public Primary(ZorillaJobDescription description, Callback callback, Node node)
-            throws Exception, IOException {
+    public Primary(ZorillaJobDescription description, Callback callback,
+            Node node) throws Exception, IOException {
 
         this.node = node;
 
@@ -166,24 +163,11 @@ public final class Primary extends Job implements Runnable, Receiver {
 
         try {
 
-            boolean javaJob = description.isJava();
+            attributes = new JobAttributes(description.getAttributes());
 
-            attributes = new TypedProperties();
-            for (Map.Entry<String, String> entry : description.getAttributes().entrySet()) {
-                attributes.setProperty(entry.getKey(), entry.getValue());
-            }
-
-            appendAttributes(attributes, javaJob);
-
-            checkAttributes(attributes);
-
-            long lifetime = attributes.getLongProperty("lifetime");
-            if (lifetime > MAX_JOB_LIFETIME) {
-                throw new Exception("job lifetime cannot be more than "
-                        + MAX_JOB_LIFETIME);
-            }
             submissiontime = System.currentTimeMillis();
-            deadline = submissiontime + (lifetime);
+            long wallTimeMillis = attributes.getLongProperty(JobAttributes.WALLTIME_MAX) * 60 * 1000;
+            deadline = submissiontime + wallTimeMillis;
 
             // create ibis
 
@@ -199,55 +183,53 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             for (int i = 0; i < preStageFiles.length; i++) {
                 ZoniInputFile file = zoniInputFiles[i];
-                preStageFiles[i] =
-                    new InputFile(file.getFile(), file.getSandboxPath(), this);
+                preStageFiles[i] = new InputFile(file.getFile(), file
+                        .getSandboxPath(), this);
             }
 
-            ArrayList<PrimaryOutputStream> postStageFiles =
-                new ArrayList<PrimaryOutputStream>();
+            ArrayList<PrimaryOutputStream> postStageFiles = new ArrayList<PrimaryOutputStream>();
 
             if (description.isInteractive()) {
-                stdout =
-                    new PrimaryOutputStream("##stdout##", File.createTempFile(
-                        id.toString(), ".stdout", node.getTmpDir()), this);
+                stdout = new PrimaryOutputStream("##stdout##", File
+                        .createTempFile(id.toString(), ".stdout", node
+                                .getTmpDir()), this);
 
-                stderr =
-                    new PrimaryOutputStream("##stderr##", File.createTempFile(
-                        id.toString(), ".stderr", node.getTmpDir()), this);
+                stderr = new PrimaryOutputStream("##stderr##", File
+                        .createTempFile(id.toString(), ".stderr", node
+                                .getTmpDir()), this);
 
                 // TODO: support standard in too :)
                 stdin = null;
 
-                for (Map.Entry<String, File> entry : description.getOutputFiles().entrySet()) {
+                for (Map.Entry<String, File> entry : description
+                        .getOutputFiles().entrySet()) {
                     postStageFiles.add(new PrimaryOutputStream(entry.getKey(),
-                            File.createTempFile(id.toString(), ".output", node.getTmpDir()), this));
+                            File.createTempFile(id.toString(), ".output", node
+                                    .getTmpDir()), this));
                 }
             } else {
-                stdout =
-                    new PrimaryOutputStream("##stdout##",
-                            description.getStdoutFile(), this);
+                stdout = new PrimaryOutputStream("##stdout##", description
+                        .getStdoutFile(), this);
 
-                stderr =
-                    new PrimaryOutputStream("##stderr##",
-                            description.getStderrFile(), this);
+                stderr = new PrimaryOutputStream("##stderr##", description
+                        .getStderrFile(), this);
 
                 if (description.getStdinFile() == null) {
                     stdin = null;
                 } else {
-                    stdin =
-                        new InputFile(description.getStdinFile(), "<<stdin>>",
-                                this);
+                    stdin = new InputFile(description.getStdinFile(),
+                            "<<stdin>>", this);
                 }
-                
-                for (Map.Entry<String, File> entry : description.getOutputFiles().entrySet()) {
+
+                for (Map.Entry<String, File> entry : description
+                        .getOutputFiles().entrySet()) {
                     postStageFiles.add(new PrimaryOutputStream(entry.getKey(),
                             entry.getValue(), this));
                 }
             }
-            
-            this.postStageFiles =
-                postStageFiles.toArray(new PrimaryOutputStream[0]);
 
+            this.postStageFiles = postStageFiles
+                    .toArray(new PrimaryOutputStream[0]);
 
             advertCount = (int) Math.round(Math.log10(maxNrOfWorkers()));
             advertTimeout = MIN_ADVERT_TIMEOUT;
@@ -261,15 +243,7 @@ public final class Primary extends Job implements Runnable, Receiver {
             // LOCAL workers
             localWorkers = new HashMap<UUID, Worker>();
 
-            int nodes = 0;
-            if (getBooleanAttribute("claim.node")) {
-                nodes = 1;
-            }
-
-            workerResources =
-                new Resources(nodes, getIntegerAttribute("worker.processors"),
-                        getSizeAttribute("worker.memory"),
-                        getSizeAttribute("worker.diskspace"));
+            workerResources = new Resources(attributes);
 
             constituents = new HashMap<UUID, Constituent>();
             // register self
@@ -352,17 +326,14 @@ public final class Primary extends Job implements Runnable, Receiver {
     public synchronized void updateAttributes(Map<String, String> attributes)
             throws Exception {
         for (String key : attributes.keySet()) {
-            if (!(key.equalsIgnoreCase("nr.of.workers") && getBooleanAttribute("malleable"))) {
+            if (!(key.equalsIgnoreCase(JobAttributes.COUNT) && getBooleanAttribute(JobAttributes.MALLEABLE))) {
                 throw new Exception("can not update attribute " + key
                         + " while the job is running");
             }
         }
 
-        TypedProperties properties = new TypedProperties();
-        for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            properties.setProperty(entry.getKey(), entry.getValue());
-        }
-        checkAttributes(properties);
+        JobAttributes jobAttributes = new JobAttributes(attributes);
+        jobAttributes.checkAttributes();
 
         this.attributes.putAll(attributes);
         dirty = true;
@@ -470,7 +441,6 @@ public final class Primary extends Job implements Runnable, Receiver {
         return cluster;
     }
 
-
     @Override
     protected ZorillaPrintStream createLogFile(String fileName)
             throws IOException, Exception {
@@ -481,8 +451,7 @@ public final class Primary extends Job implements Runnable, Receiver {
             boolean export) throws IOException, Exception {
         File file = new File(logDir, fileName);
 
-        PrimaryOutputStream result =
-            new PrimaryOutputStream(file, this, export);
+        PrimaryOutputStream result = new PrimaryOutputStream(file, this, export);
 
         logFiles.add(result);
 
@@ -602,26 +571,26 @@ public final class Primary extends Job implements Runnable, Receiver {
         setExitStatus(exitStatus);
 
         if (phase == RUNNING) {
-            if ((status == Status.DONE && getStringAttribute("on.user.exit").equalsIgnoreCase(
-                "close.world"))
+            if ((status == Status.DONE && getStringAttribute("on.user.exit")
+                    .equalsIgnoreCase("close.world"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                        "on.user.error").equalsIgnoreCase("close.world"))) {
+                            "on.user.error").equalsIgnoreCase("close.world"))) {
 
                 setPhase(CLOSED);
             }
 
-            if ((status == Status.DONE && getStringAttribute("on.user.exit").equalsIgnoreCase(
-                "cancel.job"))
+            if ((status == Status.DONE && getStringAttribute("on.user.exit")
+                    .equalsIgnoreCase("cancel.job"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                        "on.user.error").equalsIgnoreCase("cancel.job"))) {
+                            "on.user.error").equalsIgnoreCase("cancel.job"))) {
 
                 setPhase(CANCELLED);
             }
 
-            if ((status == Status.DONE && getStringAttribute("on.user.exit").equalsIgnoreCase(
-                "job.error"))
+            if ((status == Status.DONE && getStringAttribute("on.user.exit")
+                    .equalsIgnoreCase("job.error"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                        "on.user.error").equalsIgnoreCase("job.error"))) {
+                            "on.user.error").equalsIgnoreCase("job.error"))) {
 
                 setPhase(ERROR);
             }
@@ -629,18 +598,18 @@ public final class Primary extends Job implements Runnable, Receiver {
         }
 
         if (phase == CLOSED) {
-            if ((status == Status.DONE && getStringAttribute("on.user.exit").equalsIgnoreCase(
-                "cancel.job"))
+            if ((status == Status.DONE && getStringAttribute("on.user.exit")
+                    .equalsIgnoreCase("cancel.job"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                        "on.user.error").equalsIgnoreCase("cancel.job"))) {
+                            "on.user.error").equalsIgnoreCase("cancel.job"))) {
 
                 setPhase(CANCELLED);
             }
 
-            if ((status == Status.DONE && getStringAttribute("on.user.exit").equalsIgnoreCase(
-                "job.error"))
+            if ((status == Status.DONE && getStringAttribute("on.user.exit")
+                    .equalsIgnoreCase("job.error"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                        "on.user.error").equalsIgnoreCase("job.error"))) {
+                            "on.user.error").equalsIgnoreCase("job.error"))) {
 
                 setPhase(ERROR);
             }
@@ -655,8 +624,8 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     private synchronized void removeFinishedLocalWorkers() {
         // clean dead workers
-        Iterator<Entry<UUID, Worker>> iterator =
-            localWorkers.entrySet().iterator();
+        Iterator<Entry<UUID, Worker>> iterator = localWorkers.entrySet()
+                .iterator();
         while (iterator.hasNext()) {
             Entry<UUID, Worker> entry = iterator.next();
             Worker worker = entry.getValue();
@@ -666,14 +635,14 @@ public final class Primary extends Job implements Runnable, Receiver {
                 Constituent constituent = constituents.get(id);
 
                 if (constituent == null) {
-                    Exception e =
-                        new Exception("cannot find ourselves in constituents!");
+                    Exception e = new Exception(
+                            "cannot find ourselves in constituents!");
                     log(e.getMessage(), e);
                     return;
                 }
 
-                removeWorker(worker.id(), constituent, worker.status(),
-                    worker.exitStatus());
+                removeWorker(worker.id(), constituent, worker.status(), worker
+                        .exitStatus());
             }
         }
 
@@ -713,8 +682,8 @@ public final class Primary extends Job implements Runnable, Receiver {
             if (!dirty) {
                 return;
             }
-            constituents =
-                this.constituents.values().toArray(new Constituent[0]);
+            constituents = this.constituents.values().toArray(
+                    new Constituent[0]);
         }
 
         // initiate a callback
@@ -729,14 +698,14 @@ public final class Primary extends Job implements Runnable, Receiver {
             }
 
             try {
-                WriteMessage m =
-                    endPoint.send(constituents[i].getReceivePort());
+                WriteMessage m = endPoint
+                        .send(constituents[i].getReceivePort());
                 m.writeInt(Copy.STATE_UPDATE);
                 writeDynamicState(m);
                 m.finish();
             } catch (IOException e) {
                 log("could not send update to constituent: " + constituents[i],
-                    e);
+                        e);
             }
         }
         synchronized (this) {
@@ -790,7 +759,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
         try {
             node.floodService().advertise(
-                new PrimaryCopyAdvert(id, metric, count, endPoint.getID()));
+                    new PrimaryCopyAdvert(id, metric, count, endPoint.getID()));
 
         } catch (Exception e) {
             log("could not send advertizement", e);
@@ -852,7 +821,7 @@ public final class Primary extends Job implements Runnable, Receiver {
             Worker worker = new Worker(this, workerID, node, deadline);
             localWorkers.put(workerID, worker);
             node.jobService().setResourcesUsed(getID(),
-                workerResources.mult(localWorkers.size()));
+                    workerResources.mult(localWorkers.size()));
 
             worker.start();
         }
@@ -902,8 +871,8 @@ public final class Primary extends Job implements Runnable, Receiver {
     private void handleRegister(Invocation invocation) throws IOException,
             Exception, ClassNotFoundException {
         UUID constituentID = (UUID) invocation.readObject();
-        ReceivePortIdentifier receivePort =
-            (ReceivePortIdentifier) invocation.readObject();
+        ReceivePortIdentifier receivePort = (ReceivePortIdentifier) invocation
+                .readObject();
         invocation.finishRead();
 
         Constituent constituent = new Constituent(constituentID, receivePort);
@@ -1121,7 +1090,7 @@ public final class Primary extends Job implements Runnable, Receiver {
             // claim resources, do not start worker yet.
             localWorkers.put(workerID, worker);
             node.jobService().setResourcesUsed(getID(),
-                workerResources.mult(localWorkers.size()));
+                    workerResources.mult(localWorkers.size()));
 
         }
 
@@ -1135,8 +1104,8 @@ public final class Primary extends Job implements Runnable, Receiver {
             resources = new Resources(workerResources);
         }
 
-        int maxNrOfWorkers =
-            node.jobService().nrOfResourceSetsAvailable(resources);
+        int maxNrOfWorkers = node.jobService().nrOfResourceSetsAvailable(
+                resources);
 
         synchronized (this) {
             Constituent constituent = constituents.get(id);
@@ -1202,8 +1171,8 @@ public final class Primary extends Job implements Runnable, Receiver {
             try {
                 if (constituent.getID().equals(id)) {
                     // that's us :)
-                    UUID[] workers =
-                        createWorkers(neededNrOfWorkers - currentNrOfWorkers);
+                    UUID[] workers = createWorkers(neededNrOfWorkers
+                            - currentNrOfWorkers);
                     constituent.setWorkers(workers);
                     currentNrOfWorkers += workers.length;
                     log(workers.length + " created at " + constituent);
@@ -1299,7 +1268,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     public void run() {
         boolean done = false;
-        
+
         setPhase(PRE_STAGE);
         // no work needed for pre-stage
 
@@ -1314,7 +1283,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             // update resource usage
             node.jobService().setResourcesUsed(getID(),
-                workerResources.mult(localWorkers.size()));
+                    workerResources.mult(localWorkers.size()));
 
             if (getPhase() == SCHEDULING && !getBooleanAttribute("malleable")) {
                 updateLocalMaxWorkers();
@@ -1400,8 +1369,9 @@ public final class Primary extends Job implements Runnable, Receiver {
             throws Exception {
         PrimaryOutputStream file = getOutputFile(sandboxPath);
 
-        logger.debug("size of output file " + sandboxPath + " = " + file.length());
-        
+        logger.debug("size of output file " + sandboxPath + " = "
+                + file.length());
+
         out.writeLong(file.length());
         file.streamTo(out);
     }
@@ -1414,7 +1384,7 @@ public final class Primary extends Job implements Runnable, Receiver {
     @Override
     public ZoniFileInfo getFileInfo(String sandboxPath) throws Exception {
         PrimaryOutputStream file = getOutputFile(sandboxPath);
-        
+
         if (file == null) {
             throw new Exception(sandboxPath + " does not exist");
         }
