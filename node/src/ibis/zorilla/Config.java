@@ -167,7 +167,7 @@ public class Config extends TypedProperties {
                 { DEFAULT_FLOOD_METRIC, "neighbours",
                         "Default metric used to send out flood messages" },
 
-                { MAX_CLUSTER_SIZE, "1000", "Maximum size of a cluster" },
+                { MAX_CLUSTER_SIZE, "25", "Maximum size of a cluster" },
 
         };
 
@@ -198,8 +198,9 @@ public class Config extends TypedProperties {
 
     Config(Properties userProperties) throws Exception {
         Properties defaultProperties = getHardcodedProperties();
-        Properties fileProperties = new Properties(defaultProperties);
-
+        Properties classpathProperties = new Properties(defaultProperties);
+        Properties fileProperties = new Properties(classpathProperties);
+        
         Properties systemProperties = new Properties(fileProperties);
         // copy systemproperties to new map
         systemProperties.putAll(System.getProperties());
@@ -216,7 +217,7 @@ public class Config extends TypedProperties {
             InputStream inputStream =
                 classLoader.getResourceAsStream(PROPERTIES);
             if (inputStream != null) {
-                fileProperties.load(inputStream);
+                classpathProperties.load(inputStream);
                 logger.debug("loaded " + fileProperties.size() + " properties from classpath");
             }
         } catch (IOException e) {

@@ -71,7 +71,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
     private Map<String, String> status;
 
-    private TypedProperties attributes;
+    private JobAttributes attributes;
 
     private int phase;
 
@@ -142,7 +142,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
         status = new HashMap<String, String>();
         status.put("initialized", "false");
-        attributes = new TypedProperties();
+        attributes = new JobAttributes();
         phase = UNKNOWN;
         constituents = new HashMap<UUID, Constituent>();
         deadline = Integer.MAX_VALUE;
@@ -181,7 +181,7 @@ public final class Copy extends Job implements Receiver, Runnable {
             throws IOException, Exception {
         try {
             status = (Map<String, String>) in.readObject();
-            attributes = (TypedProperties) in.readObject();
+            attributes = (JobAttributes) in.readObject();
             phase = in.readInt();
             constituents = (Map<UUID, Constituent>) in.readObject();
 
@@ -201,7 +201,7 @@ public final class Copy extends Job implements Receiver, Runnable {
             throws IOException, Exception {
         try {
             status = (Map<String, String>) in.readObject();
-            attributes = (TypedProperties) in.readObject();
+            attributes = (JobAttributes) in.readObject();
             phase = in.readInt();
             constituents = (Map<UUID, Constituent>) in.readObject();
 
@@ -349,13 +349,8 @@ public final class Copy extends Job implements Receiver, Runnable {
     }
 
     @Override
-    public synchronized Map<String, String> getAttributes() {
-        HashMap<String, String> result = new HashMap<String, String>();
-
-        for (Map.Entry entry : attributes.entrySet()) {
-            result.put((String) entry.getKey(), (String) entry.getValue());
-        }
-        return result;
+    public synchronized JobAttributes getAttributes() {
+        return attributes;
     }
 
     @Override

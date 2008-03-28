@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
+import org.apache.log4j.Logger;
+
 public class OutputForwarder extends Thread {
+    
+    private static final Logger logger = Logger.getLogger(OutputForwarder.class);
 
     private final ZoniConnection connection;
 
@@ -33,8 +37,7 @@ public class OutputForwarder extends Thread {
         try {
             connection.getOutputStream(stream, jobID, isStderr);
         } catch (IOException e) {
-            System.err.println("error in getting output for " + jobID + ": "
-                    + e.getMessage());
+            logger.warn("error in getting output for " + jobID, e);
         }
     }
 

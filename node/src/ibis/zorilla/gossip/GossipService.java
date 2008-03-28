@@ -158,6 +158,12 @@ public class GossipService implements Service {
             socket.close();
 
             logger.debug("reply received");
+            
+            if (!request.getReceiver().getID().equals(reply.getSender().getID())) {
+                //logger.info("got gossip reply from wrong node, " + request.getReceiver() + " instead of " + reply.getSender());
+                throw new IOException("got reply from wrong node");
+            }
+            
 
             return reply;
         } catch (ClassNotFoundException e) {

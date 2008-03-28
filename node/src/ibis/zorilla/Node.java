@@ -22,7 +22,6 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.UUID;
 
-
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
@@ -41,7 +40,7 @@ public final class Node implements Runnable {
     private final Config config;
 
     // directory to store logs, stats, etc
-    private final File nodeDir;
+    private final File logDir;
 
     // directory for temporary files
     private final File tmpDir;
@@ -139,16 +138,17 @@ public final class Node implements Runnable {
             }
         }
 
-        nodeDir = new File(config.getConfigDir(), name);
-        nodeDir.mkdirs();
+        logDir = new File(config.getConfigDir(), name);
 
-        File log4jFile = new File(nodeDir, "log");
+        logDir.mkdirs();
+
+        File log4jFile = new File(logDir, "log");
         FileAppender appender = new FileAppender(new PatternLayout(
                 "%d{HH:mm:ss} %-5p [%t] %c - %m%n"), log4jFile
                 .getAbsolutePath());
         Logger.getRootLogger().addAppender(appender);
 
-        logger.info("Saving statistics and logs to " + nodeDir);
+        logger.info("Saving statistics and logs to " + logDir);
 
         File systemTmpDir = new File(System.getProperty("java.io.tmpdir"));
 
@@ -210,7 +210,7 @@ public final class Node implements Runnable {
     }
 
     public File getNodeDir() {
-        return nodeDir;
+        return logDir;
     }
 
     public File getTmpDir() {
@@ -295,7 +295,8 @@ public final class Node implements Runnable {
 
         result.put("Address", network.getAddress().toString());
         result.put("Coordinate", vivaldiService().getCoordinates().toString());
-        result.put("Max.workers", Integer.toString(jobService().getMaxWorkers()));
+        result.put("Max.workers", Integer
+                .toString(jobService().getMaxWorkers()));
 
         return result;
     }

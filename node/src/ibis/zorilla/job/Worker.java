@@ -133,7 +133,6 @@ public final class Worker implements Runnable {
     }
 
     private ProcessBuilder javaCommand(File workingDir) throws Exception {
-        String appClassPath;
         ProcessBuilder result = new ProcessBuilder();
 
         String javaHome = System.getProperty("java.home");
@@ -153,38 +152,28 @@ public final class Worker implements Runnable {
                 "-Djava.security.policy==file:"
                         + securityFile.getAbsolutePath());
 
-        result.command().add("-Xmx" + job.getStringAttribute("worker.memory"));
+        result.command().add(
+                "-Xmx" + job.getStringAttribute(JobAttributes.MEMORY_MAX));
 
         // node port
         result.command().add("-Dzorilla.node.port=" + nodePort);
-
-        if (!job.getBooleanAttribute("malleable")) {
-            result.command().add(
-                    "-Dzorilla.nr.of.workers="
-                            + job.getIntegerAttribute("nr.of.workers"));
-        }
 
         result.command().add("-Dzorilla.cluster=" + job.cluster());
 
         // Ibis support
         if (job.getBooleanAttribute("ibis")) {
-            // ibis malleability support
 
-            if (!job.getBooleanAttribute("malleable")) {
-                result.command().add(
-                        "-Dibis.pool.size="
-                                + job.getIntegerAttribute("nr.of.workers"));
-            }
+            result.command().add(
+                    "-Dibis.pool.size=" + job.getAttributes().getMaxWorkers());
 
             // result.command().add("-Dibis.pool.cluster=" + job.cluster());
         }
 
-        if (job.getAttributes().containsKey("classpath")) {
-            appClassPath = job.getAttributes().get("classpath");
-        } else {
+        String appClassPath = job.getDescription().getJavaClassPath();
+        if (appClassPath == null) {
             // add root of job to classpath
             appClassPath = "." + File.pathSeparator;
-            //appClassPath = "";
+            // appClassPath = "";
 
             InputFile[] inputs = job.getPreStageFiles();
 
@@ -197,6 +186,10 @@ public final class Worker implements Runnable {
                             + File.pathSeparator;
                 }
             }
+        } else {
+            // replace all ; with : or the other way around :)
+            appClassPath = appClassPath.replace(":", File.pathSeparator);
+            appClassPath = appClassPath.replace(";", File.pathSeparator);
         }
 
         // class path
@@ -206,6 +199,11 @@ public final class Worker implements Runnable {
         // user specified environment options
         for (Map.Entry<String, String> entry : job.getDescription()
                 .getJavaSystemProperties().entrySet()) {
+            if (entry.getKey().startsWith("java")) {
+                throw new Exception(
+                        "cannot add system properties starting with \"java\"");
+            }
+
             result.command()
                     .add("-D" + entry.getKey() + "=" + entry.getValue());
         }
@@ -277,7 +275,8 @@ public final class Worker implements Runnable {
     }
 
     private File createScratchDir(UUID id) throws IOException, Exception {
-        File scratchDir = new File(node.getTmpDir(),id.toString()).getAbsoluteFile();
+        File scratchDir = new File(node.getTmpDir(), id.toString())
+                .getAbsoluteFile();
 
         scratchDir.mkdirs();
         scratchDir.deleteOnExit();
@@ -395,9 +394,9 @@ public final class Worker implements Runnable {
             errWriter = new StreamWriter(process.getErrorStream(), job
                     .getStderr());
 
-            //TODO reimplement stdin
-//            FileReader fileReader = new FileReader(job.getStdin(), process
-//                    .getOutputStream());
+            // TODO reimplement stdin
+            // FileReader fileReader = new FileReader(job.getStdin(), process
+            // .getOutputStream());
 
             logger.debug("created stream writers, waiting for"
                     + " process to finish");
@@ -415,7 +414,7 @@ public final class Worker implements Runnable {
                     logger.debug("worker " + this + " done, exit code "
                             + result);
 
-//                    fileReader.close();
+                    // fileReader.close();
 
                     setExitStatus(result);
 

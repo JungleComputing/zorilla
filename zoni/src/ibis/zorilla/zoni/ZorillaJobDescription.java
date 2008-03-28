@@ -27,6 +27,8 @@ public class ZorillaJobDescription implements Serializable {
     private String javaMain;
 
     private String[] javaArguments;
+    
+    private String javaClassPath;
 
     private final List<ZoniInputFile> inputFiles;
 
@@ -63,7 +65,8 @@ public class ZorillaJobDescription implements Serializable {
         javaSystemProperties = in.readStringMap();
         javaMain = in.readString();
         javaArguments = in.readStringArray();
-
+        javaClassPath = in.readString();
+        
         interactive = in.readBoolean();
 
         inputFiles = new ArrayList<ZoniInputFile>();
@@ -117,6 +120,10 @@ public class ZorillaJobDescription implements Serializable {
 
     public String getJavaMain() {
         return javaMain;
+    }
+    
+    public String getJavaClassPath() {
+        return javaClassPath;
     }
 
     public String[] getJavaOptions() {
@@ -186,6 +193,10 @@ public class ZorillaJobDescription implements Serializable {
     public void setJavaMain(String javaMain) {
         this.javaMain = javaMain;
     }
+    
+    public void setJavaClassPath(String javaClassPath) {
+        this.javaClassPath = javaClassPath;
+    }
 
     public void setJavaOptions(String[] javaOptions) {
         this.javaOptions = javaOptions.clone();
@@ -222,7 +233,8 @@ public class ZorillaJobDescription implements Serializable {
         out.writeStringMap(javaSystemProperties);
         out.writeString(javaMain);
         out.writeStringArray(javaArguments);
-
+        out.writeString(javaClassPath);
+        
         out.writeBoolean(interactive);
 
         out.writeInt(inputFiles.size());
@@ -277,6 +289,7 @@ public class ZorillaJobDescription implements Serializable {
         result += "\nJava System Properties:" + toString(javaSystemProperties);
         result += "\nJava Main = " + javaMain;
         result += "\nJava Arguments = " + toString(javaArguments);
+        result += "\nJava Classpath = " + javaClassPath;
         result += "\nInteractive = " + interactive;
         
         result += "\nInput files:";

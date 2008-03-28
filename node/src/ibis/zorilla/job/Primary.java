@@ -463,14 +463,8 @@ public final class Primary extends Job implements Runnable, Receiver {
     }
 
     @Override
-    public synchronized Map<String, String> getAttributes() {
-        HashMap<String, String> result = new HashMap<String, String>();
-
-        for (Map.Entry entry : attributes.entrySet()) {
-            result.put((String) entry.getKey(), (String) entry.getValue());
-        }
-        return result;
-
+    public synchronized JobAttributes getAttributes() {
+        return attributes;
     }
 
     @Override

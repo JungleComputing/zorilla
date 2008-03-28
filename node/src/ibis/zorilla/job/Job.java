@@ -205,11 +205,6 @@ public abstract class Job {
      */
     protected abstract void flush() throws IOException, Exception;
 
-    /**
-     * Returns the current value of the attributes of this job
-     */
-    public abstract Map<String, String> getAttributes();
-
     public abstract int getPhase();
 
     protected abstract boolean getBooleanAttribute(String name)
@@ -249,4 +244,7 @@ public abstract class Job {
             throws IOException, Exception;
 
     abstract IbisIdentifier getRandomConstituent();
+
+    public abstract JobAttributes getAttributes();
+
 }

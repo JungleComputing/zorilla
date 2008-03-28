@@ -4,6 +4,8 @@ import ibis.util.TypedProperties;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -39,7 +41,7 @@ public class JobAttributes extends TypedProperties {
     public static final String MEMORY_MAX = "memory.max";
 
     public static final String DISK_SPACE = "disk.space";
-    
+
     public static final String SAVE_STATE = "savestate";
 
     public static final String RESTART = "restart";
@@ -55,7 +57,6 @@ public class JobAttributes extends TypedProperties {
 
     public static final String ADVERT_METRIC = "advert.metric";
 
-    
     // constants
 
     public static final long MAX_JOB_LIFETIME = 8 * 60; // 8 hours
@@ -72,8 +73,8 @@ public class JobAttributes extends TypedProperties {
             { PROJECT, null, "unused" },
             { DRY_RUN, null, "unused" },
             { MEMORY_MIN, null, "unused" },
-            { MEMORY_MAX, "256", "Memory needed per executable in MB" },
-            { DISK_SPACE, "256", "Diskspace needed per executable in MB" },
+            { MEMORY_MAX, "1024", "Memory needed per executable in MB" },
+            { DISK_SPACE, "1024", "Diskspace needed per executable in MB" },
             { SAVE_STATE, null, "unused" },
             { RESTART, null, "unused" },
             { ON_USER_EXIT, "close.world",
@@ -99,6 +100,10 @@ public class JobAttributes extends TypedProperties {
         checkAttributes();
     }
 
+    JobAttributes() throws Exception {
+        super();
+    }
+
     void checkAttributes() throws Exception {
 
         TypedProperties wrong = checkProperties(null, JobAttributes
@@ -122,9 +127,8 @@ public class JobAttributes extends TypedProperties {
                     + " or " + JobAttributes.HOST_COUNT);
         }
 
-        //count == hostcount ?
-        if (getProperty(COUNT) != null
-                && getProperty(HOST_COUNT) != null) {
+        // count == hostcount ?
+        if (getProperty(COUNT) != null && getProperty(HOST_COUNT) != null) {
             if (getIntProperty(COUNT) != getIntProperty(JobAttributes.HOST_COUNT)) {
                 throw new Exception("if both "
                         + COUNT
@@ -153,7 +157,8 @@ public class JobAttributes extends TypedProperties {
                         || onUserExit.equalsIgnoreCase("cancel.job")
                         || onUserExit.equalsIgnoreCase("close.world") || onUserExit
                         .equalsIgnoreCase("job.error"))) {
-            throw new Exception("invalid value for " + ON_USER_EXIT + " : " + onUserExit);
+            throw new Exception("invalid value for " + ON_USER_EXIT + " : "
+                    + onUserExit);
         }
 
         String onUserError = getProperty(ON_USER_ERROR);
@@ -224,6 +229,30 @@ public class JobAttributes extends TypedProperties {
         }
 
         return new File(getProperty(key));
+    }
+
+    public int getMaxWorkers() {
+        if (getProperty(COUNT) != null) {
+            return getIntProperty(COUNT);
+        }
+
+        if (getProperty(HOST_COUNT) != null) {
+            return getIntProperty(HOST_COUNT);
+        }
+
+        return 1;
+    }
+
+    public Map<String, String> getStringMap() {
+        Map<String, String> result = new HashMap<String, String>();
+
+        for (Enumeration<?> e = propertyNames(); e.hasMoreElements();) {
+            String name = (String) e.nextElement();
+            
+            result.put(name, getProperty(name));
+        }
+
+        return result;
     }
 
 }

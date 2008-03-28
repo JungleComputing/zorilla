@@ -135,7 +135,6 @@ public class VivaldiService implements Service, Runnable {
                 try {
                     ping(neighbour, true);
                 } catch (Exception e) {
-                    logger.error("error on pinging neighbour " + neighbour);
                     logger.debug("error on pinging neighbour " + neighbour, e);
 
                 }
@@ -146,7 +145,6 @@ public class VivaldiService implements Service, Runnable {
                 try {
                     ping(randomNode, true);
                 } catch (Exception e) {
-                    logger.error("error on pinging random node " + randomNode);
                     logger.debug("error on pinging random node " + randomNode,
                             e);
 

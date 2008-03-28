@@ -296,7 +296,7 @@ public final class PageServlet extends HttpServlet {
         }
 
         out.println("<h3>Attributes</h3>");
-        printMap(job.getAttributes(), out);
+        printMap(job.getAttributes().getStringMap(), out);
 
         out.println("<h3>Stats</h3>");
         printMap(job.getStats(), out);
