@@ -8,7 +8,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Enumeration;
-import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -18,6 +17,8 @@ public class Starter {
 
     private static final int BUFFER_SIZE = 32 * 1024;
 
+    private static final int TIMEOUT = 10 * 1000; // 10 seconds
+    
     private final URL location;
 
     private final File workingDir;
@@ -43,6 +44,8 @@ public class Starter {
         URLConnection connection;
         try {
             connection = location.openConnection();
+            connection.setConnectTimeout(TIMEOUT);
+            connection.setReadTimeout(TIMEOUT);
             long result = connection.getLastModified();
 
             return result;
@@ -71,7 +74,10 @@ public class Starter {
         URLConnection connection;
         try {
             connection = location.openConnection();
-
+            
+            connection.setConnectTimeout(TIMEOUT);
+            connection.setReadTimeout(TIMEOUT);
+            
             InputStream in = connection.getInputStream();
 
             FileOutputStream out = new FileOutputStream(zipFile);
@@ -241,7 +247,7 @@ public class Starter {
                     unzip();
 
                     process = startProcess();
-                } catch (IOException e) {
+                } catch (Throwable e) {
                     System.err.println("STARTER: could not start process");
                     e.printStackTrace(System.err);
                 }
