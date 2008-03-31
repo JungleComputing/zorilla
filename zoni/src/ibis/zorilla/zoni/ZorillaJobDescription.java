@@ -27,7 +27,7 @@ public class ZorillaJobDescription implements Serializable {
     private String javaMain;
 
     private String[] javaArguments;
-    
+
     private String javaClassPath;
 
     private final List<ZoniInputFile> inputFiles;
@@ -66,7 +66,7 @@ public class ZorillaJobDescription implements Serializable {
         javaMain = in.readString();
         javaArguments = in.readStringArray();
         javaClassPath = in.readString();
-        
+
         interactive = in.readBoolean();
 
         inputFiles = new ArrayList<ZoniInputFile>();
@@ -121,7 +121,7 @@ public class ZorillaJobDescription implements Serializable {
     public String getJavaMain() {
         return javaMain;
     }
-    
+
     public String getJavaClassPath() {
         return javaClassPath;
     }
@@ -193,7 +193,7 @@ public class ZorillaJobDescription implements Serializable {
     public void setJavaMain(String javaMain) {
         this.javaMain = javaMain;
     }
-    
+
     public void setJavaClassPath(String javaClassPath) {
         this.javaClassPath = javaClassPath;
     }
@@ -234,7 +234,7 @@ public class ZorillaJobDescription implements Serializable {
         out.writeString(javaMain);
         out.writeStringArray(javaArguments);
         out.writeString(javaClassPath);
-        
+
         out.writeBoolean(interactive);
 
         out.writeInt(inputFiles.size());
@@ -253,7 +253,7 @@ public class ZorillaJobDescription implements Serializable {
         out.writeFile(stderrFile);
     }
 
-    private String toString(Map<String, String> map) {
+    private String toNewLineString(Map<String, String> map) {
         if (map == null || map.size() == 0) {
             return "\n\t-";
         }
@@ -265,11 +265,23 @@ public class ZorillaJobDescription implements Serializable {
         return result;
     }
     
+    private String toString(Map<String, String> map) {
+        if (map == null || map.size() == 0) {
+            return "";
+        }
+
+        String result = "";
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            result += entry.getKey() + " = " + entry.getValue() + "<br>";
+        }
+        return result;
+    }
+
     private String toString(String[] array) {
         if (array == null) {
             return "";
         }
-        
+
         String result = "";
         for (String element : array) {
             result += element + " ";
@@ -277,23 +289,59 @@ public class ZorillaJobDescription implements Serializable {
         return result;
     }
 
+    public Map<String, String> toStringMap() {
+        Map<String, String> result = new HashMap<String, String>();
+
+        result.put("executable", executable);
+        result.put("arguments", toString(arguments));
+        result.put("environment", toString(environment));
+        result.put("attributes", toString(attributes));
+        
+        result.put("java.options", toString(javaOptions));
+        result.put("java.system.properties", toString(javaSystemProperties));
+        result.put("java Main", javaMain);
+        result.put("java Arguments", toString(javaArguments));
+        result.put("java Classpath", javaClassPath);
+        
+        result.put("interactive", Boolean.toString(interactive));
+
+        String inputFileString = "";
+        for (ZoniInputFile file : inputFiles) {
+            inputFileString += file + "<br>";
+        }
+        result.put("input.files", inputFileString);
+
+        String outputFileString = "";
+        for (Map.Entry<String, File> entry : outputFiles.entrySet()) {
+            outputFileString += entry.getKey() + " = " + entry.getValue()
+                    + "<br>";
+        }
+        result.put("output.files", outputFileString);
+
+        result.put("stdin", "" + stdinFile);
+        result.put("stdout", "" + stdoutFile);
+        
+        result.put("stderr", "" + stderrFile);
+
+        return result;
+    }
 
     public String toString() {
         String result = "";
 
         result += "\nExecutable = " + executable;
         result += "\nArguments = " + toString(arguments);
-        result += "\nEnvironment:" + toString(environment);
-        result += "\nAttributes:" + toString(attributes);
+        result += "\nEnvironment:" + toNewLineString(environment);
+        result += "\nAttributes:" + toNewLineString(attributes);
         result += "\nJava Options = " + toString(javaOptions);
-        result += "\nJava System Properties:" + toString(javaSystemProperties);
+        result += "\nJava System Properties:" + toNewLineString(javaSystemProperties);
         result += "\nJava Main = " + javaMain;
         result += "\nJava Arguments = " + toString(javaArguments);
         result += "\nJava Classpath = " + javaClassPath;
         result += "\nInteractive = " + interactive;
-        
+
         result += "\nInput files:";
-        for(ZoniInputFile file: inputFiles) {
+        for (ZoniInputFile file : inputFiles) {
             result += "\n\t" + file;
         }
 
@@ -301,11 +349,11 @@ public class ZorillaJobDescription implements Serializable {
         for (Map.Entry<String, File> entry : outputFiles.entrySet()) {
             result += "\n\t" + entry.getKey() + " = " + entry.getValue();
         }
-        
+
         result += "\nStdin = " + stdinFile;
         result += "\nStdout = " + stdoutFile;
         result += "\nStderr = " + stderrFile;
-        
+
         return result;
     }
 

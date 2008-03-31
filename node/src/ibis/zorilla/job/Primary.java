@@ -381,31 +381,31 @@ public final class Primary extends Job implements Runnable, Receiver {
             result.put("java", "no");
         }
 
-        if (stdout != null) {
-            result.put("stout", stdout.sandboxPath());
-        }
-        if (stderr != null) {
-            result.put("sterr", stderr.sandboxPath());
-        }
-        if (stdin != null) {
-            result.put("stdin", stdin.sandboxPath());
-        }
-
-        if (preStageFiles.length > 0) {
-            String inputs = "";
-            for (InputFile file : preStageFiles) {
-                inputs += file.toString() + "\n";
-            }
-            result.put("prestage", inputs);
-        }
-
-        if (postStageFiles.length > 0) {
-            String outputs = "";
-            for (PrimaryOutputStream file : postStageFiles) {
-                outputs += file.toString() + "\n";
-            }
-            result.put("poststage", outputs);
-        }
+//        if (stdout != null) {
+//            result.put("stout", stdout.sandboxPath());
+//        }
+//        if (stderr != null) {
+//            result.put("sterr", stderr.sandboxPath());
+//        }
+//        if (stdin != null) {
+//            result.put("stdin", stdin.sandboxPath());
+//        }
+//
+//        if (preStageFiles.length > 0) {
+//            String inputs = "";
+//            for (InputFile file : preStageFiles) {
+//                inputs += file.toString() + "\n";
+//            }
+//            result.put("prestage", inputs);
+//        }
+//
+//        if (postStageFiles.length > 0) {
+//            String outputs = "";
+//            for (PrimaryOutputStream file : postStageFiles) {
+//                outputs += file.toString() + "\n";
+//            }
+//            result.put("poststage", outputs);
+//        }
 
         return result;
     }

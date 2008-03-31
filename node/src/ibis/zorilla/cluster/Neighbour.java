@@ -5,6 +5,7 @@ import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.net.Network;
 
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
@@ -69,9 +70,10 @@ public class Neighbour implements Runnable {
     }
 
     private void updateInfo() {
+        DirectSocket socket = null;
         try {
             NodeInfo oldInfo = getInfo();
-            DirectSocket socket = node.network().connect(oldInfo,
+            socket = node.network().connect(oldInfo,
                     Network.CLUSTER_SERVICE, REQUEST_TIMEOUT);
 
             OutputStream out = socket.getOutputStream();
@@ -119,6 +121,14 @@ public class Neighbour implements Runnable {
 
             synchronized (this) {
                 failures++;
+            }
+        } finally {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    //IGNORE
+                }
             }
         }
     }
