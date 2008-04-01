@@ -64,7 +64,7 @@ public final class WebService implements Service {
         server.setThreadPool(pool);
 
         // Create a context
-        Context context = new Context(server, "/", Context.SESSIONS);
+        Context context = new Context(server, "/", Context.NO_SESSIONS | Context.NO_SECURITY);
         
         pageServlet = new PageServlet(this, node);
         context.addServlet(new ServletHolder(pageServlet), "/*");

@@ -1,8 +1,8 @@
 package ibis.zorilla.job;
 
 import ibis.ipl.IbisIdentifier;
-import ibis.util.TypedProperties;
 import ibis.zorilla.Node;
+import ibis.zorilla.NodeInfo;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Receiver;
@@ -247,4 +247,5 @@ public abstract class Job {
 
     public abstract JobAttributes getAttributes();
 
+    public abstract NodeInfo[] getConstituentInfos();
 }

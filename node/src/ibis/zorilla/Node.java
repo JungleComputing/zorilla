@@ -148,8 +148,6 @@ public final class Node implements Runnable {
                 .getAbsolutePath());
         Logger.getRootLogger().addAppender(appender);
 
-        logger.info("Saving statistics and logs to " + logDir);
-
         File systemTmpDir = new File(System.getProperty("java.io.tmpdir"));
 
         tmpDir = new File(systemTmpDir, "zorilla-" + id.toString());
@@ -160,9 +158,12 @@ public final class Node implements Runnable {
             throw new Exception("cannot create temp dir: " + tmpDir);
         }
 
-        vivaldiService = new VivaldiService(this);
-
         // INIT SERVICES
+        
+        //webservice is first, as it also keeps logs
+        webService = new WebService(this);
+
+        vivaldiService = new VivaldiService(this);
 
         discoveryService = new DiscoveryService(this);
 
@@ -175,8 +176,6 @@ public final class Node implements Runnable {
         floodService = new FloodService(this);
 
         jobService = new JobService(this);
-
-        webService = new WebService(this);
 
         zoniService = new ZoniService(this);
 
@@ -202,6 +201,7 @@ public final class Node implements Runnable {
             deadline = Long.MAX_VALUE;
         }
 
+        logger.info("Saving statistics and logs to " + logDir);
         logger.info("Node " + name + " started");
     }
 

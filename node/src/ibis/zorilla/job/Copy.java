@@ -5,9 +5,9 @@ import ibis.ipl.IbisIdentifier;
 import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
-import ibis.util.TypedProperties;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
+import ibis.zorilla.NodeInfo;
 import ibis.zorilla.io.ObjectInput;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.Call;
@@ -502,6 +502,7 @@ public final class Copy extends Job implements Receiver, Runnable {
         call.writeInt(Primary.REGISTER);
         call.writeObject(id);
         call.writeObject(endPoint.getID());
+        call.writeObject(node.getInfo());
 
         log("doing initialization call");
 
@@ -915,5 +916,10 @@ public final class Copy extends Job implements Receiver, Runnable {
     public ZorillaJobDescription getDescription() {
         return jobDescription;
     }
+
+	@Override
+	public NodeInfo[] getConstituentInfos() {
+		return new NodeInfo[0];
+	}
 
 }

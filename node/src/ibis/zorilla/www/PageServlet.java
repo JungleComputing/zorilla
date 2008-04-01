@@ -5,8 +5,6 @@ import ibis.zorilla.NodeInfo;
 import ibis.zorilla.cluster.Coordinates;
 import ibis.zorilla.cluster.Neighbour;
 import ibis.zorilla.job.Job;
-import ibis.zorilla.zoni.ZorillaJobDescription;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -281,7 +279,7 @@ public final class PageServlet extends HttpServlet {
         out.println("</table>");
     }
 
-    private void writeJobDetailPage(PrintWriter out, String jobID) {
+    private void writeJobDetailPage(PrintWriter out, String jobID) throws Exception {
         out.println("<h2>Job " + jobID + "</h2>");
 
         Job job;
@@ -296,9 +294,13 @@ public final class PageServlet extends HttpServlet {
             return;
         }
 
+        
         out.println("<h3>Job Description</h3>");
         printMap(job.getDescription().toStringMap(), out);
         
+        out.println("<h3>Constituents</h3>");
+        printNodeList(job.getConstituentInfos(), out);
+
 
         out.println("<h3>Stats</h3>");
         printMap(job.getStats(), out);

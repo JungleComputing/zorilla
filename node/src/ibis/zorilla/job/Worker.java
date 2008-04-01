@@ -153,7 +153,7 @@ public final class Worker implements Runnable {
                         + securityFile.getAbsolutePath());
 
         result.command().add(
-                "-Xmx" + job.getStringAttribute(JobAttributes.MEMORY_MAX));
+                "-Xmx" + job.getStringAttribute(JobAttributes.MEMORY_MAX) + "m");
 
         // node port
         result.command().add("-Dzorilla.node.port=" + nodePort);

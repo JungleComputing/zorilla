@@ -15,15 +15,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.management.AttributeNotFoundException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanException;
 import javax.management.MBeanServer;
-import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
-
 import org.apache.log4j.Logger;
 
 import ibis.smartsockets.direct.DirectSocket;
@@ -76,7 +69,7 @@ public final class JobService implements Service, Runnable {
         maxWorkers = node.config().getIntProperty(Config.MAX_WORKERS,
                 defaultWorkers);
 
-        logger.info("Maximum of " + maxWorkers + " workers on this node");
+        
 
         long usableDiskSpace = node.getTmpDir().getUsableSpace() / 1024 / 1024;
         
@@ -245,7 +238,8 @@ public final class JobService implements Service, Runnable {
 
     public void start() {
         ThreadPool.createNew(this, "job service");
-        logger.info("Started ZorillaJobDescription service");
+        logger.info("Maximum of " + maxWorkers + " workers on this node");
+        logger.info("Started Job service");
     }
 
     public void handleConnection(DirectSocket socket) {

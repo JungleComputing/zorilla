@@ -126,20 +126,7 @@ public class JobAttributes extends TypedProperties {
             throw new Exception("must either specify " + JobAttributes.COUNT
                     + " or " + JobAttributes.HOST_COUNT);
         }
-
-        // count == hostcount ?
-        if (getProperty(COUNT) != null && getProperty(HOST_COUNT) != null) {
-            if (getIntProperty(COUNT) != getIntProperty(JobAttributes.HOST_COUNT)) {
-                throw new Exception("if both "
-                        + COUNT
-                        + " and "
-                        + HOST_COUNT
-                        + " are specified, they must be equal, not "
-                        + getIntProperty(COUNT + " and "
-                                + getIntProperty(HOST_COUNT)));
-            }
-        }
-
+       
         if (getIntProperty(MEMORY_MAX, 1) < 0) {
             throw new Exception("max.memory attribute invalid: "
                     + getProperty("max.memory"));

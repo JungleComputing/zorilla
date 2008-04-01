@@ -1,6 +1,7 @@
 package ibis.zorilla.job;
 
 import ibis.ipl.ReceivePortIdentifier;
+import ibis.zorilla.NodeInfo;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -16,6 +17,8 @@ class Constituent implements Serializable {
     private final UUID id;
 
     private final ReceivePortIdentifier receivePort;
+    
+    private final NodeInfo info;
 
     private Set<UUID> workers;
 
@@ -23,9 +26,10 @@ class Constituent implements Serializable {
 
     private int maxNrOfWorkers = 0;
 
-    Constituent(UUID id, ReceivePortIdentifier receivePort) {
+    Constituent(UUID id, ReceivePortIdentifier receivePort, NodeInfo info) {
         this.id = id;
         this.receivePort = receivePort;
+        this.info = info;
 
         workers = new HashSet<UUID>();
 
@@ -78,4 +82,8 @@ class Constituent implements Serializable {
     public String toString() {
         return id.toString().substring(0, 8);
     }
+
+	public NodeInfo getInfo() {
+		return info;
+	}
 }

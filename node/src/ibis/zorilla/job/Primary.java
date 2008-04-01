@@ -7,6 +7,7 @@ import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
+import ibis.zorilla.NodeInfo;
 import ibis.zorilla.io.ObjectOutput;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.Worker.Status;
@@ -247,7 +248,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             constituents = new HashMap<UUID, Constituent>();
             // register self
-            constituents.put(id, new Constituent(id, endPoint.getID()));
+            constituents.put(id, new Constituent(id, endPoint.getID(), node.getInfo()));
 
             log("Primary created for " + id);
             logger.info("new job " + id.toString().substring(0, 7)
@@ -867,9 +868,10 @@ public final class Primary extends Job implements Runnable, Receiver {
         UUID constituentID = (UUID) invocation.readObject();
         ReceivePortIdentifier receivePort = (ReceivePortIdentifier) invocation
                 .readObject();
+        NodeInfo nodeInfo = (NodeInfo) invocation.readObject();
         invocation.finishRead();
 
-        Constituent constituent = new Constituent(constituentID, receivePort);
+        Constituent constituent = new Constituent(constituentID, receivePort, nodeInfo);
 
         synchronized (this) {
             if (phase > RUNNING) {
@@ -1393,5 +1395,18 @@ public final class Primary extends Job implements Runnable, Receiver {
     public ZorillaJobDescription getDescription() {
         return jobDescription;
     }
+
+	@Override
+	public NodeInfo[] getConstituentInfos() {
+		ArrayList<NodeInfo> result = new ArrayList<NodeInfo>();
+		
+		for(Constituent constituent: getConstituents()) {
+			result.add(constituent.getInfo());
+		}
+		
+		return result.toArray(new NodeInfo[0]);
+	}
+    
+
 
 }
