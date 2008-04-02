@@ -27,7 +27,7 @@ public final class JettyLogger implements org.mortbay.log.Logger {
     }
 
     public void info(String message, Object arg1, Object arg2) {
-        logger.info(message + ":" + arg1 + " " + arg2);
+        logger.debug(message + ":" + arg1 + " " + arg2);
     }
 
     public boolean isDebugEnabled() {
