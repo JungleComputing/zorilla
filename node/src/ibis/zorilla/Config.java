@@ -36,6 +36,8 @@ public class Config extends TypedProperties {
 
     public static final String CONFIG_DIR = PREFIX + "config.dir";
 
+    public static final String TMP_DIR = PREFIX + "tmp.dir";
+
     public static final String PROPERTIES = PREFIX + "properties";
 
     public static final String NODE_ID = PREFIX + "node.id";
@@ -70,13 +72,13 @@ public class Config extends TypedProperties {
 
     public static final String NATIVE_JOBS = PREFIX + "native.jobs";
 
-    public static final String MESSAGE_LOSS_PERCENTAGE =
-        PREFIX + "message.loss.percentage";
+    public static final String MESSAGE_LOSS_PERCENTAGE = PREFIX
+            + "message.loss.percentage";
 
     public static final String BOOTSTRAP_TIMEOUT = PREFIX + "bootstrap.timeout";
 
-    public static final String ADDITIONAL_GOSSIP_ALGORITHMS =
-        PREFIX + "additional.gossip.algorithms";
+    public static final String ADDITIONAL_GOSSIP_ALGORITHMS = PREFIX
+            + "additional.gossip.algorithms";
 
     public static final String GOSSIP_INTERVAL = PREFIX + "gossip.interval";
 
@@ -84,92 +86,104 @@ public class Config extends TypedProperties {
 
     public static final String GOSSIP_SEND_SIZE = PREFIX + "gossip.send.size";
 
-    public static final String DEFAULT_FLOOD_METRIC =
-        PREFIX + "default.flood.metric";
+    public static final String DEFAULT_FLOOD_METRIC = PREFIX
+            + "default.flood.metric";
 
     public static final String MAX_CLUSTER_SIZE = PREFIX + "max.cluster.size";
 
+    public static final String WORKER = PREFIX + "worker";
+    public static final String MASTER = PREFIX + "master";
+    public static final String MASTER_ADDRESS = PREFIX + "master.address";
+
     private static final Logger logger = Logger.getLogger(Config.class);
 
-    private static final String[][] propertiesList =
-        {
+    private static final String[][] propertiesList = {
 
-                { CONFIG_DIR, ".zorilla",
-                        "Location of configuration and other files of zorilla" },
+            { CONFIG_DIR, ".zorilla",
+                    "Location of configuration and other files of zorilla" },
 
-                { NODE_ID, null, "UUID of this node" },
+            { TMP_DIR, "zorilla", "Location of temporary files of zorilla" },
 
-                { NODE_NAME, null,
-                        "Name of this node, user friendly but not necessarily unique" },
+            { NODE_ID, null, "UUID of this node" },
 
-                { CLUSTER_NAME, null,
-                        "Name of the cluster of this Zorilla node" },
+            { NODE_NAME, null,
+                    "Name of this node, user friendly but not necessarily unique" },
 
-                { NETWORK_NAME, "default.network",
-                        "Name of Zorilla network to join" },
+            { CLUSTER_NAME, null, "Name of the cluster of this Zorilla node" },
 
-                { PEERS, null,
-                        "Comma seperated list of peer nodes used for bootstrapping" },
+            { NETWORK_NAME, "default.network",
+                    "Name of Zorilla network to join" },
 
-                { PORT, "5444", "TCP port number used for the P2P network" },
+            { PEERS, null,
+                    "Comma seperated list of peer nodes used for bootstrapping" },
 
-                { ZONI_PORT, "5445",
-                        "TCP port for connections from clients (users,applications) to Zorilla" },
+            { PORT, "5444", "TCP port number used for the P2P network" },
 
-                { WWW_PORT, "5446", "TCP port used for the web interface" },
+            { ZONI_PORT, "5445",
+                    "TCP port for connections from clients (users,applications) to Zorilla" },
 
-                { DISCOVERY_PORT, "5447",
-                        "UDP port used for discovery of other nodes on the local network" },
+            { WWW_PORT, "5446", "TCP port used for the web interface" },
 
-                { MAX_RUNTIME, null,
-                        "Maximum runtime (in seconds) of this node" },
+            { DISCOVERY_PORT, "5447",
+                    "UDP port used for discovery of other nodes on the local network" },
 
-                {
-                        MAX_WORKERS,
-                        null,
-                        "Maximum number of workers on this node (defaults to number of processors available)" },
+            { MAX_RUNTIME, null, "Maximum runtime (in seconds) of this node" },
 
-                { FIREWALL, "false",
-                        "if set to \"true\" this node will not accept incoming connections" },
+            {
+                    MAX_WORKERS,
+                    null,
+                    "Maximum number of workers on this node (defaults to number of processors available)" },
 
-                { DISCONNECT_TIME, "-1",
-                        "number of seconds before this node is \"disconnected\"" },
+            { FIREWALL, "false",
+                    "if set to \"true\" this node will not accept incoming connections" },
 
-                { RECONNECT_TIME, "-1",
-                        "number of seconds before this node is \"reconnected\"" },
+            { DISCONNECT_TIME, "-1",
+                    "number of seconds before this node is \"disconnected\"" },
 
-                {
-                        WAN_DISCONNECT,
-                        "false",
-                        "boolean: if set to \"true\" the node will only disconnect from "
-                                + "all nodes in other clusters, but will still be connected to the"
-                                + "local network" },
+            { RECONNECT_TIME, "-1",
+                    "number of seconds before this node is \"reconnected\"" },
 
-                { NATIVE_JOBS, "false",
-                        "if set to \"true\" this node will also run native (non-java) jobs" },
+            {
+                    WAN_DISCONNECT,
+                    "false",
+                    "boolean: if set to \"true\" the node will only disconnect from "
+                            + "all nodes in other clusters, but will still be connected to the"
+                            + "local network" },
 
-                { MESSAGE_LOSS_PERCENTAGE, "0",
-                        "percentage of messages lost by the gossiping service" },
+            { NATIVE_JOBS, "false",
+                    "if set to \"true\" this node will also run native (non-java) jobs" },
 
-                { BOOTSTRAP_TIMEOUT, "0",
-                        "maximum bootstrap time (in seconds) for the gossiping algorithm" },
+            { MESSAGE_LOSS_PERCENTAGE, "0",
+                    "percentage of messages lost by the gossiping service" },
 
-                { ADDITIONAL_GOSSIP_ALGORITHMS, "false",
-                        "boolean: if true, additional gossiping algorithms will be run" },
+            { BOOTSTRAP_TIMEOUT, "0",
+                    "maximum bootstrap time (in seconds) for the gossiping algorithm" },
 
-                { GOSSIP_INTERVAL, "1",
-                        "Integer: average number of seconds between two consecutive gossip attempts" },
+            { ADDITIONAL_GOSSIP_ALGORITHMS, "false",
+                    "boolean: if true, additional gossiping algorithms will be run" },
 
-                { GOSSIP_CACHE_SIZE, "100", "Integer: size of gossip cache" },
-                { GOSSIP_SEND_SIZE, "30",
-                        "Integer: number of items to gossip each gossip round" },
+            { GOSSIP_INTERVAL, "1",
+                    "Integer: average number of seconds between two consecutive gossip attempts" },
 
-                { DEFAULT_FLOOD_METRIC, "neighbours",
-                        "Default metric used to send out flood messages" },
+            { GOSSIP_CACHE_SIZE, "100", "Integer: size of gossip cache" },
+            { GOSSIP_SEND_SIZE, "30",
+                    "Integer: number of items to gossip each gossip round" },
 
-                { MAX_CLUSTER_SIZE, "25", "Maximum size of a cluster" },
+            { DEFAULT_FLOOD_METRIC, "neighbours",
+                    "Default metric used to send out flood messages" },
 
-        };
+            { MAX_CLUSTER_SIZE, "25", "Maximum size of a cluster" },
+
+            {
+                    WORKER,
+                    "false",
+                    "Boolean: if true, this node will act as a worker (not accept any job submissions)" },
+            {
+                    MASTER,
+                    "false",
+                    "Boolean: if true, this node will act as a master (not start any workers, start smartsockets hub for communication)" },
+
+            { MASTER_ADDRESS, null, "Address of the master node" }, };
 
     // public static final long JOB_STATE_EXPIRATION_TIMEOUT = 30 * 60 * 1000;
     // public static final long JOB_STATE_REFRESH_TIMEOUT = 60 * 1000;
@@ -196,11 +210,13 @@ public class Config extends TypedProperties {
 
     private final File configDir;
 
+    private final File tmpDir;
+
     Config(Properties userProperties) throws Exception {
         Properties defaultProperties = getHardcodedProperties();
         Properties classpathProperties = new Properties(defaultProperties);
         Properties fileProperties = new Properties(classpathProperties);
-        
+
         Properties systemProperties = new Properties(fileProperties);
         // copy systemproperties to new map
         systemProperties.putAll(System.getProperties());
@@ -214,11 +230,12 @@ public class Config extends TypedProperties {
         // load from classpath
         try {
             ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-            InputStream inputStream =
-                classLoader.getResourceAsStream(PROPERTIES);
+            InputStream inputStream = classLoader
+                    .getResourceAsStream(PROPERTIES);
             if (inputStream != null) {
                 classpathProperties.load(inputStream);
-                logger.debug("loaded " + fileProperties.size() + " properties from classpath");
+                logger.debug("loaded " + fileProperties.size()
+                        + " properties from classpath");
             }
         } catch (IOException e) {
             logger.warn("could not load properties from classpath", e);
@@ -244,10 +261,21 @@ public class Config extends TypedProperties {
 
         checkProperties("zorilla.", getValidKeys(), null, true);
 
+        File tmpDir = getFileProperty(Config.TMP_DIR);
+        if (!configDir.isAbsolute()) {
+            // make absolute by resolving against java system tmp
+            String systemTmp = System.getProperty("java.io.tmpdir");
+            tmpDir = new File(systemTmp, tmpDir.getPath());
+        }
+        this.tmpDir = tmpDir;
     }
 
     public File getConfigDir() {
         return configDir;
+    }
+    
+    public File getTmpDir() {
+        return tmpDir;
     }
 
     /**
@@ -300,6 +328,16 @@ public class Config extends TypedProperties {
         }
 
         return new File(getProperty(key));
+    }
+
+    // shortcut methods to get config properties
+
+    public boolean isWorker() {
+        return getBooleanProperty(WORKER);
+    }
+
+    public boolean isMaster() {
+        return getBooleanProperty(MASTER);
     }
 
 }

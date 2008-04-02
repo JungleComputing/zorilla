@@ -74,7 +74,7 @@ public class JobAttributes extends TypedProperties {
             { DRY_RUN, null, "unused" },
             { MEMORY_MIN, null, "unused" },
             { MEMORY_MAX, "768", "Memory needed per executable in MB" },
-            { DISK_SPACE, "768", "Diskspace needed per executable in MB" },
+            { DISK_SPACE, "100", "Diskspace needed per executable in MB" },
             { SAVE_STATE, null, "unused" },
             { RESTART, null, "unused" },
             { ON_USER_EXIT, "close.world",

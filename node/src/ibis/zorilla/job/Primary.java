@@ -192,11 +192,11 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             if (description.isInteractive()) {
                 stdout = new PrimaryOutputStream("##stdout##", File
-                        .createTempFile(id.toString(), ".stdout", node
+                        .createTempFile(id.toString(), ".stdout", node.config()
                                 .getTmpDir()), this);
 
                 stderr = new PrimaryOutputStream("##stderr##", File
-                        .createTempFile(id.toString(), ".stderr", node
+                        .createTempFile(id.toString(), ".stderr", node.config()
                                 .getTmpDir()), this);
 
                 // TODO: support standard in too :)
@@ -205,7 +205,7 @@ public final class Primary extends Job implements Runnable, Receiver {
                 for (Map.Entry<String, File> entry : description
                         .getOutputFiles().entrySet()) {
                     postStageFiles.add(new PrimaryOutputStream(entry.getKey(),
-                            File.createTempFile(id.toString(), ".output", node
+                            File.createTempFile(id.toString(), ".output", node.config()
                                     .getTmpDir()), this));
                 }
             } else {

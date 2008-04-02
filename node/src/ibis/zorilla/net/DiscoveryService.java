@@ -10,7 +10,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 
@@ -43,11 +45,19 @@ public class DiscoveryService implements Service, Runnable {
 
         nodes = new HashMap<UUID, NodeInfo>();
 
-        String[] strings = node.config().getStringList(Config.PEERS);
-        this.addresses = new DirectSocketAddress[strings.length];
-        for (int i = 0; i < strings.length; i++) {
-            this.addresses[i] = DirectSocketAddress.getByAddress(strings[i]);
+        Set<DirectSocketAddress> addresses = new HashSet<DirectSocketAddress>();
+        
+        for (String string:node.config().getStringList(Config.PEERS)) {
+            addresses.add(DirectSocketAddress.getByAddress(string));
         }
+        
+        //also add master (if available)
+        String masterAddress = node.config().getProperty(Config.MASTER_ADDRESS); 
+        if (node.config().isWorker() && masterAddress != null) {
+            addresses.add(DirectSocketAddress.getByAddress(masterAddress));
+        }
+        
+        this.addresses = addresses.toArray(new DirectSocketAddress[0]);
     }
 
     public void start() {

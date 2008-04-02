@@ -31,7 +31,7 @@ public final class Main {
         out.println("Zorilla usage:");
         out.println();
 
-        out.println("--config_dir DIR | -c");
+        out.println("--config-dir DIR | -c");
         out.println("\t" + properties.get(Config.CONFIG_DIR));
 
         out.println("--cluster-name NAME");

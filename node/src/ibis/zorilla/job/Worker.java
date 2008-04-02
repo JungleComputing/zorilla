@@ -275,7 +275,7 @@ public final class Worker implements Runnable {
     }
 
     private File createScratchDir(UUID id) throws IOException, Exception {
-        File scratchDir = new File(node.getTmpDir(), id.toString())
+        File scratchDir = new File(node.config().getTmpDir(), id.toString())
                 .getAbsoluteFile();
 
         scratchDir.mkdirs();

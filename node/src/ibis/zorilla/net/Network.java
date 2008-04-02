@@ -49,8 +49,8 @@ public class Network implements Runnable {
     public Network(Node node) throws IOException, Exception {
         this.node = node;
 
-        TypedProperties factoryProperties =
-            SmartSocketsProperties.getDefaultProperties();
+        TypedProperties factoryProperties = SmartSocketsProperties
+                .getDefaultProperties();
 
         String cluster = node.config().getProperty(Config.CLUSTER_NAME);
 
@@ -58,17 +58,36 @@ public class Network implements Runnable {
             factoryProperties.put("smartsockets.networks.name", cluster);
         }
 
+        if (node.config().isMaster()) {
+            // start smartsockets hub
+            factoryProperties.put(SmartSocketsProperties.START_HUB, "true");
+            factoryProperties.put(SmartSocketsProperties.HUB_DELEGATE, "true");
+        } else if (node.config().isWorker()) {
+            String masterAddressString = node.config().getProperty(
+                    Config.MASTER_ADDRESS);
+
+            if (masterAddressString != null) {
+
+                DirectSocketAddress masterAddress = DirectSocketAddress
+                        .getByAddress(masterAddressString);
+
+                logger.info("Master address = " + masterAddress);
+
+                factoryProperties.put(SmartSocketsProperties.HUB_ADDRESSES,
+                        masterAddress.toString());
+            }
+        }
+
         socketFactory = DirectSocketFactory.getSocketFactory(factoryProperties);
 
-        serverSocket =
-            socketFactory.createServerSocket(node.config().getIntProperty(
-                Config.PORT), 0, null);
+        serverSocket = socketFactory.createServerSocket(node.config()
+                .getIntProperty(Config.PORT), 0, null);
 
     }
 
     public void start() {
-        boolean firewalled =
-            node.config().getBooleanProperty(Config.FIREWALL, false);
+        boolean firewalled = node.config().getBooleanProperty(Config.FIREWALL,
+                false);
         if (!firewalled) {
             // start handling connections
             ThreadPool.createNew(this, "network connection handler");
@@ -87,8 +106,8 @@ public class Network implements Runnable {
 
     public DirectSocket connect(NodeInfo peer, byte serviceID, int timeout)
             throws IOException {
-        DirectSocket result =
-            socketFactory.createSocket(peer.getAddress(), timeout, 0, null);
+        DirectSocket result = socketFactory.createSocket(peer.getAddress(),
+                timeout, 0, null);
 
         result.getOutputStream().write(serviceID);
 
@@ -97,8 +116,8 @@ public class Network implements Runnable {
 
     public DirectSocket connect(DirectSocketAddress address, byte serviceID,
             int timeout) throws IOException {
-        DirectSocket result =
-            socketFactory.createSocket(address, timeout, 0, null);
+        DirectSocket result = socketFactory.createSocket(address, timeout, 0,
+                null);
 
         result.getOutputStream().write(serviceID);
 

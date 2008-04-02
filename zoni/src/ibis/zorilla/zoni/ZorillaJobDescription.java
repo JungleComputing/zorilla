@@ -20,8 +20,6 @@ public class ZorillaJobDescription implements Serializable {
 
     private Map<String, String> attributes;
 
-    private String[] javaOptions;
-
     private Map<String, String> javaSystemProperties;
 
     private String javaMain;
@@ -61,7 +59,6 @@ public class ZorillaJobDescription implements Serializable {
         environment = in.readStringMap();
         attributes = in.readStringMap();
 
-        javaOptions = in.readStringArray();
         javaSystemProperties = in.readStringMap();
         javaMain = in.readString();
         javaArguments = in.readStringArray();
@@ -124,10 +121,6 @@ public class ZorillaJobDescription implements Serializable {
 
     public String getJavaClassPath() {
         return javaClassPath;
-    }
-
-    public String[] getJavaOptions() {
-        return javaOptions.clone();
     }
 
     public Map<String, String> getJavaSystemProperties() {
@@ -198,10 +191,6 @@ public class ZorillaJobDescription implements Serializable {
         this.javaClassPath = javaClassPath;
     }
 
-    public void setJavaOptions(String[] javaOptions) {
-        this.javaOptions = javaOptions.clone();
-    }
-
     public void setJavaSystemProperties(Map<String, String> properties) {
         this.javaSystemProperties = new HashMap<String, String>(properties);
     }
@@ -229,7 +218,6 @@ public class ZorillaJobDescription implements Serializable {
         out.writeStringMap(environment);
         out.writeStringMap(attributes);
 
-        out.writeStringArray(javaOptions);
         out.writeStringMap(javaSystemProperties);
         out.writeString(javaMain);
         out.writeStringArray(javaArguments);
@@ -297,7 +285,6 @@ public class ZorillaJobDescription implements Serializable {
         result.put("environment", toString(environment));
         result.put("attributes", toString(attributes));
         
-        result.put("java.options", toString(javaOptions));
         result.put("java.system.properties", toString(javaSystemProperties));
         result.put("java Main", javaMain);
         result.put("java Arguments", toString(javaArguments));
@@ -333,7 +320,6 @@ public class ZorillaJobDescription implements Serializable {
         result += "\nArguments = " + toString(arguments);
         result += "\nEnvironment:" + toNewLineString(environment);
         result += "\nAttributes:" + toNewLineString(attributes);
-        result += "\nJava Options = " + toString(javaOptions);
         result += "\nJava System Properties:" + toNewLineString(javaSystemProperties);
         result += "\nJava Main = " + javaMain;
         result += "\nJava Arguments = " + toString(javaArguments);

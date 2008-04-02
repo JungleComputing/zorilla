@@ -5,7 +5,6 @@ if [ -z $ZORILLA_HOME ];  then
 	exit
 fi
 
-#add zorilla home dir to classpath for log4j.properties file
 LIBCLASSPATH=""
 add_to_libclasspath () {
     JARFILES=`cd "$1" && ls * 2>/dev/null`

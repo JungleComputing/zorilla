@@ -42,9 +42,6 @@ public final class Node implements Runnable {
     // directory to store logs, stats, etc
     private final File logDir;
 
-    // directory for temporary files
-    private final File tmpDir;
-
     private final Network network;
 
     // ***** Services *****\\
@@ -137,30 +134,34 @@ public final class Node implements Runnable {
                 config.put(Config.NODE_NAME, name);
             }
         }
+        
+        config.getTmpDir().mkdirs();
+        config.getTmpDir().deleteOnExit();
+        if (!config.getTmpDir().exists()) {
+            throw new Exception("could not create tmp dir: " + config.getTmpDir());
+        }
+        
+        if (config.isWorker()) {
+            // TODO: start log forwarding service
 
-        logDir = new File(config.getConfigDir(), name);
+            logDir = null;
+        } else {
+            // save log locally
+            logDir = new File(config.getConfigDir(), name);
 
-        logDir.mkdirs();
+            logDir.mkdirs();
 
-        File log4jFile = new File(logDir, "log");
-        FileAppender appender = new FileAppender(new PatternLayout(
-                "%d{HH:mm:ss} %-5p [%t] %c - %m%n"), log4jFile
-                .getAbsolutePath());
-        Logger.getRootLogger().addAppender(appender);
-
-        File systemTmpDir = new File(System.getProperty("java.io.tmpdir"));
-
-        tmpDir = new File(systemTmpDir, "zorilla-" + id.toString());
-        tmpDir.mkdirs();
-        tmpDir.deleteOnExit();
-
-        if (!tmpDir.isDirectory()) {
-            throw new Exception("cannot create temp dir: " + tmpDir);
+            File log4jFile = new File(logDir, "log");
+            FileAppender appender = new FileAppender(new PatternLayout(
+                    "%d{HH:mm:ss} %-5p [%t] %c - %m%n"), log4jFile
+                    .getAbsolutePath());
+            Logger.getRootLogger().addAppender(appender);
         }
 
+       
         // INIT SERVICES
-        
-        //webservice is first, as it also keeps logs
+
+        // webservice is first, as it also keeps logs
         webService = new WebService(this);
 
         vivaldiService = new VivaldiService(this);
@@ -202,7 +203,13 @@ public final class Node implements Runnable {
         }
 
         logger.info("Saving statistics and logs to " + logDir);
-        logger.info("Node " + name + " started");
+        if (config.isMaster()) {
+            logger.info("MASTER node " + name + " started");
+        } else if (config.isWorker()) {
+            logger.info("WORKER node " + name + " started");
+        } else {
+            logger.info("Node " + name + " started");
+        }            
     }
 
     public synchronized Config config() {
@@ -211,10 +218,6 @@ public final class Node implements Runnable {
 
     public File getNodeDir() {
         return logDir;
-    }
-
-    public File getTmpDir() {
-        return tmpDir;
     }
 
     public UUID getID() {

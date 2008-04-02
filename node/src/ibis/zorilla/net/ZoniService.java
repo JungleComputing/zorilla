@@ -36,7 +36,7 @@ public class ZoniService implements Service, Runnable {
 
         int port = node.config().getIntProperty(Config.ZONI_PORT);
 
-        if (port == -1) {
+        if (node.config().isWorker() || port == -1) {
             serverSocket = null;
         } else {
             serverSocket = new ServerSocket(port);

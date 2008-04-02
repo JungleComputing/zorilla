@@ -531,7 +531,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
                 preStageFiles = new InputFile[call.readInt()];
                 for (int i = 0; i < preStageFiles.length; i++) {
-                    preStageFiles[i] = new InputFile(call, this, node.getTmpDir());
+                    preStageFiles[i] = new InputFile(call, this, node.config().getTmpDir());
                 }
 
                 postStageFiles = new String[call.readInt()];
@@ -548,7 +548,7 @@ public final class Copy extends Job implements Receiver, Runnable {
                 }
 
                 if (call.readBoolean()) {
-                    stdin = new InputFile(call, this, node.getTmpDir());
+                    stdin = new InputFile(call, this, node.config().getTmpDir());
                 }
 
                 workerResources = (Resources) call.readObject();

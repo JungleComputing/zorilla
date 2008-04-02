@@ -51,7 +51,7 @@ public final class WebService implements Service {
             "ibis.zorilla.www.JettyLogger");
 
         // save log to a temp file in HTML format
-        File logFile = File.createTempFile("zorilla", ".log", node.getTmpDir());
+        File logFile = File.createTempFile("zorilla", ".log", node.config().getTmpDir());
         logFile.deleteOnExit();
         FileAppender appender = new FileAppender(new HTMLLayout(), logFile
             .getAbsolutePath());

@@ -16,9 +16,9 @@ public final class Resources implements Serializable {
     
     private final int processors;
 
-    private final long memory; // MB
+    private final int memory; // MB
 
-    private final long diskSpace; // MB
+    private final int diskSpace; // MB
 
     public Resources() {
         this.claimNode = false;
@@ -27,7 +27,7 @@ public final class Resources implements Serializable {
         this.diskSpace = 0;
     }
 
-    public Resources(boolean claimNode,  int processors, long memory, long diskspace) {
+    public Resources(boolean claimNode,  int processors, int memory, int diskspace) {
         this.claimNode = claimNode;
         this.processors = processors;
         this.memory = memory;
@@ -85,8 +85,8 @@ public final class Resources implements Serializable {
         
         result.put("claimNode", "" + claimNode);
         result.put("processors", Integer.toString(processors));
-        result.put("memory", Long.toString(memory));
-        result.put("disk.space", Long.toString(diskSpace));
+        result.put("memory", Integer.toString(memory));
+        result.put("disk.space", Integer.toString(diskSpace));
         
         return result;
         

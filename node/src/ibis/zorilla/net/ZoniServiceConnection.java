@@ -47,7 +47,7 @@ final class ZoniServiceConnection implements Runnable {
     }
 
     private void submitJob() throws IOException, Exception {
-        ZorillaJobDescription jobDescription = new ZorillaJobDescription(in, node.getTmpDir());
+        ZorillaJobDescription jobDescription = new ZorillaJobDescription(in, node.config().getTmpDir());
 
         ZoniCallback callback = null;
 

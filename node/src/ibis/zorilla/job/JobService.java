@@ -25,7 +25,7 @@ public final class JobService implements Service, Runnable {
 
     public static final int JOB_MAINTENANCE_INTERVAL = 60 * 1000;
 
-    public static final long ONE_GB = 1024 * 1024 * 1024;
+    public static final int ONE_GB = 1024; // MB
 
     private static final Logger logger = Logger.getLogger(JobService.class);
 
@@ -41,19 +41,16 @@ public final class JobService implements Service, Runnable {
 
     private final Map<UUID, Resources> usedResources;
 
-    private static long totalMemory() {
+    private static int totalMemory() {
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
             long result = (Long) server.getAttribute(new ObjectName(
                     "java.lang:type=OperatingSystem"),
                     "TotalPhysicalMemorySize");
-            logger.debug("total system memory = " + result);
-            return result;
+            return (int) (result / 1024.0 / 1024.0);
         } catch (Throwable t) {
-            logger
-                    .error(
-                            "could not determin total memory of this machine, using 1Gb",
-                            t);
+            logger.error("could not determine"
+                    + " total memory of this machine, using 1Gb", t);
             return ONE_GB;
         }
     }
@@ -65,16 +62,26 @@ public final class JobService implements Service, Runnable {
         createWorkerSecurityFile(new File(node.config().getConfigDir(),
                 "worker.security.policy"));
 
-        int defaultWorkers = Runtime.getRuntime().availableProcessors();
+        int defaultWorkers;
+        if (node.config().isMaster()) {
+            defaultWorkers = 0;
+        } else {
+            defaultWorkers = Runtime.getRuntime().availableProcessors();
+        }
+
         maxWorkers = node.config().getIntProperty(Config.MAX_WORKERS,
                 defaultWorkers);
-
+        logger.info("Maximum of workers on this node: " + maxWorkers);
         
-
-        long usableDiskSpace = node.getTmpDir().getUsableSpace() / 1024 / 1024;
+        int totalMemory = totalMemory();
+        logger.info("Total memory available: " + totalMemory + " Mb");
         
-        availableResources = new Resources(false, maxWorkers, totalMemory(),
+        int usableDiskSpace = (int) (node.config().getTmpDir().getUsableSpace() / 1024.0 / 1024.0);
+        logger.info("Total diskspace available: " + usableDiskSpace + " Mb");
+
+        availableResources = new Resources(false, maxWorkers, totalMemory,
                 usableDiskSpace);
+
         usedResources = new HashMap<UUID, Resources>();
     }
 
@@ -230,7 +237,7 @@ public final class JobService implements Service, Runnable {
 
             free = free.subtract(request);
         }
-        
+
         logger.debug("result for resource request: " + result);
 
         return result;
@@ -238,7 +245,6 @@ public final class JobService implements Service, Runnable {
 
     public void start() {
         ThreadPool.createNew(this, "job service");
-        logger.info("Maximum of " + maxWorkers + " workers on this node");
         logger.info("Started Job service");
     }
 
