@@ -172,7 +172,7 @@ public class Config extends TypedProperties {
             { DEFAULT_FLOOD_METRIC, "neighbours",
                     "Default metric used to send out flood messages" },
 
-            { MAX_CLUSTER_SIZE, "25", "Maximum size of a cluster" },
+            { MAX_CLUSTER_SIZE, "100", "Maximum size of a cluster" },
 
             {
                     WORKER,

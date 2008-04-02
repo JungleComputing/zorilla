@@ -36,7 +36,9 @@ public final class Resources implements Serializable {
 
     
     public Resources(JobAttributes attributes) {
-        claimNode = attributes.getProperty(JobAttributes.HOST_COUNT) != null;
+    	//FIXME:hack
+        //claimNode = attributes.getProperty(JobAttributes.HOST_COUNT) != null;
+        claimNode = false;
         processors = 1;
         memory = attributes.getIntProperty(JobAttributes.MEMORY_MAX);
         diskSpace = attributes.getIntProperty(JobAttributes.DISK_SPACE);

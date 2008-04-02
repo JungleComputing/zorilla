@@ -212,16 +212,30 @@ public class ZorillaJobDescription implements Serializable {
     }
 
     void writeTo(ZoniOutputStream out) throws IOException {
+    	//FIXME: remove all these flushes :(
+    	
         out.writeString(executable);
+        out.flush();
         out.writeStringArray(arguments);
+        out.flush();
 
         out.writeStringMap(environment);
+        out.flush();
+
         out.writeStringMap(attributes);
+        out.flush();
 
         out.writeStringMap(javaSystemProperties);
+        out.flush();
+
         out.writeString(javaMain);
+        out.flush();
+
         out.writeStringArray(javaArguments);
+        out.flush();
+
         out.writeString(javaClassPath);
+        out.flush();
 
         out.writeBoolean(interactive);
 
