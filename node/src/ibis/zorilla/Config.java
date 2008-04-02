@@ -262,7 +262,7 @@ public class Config extends TypedProperties {
         checkProperties("zorilla.", getValidKeys(), null, true);
 
         File tmpDir = getFileProperty(Config.TMP_DIR);
-        if (!configDir.isAbsolute()) {
+        if (!tmpDir.isAbsolute()) {
             // make absolute by resolving against java system tmp
             String systemTmp = System.getProperty("java.io.tmpdir");
             tmpDir = new File(systemTmp, tmpDir.getPath());
