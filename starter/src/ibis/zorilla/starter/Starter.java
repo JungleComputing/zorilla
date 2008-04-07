@@ -18,7 +18,7 @@ public class Starter {
     private static final int BUFFER_SIZE = 32 * 1024;
 
     private static final int TIMEOUT = 10 * 1000; // 10 seconds
-    
+
     private final URL location;
 
     private final File workingDir;
@@ -52,7 +52,7 @@ public class Starter {
         } catch (IOException e) {
             System.err.println("could not get timestamp");
             e.printStackTrace(System.err);
-            return 0;
+            return -1;
         }
 
     }
@@ -74,16 +74,18 @@ public class Starter {
         URLConnection connection;
         try {
             connection = location.openConnection();
-            
+
             connection.setConnectTimeout(TIMEOUT);
             connection.setReadTimeout(TIMEOUT);
-            
+
             InputStream in = connection.getInputStream();
 
             FileOutputStream out = new FileOutputStream(zipFile);
 
-            System.err.println("STARTER: dowloading "
-                    + connection.getContentLength() + " bytes from " + location);
+            System.err
+                    .println("STARTER: dowloading "
+                            + connection.getContentLength() + " bytes from "
+                            + location);
 
             byte[] buffer = new byte[BUFFER_SIZE];
             boolean done = false;
@@ -171,9 +173,8 @@ public class Starter {
     private Process startProcess() throws IOException {
         ProcessBuilder builder = new ProcessBuilder();
 
-        String javaExecutable =
-            System.getProperty("java.home") + File.separator + "bin"
-                    + File.separator + "java";
+        String javaExecutable = System.getProperty("java.home")
+                + File.separator + "bin" + File.separator + "java";
 
         builder.command().add(javaExecutable);
         builder.command().add("-server");
@@ -183,12 +184,12 @@ public class Starter {
 
         // log4j stuff
         builder.command().add(
-            "-Dlog4j.configuration=file:" + libDir.getAbsolutePath()
-                    + File.separator + "log4j.properties");
+                "-Dlog4j.configuration=file:" + libDir.getAbsolutePath()
+                        + File.separator + "log4j.properties");
 
-        //add user home (just in case)
+        // add user home (just in case)
         builder.command().add("-Duser.home=" + System.getProperty("user.home"));
-        
+
         builder.command().add("ibis.zorilla.Main");
 
         System.err.print("STARTER: starting process: ");
@@ -201,13 +202,13 @@ public class Starter {
 
         // forward stdout and stderr of process.
 
-        StreamReader outReader =
-            new StreamReader(result.getInputStream(), System.out);
+        StreamReader outReader = new StreamReader(result.getInputStream(),
+                System.out);
         outReader.setDaemon(true);
         outReader.start();
 
-        StreamReader errReader =
-            new StreamReader(result.getErrorStream(), System.err);
+        StreamReader errReader = new StreamReader(result.getErrorStream(),
+                System.err);
         errReader.setDaemon(true);
         errReader.start();
 
@@ -218,7 +219,7 @@ public class Starter {
         Process process = null;
 
         while (true) {
-            //check if process has ended
+            // check if process has ended
             if (process != null) {
                 try {
                     process.exitValue();
@@ -228,15 +229,19 @@ public class Starter {
                 }
             }
 
-            // check timestamp, if newer, kill the process
-            if (process != null && (timestamp != getTimestamp())) {
-                System.err.println("STARTER: destroying process");
-                process.destroy();
-                process = null;
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    // IGNORE
+            if (process != null) {
+                // check timestamp, if newer, kill the process
+                // timestamp of -1 means we could not retrieve the timestamp
+                long currentTimestamp = getTimestamp();
+                if (currentTimestamp != -1 && timestamp != currentTimestamp) {
+                    System.err.println("STARTER: destroying process");
+                    process.destroy();
+                    process = null;
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        // IGNORE
+                    }
                 }
             }
 
@@ -265,13 +270,12 @@ public class Starter {
 
     public static void main(String[] args) {
         String location = "http://www.cs.vu.nl/~ndrost/zorilla-lib.zip";
-        String workingDir =
-            System.getProperty("java.io.tmpdir") + File.separator
-                    + "zorilla-starter";
+        String workingDir = System.getProperty("java.io.tmpdir")
+                + File.separator + "zorilla.starter";
 
         System.err.println("system properties: ");
         System.getProperties().list(System.err);
-        
+
         for (int i = 0; i < args.length; i++) {
             if (args[i].equalsIgnoreCase("--dir")) {
                 i++;
@@ -282,8 +286,8 @@ public class Starter {
         }
 
         try {
-            Starter starter =
-                new Starter(new URL(location), new File(workingDir));
+            Starter starter = new Starter(new URL(location), new File(
+                    workingDir));
 
             starter.run();
         } catch (MalformedURLException e) {

@@ -64,18 +64,29 @@ public final class Main {
         out.println("\tWARNING: SECURITY RISK!");
 
         out.println("--max-workers WORKERS");
-        out.println("\tmaximum number of workers for this node. Defaults to number");
+        out
+                .println("\tmaximum number of workers for this node. Defaults to number");
         out.println("\tof processors available");
-        
+
         out.println("--random-ports");
         out.println("\t shortcut to set all the port options to 0");
-        
+
+        out.println("--master");
+        out
+                .println("\t make this node a master node (does not have any workers)");
+
+        out.println("--worker");
+        out
+                .println("\t make this node a worker node (does not accept job submissions)");
+
+        out.println("--worker-address");
+        out.println("\t address of master node");
+
         out.println();
         out.println("PROPERTY=VALUE");
         out.println("\tSet a property, as if it was set in a configuration");
         out.println("\t\t\tfile or as a System property.");
         out.println();
-
 
         out.println("--config-properties");
         out
@@ -130,9 +141,12 @@ public final class Main {
                 commandLineProperties.put(Config.ZONI_PORT, "0");
                 commandLineProperties.put(Config.WWW_PORT, "0");
                 commandLineProperties.put(Config.DISCOVERY_PORT, "0");
+            } else if (args[i].equalsIgnoreCase("--worker")) {
+                commandLineProperties.put(Config.WORKER, "true");
+            } else if (args[i].equalsIgnoreCase("--master")) {
+                commandLineProperties.put(Config.MASTER, "true");
             } else if (args[i].equalsIgnoreCase("--config-properties")) {
-                Map<String, String> properties = Config
-                        .getDescriptions();
+                Map<String, String> properties = Config.getDescriptions();
                 for (Map.Entry<String, String> property : properties.entrySet()) {
                     System.out.println(property.getKey());
                     System.out.println("\t" + property.getValue());

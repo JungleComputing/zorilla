@@ -83,7 +83,7 @@ public class GossipService implements Service {
 
         algorithms = new HashMap<String, GossipAlgorithm>();
 
-        File statsDir = new File(node.getNodeDir(), "gossip_stats");
+        File statsDir = new File(node.config().getLogDir(), node.getName() + "-gossip-stats");
         statsDir.mkdirs();
 
         GossipAlgorithm arrg = new ARRG("ARRG", true, true, cacheSize,

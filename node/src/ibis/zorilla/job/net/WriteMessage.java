@@ -10,12 +10,14 @@ import java.io.IOException;
 
 public class WriteMessage implements ObjectOutput {
     
+    public static final long CONNECTION_TIMEOUT = 10 * 1000;
+    
     private ibis.ipl.WriteMessage message;
     private SendPort sendPort;
     
     public WriteMessage(ReceivePortIdentifier receiver, Ibis ibis) throws IOException {
         sendPort = ibis.createSendPort(Factory.callType);
-        sendPort.connect(receiver);
+        sendPort.connect(receiver, CONNECTION_TIMEOUT, true);
         message = sendPort.newMessage();
         message.writeInt(EndPoint.MESSAGE);
     }

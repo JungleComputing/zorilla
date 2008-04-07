@@ -32,13 +32,15 @@ public class Config extends TypedProperties {
 
     private static final long serialVersionUID = 1L;
 
+    public static final String PROPERTIES_FILE = "zorilla.properties";
+
     public static final String PREFIX = "zorilla.";
 
     public static final String CONFIG_DIR = PREFIX + "config.dir";
 
-    public static final String TMP_DIR = PREFIX + "tmp.dir";
+    public static final String LOG_DIR = PREFIX + "log.dir";
 
-    public static final String PROPERTIES = PREFIX + "properties";
+    public static final String TMP_DIR = PREFIX + "tmp.dir";
 
     public static final String NODE_ID = PREFIX + "node.id";
 
@@ -101,6 +103,8 @@ public class Config extends TypedProperties {
 
             { CONFIG_DIR, ".zorilla",
                     "Location of configuration and other files of zorilla" },
+
+            { LOG_DIR, ".zorilla/logs", "Location of job and node logs" },
 
             { TMP_DIR, "zorilla", "Location of temporary files of zorilla" },
 
@@ -209,8 +213,83 @@ public class Config extends TypedProperties {
     // public static final int BUFFER_SIZE = 100 * 1024;
 
     private final File configDir;
-
+    private final File logDir;
     private final File tmpDir;
+
+    private File createConfigDir() throws Exception {
+        File configDir = getFileProperty(Config.CONFIG_DIR);
+        if (!configDir.isAbsolute()) {
+            // make absolute by resolving against user home directory
+            String userHome = System.getProperty("user.home");
+            configDir = new File(userHome, configDir.getPath());
+        }
+
+        configDir.mkdirs();
+
+        if (!configDir.exists()) {
+            File systemTmpDir = new File(System.getProperty("java.io.tmpdir"));
+            File tmpConfigDir = new File(systemTmpDir, "zorilla.config");
+
+            logger.warn("Could not create config dir: " + configDir
+                    + ", using " + tmpConfigDir);
+
+            tmpConfigDir.mkdirs();
+            tmpConfigDir.deleteOnExit();
+            configDir = tmpConfigDir;
+        }
+
+        if (!configDir.exists()) {
+            throw new Exception("Could not create config dir: " + configDir);
+        }
+
+        return configDir;
+    }
+
+    private File createLogDir() throws Exception {
+        File logDir = getFileProperty(Config.LOG_DIR);
+        if (!logDir.isAbsolute()) {
+            // make absolute by resolving against user home directory
+            String userHome = System.getProperty("user.home");
+            logDir = new File(userHome, logDir.getPath());
+        }
+
+        logDir.mkdirs();
+
+        if (!logDir.exists()) {
+            File systemTmpDir = new File(System.getProperty("java.io.tmpdir"));
+            File tmpLogDir = new File(systemTmpDir, "zorilla.logs");
+
+            logger.warn("Could not create log dir: " + logDir + ", using "
+                    + tmpLogDir);
+
+            tmpLogDir.mkdirs();
+            tmpLogDir.deleteOnExit();
+            logDir = tmpLogDir;
+        }
+
+        if (!logDir.exists()) {
+            throw new Exception("Could not create log dir: " + logDir);
+        }
+
+        return logDir;
+
+    }
+
+    private File createTmpDir() throws Exception {
+        File tmpDir = getFileProperty(Config.TMP_DIR);
+        if (!tmpDir.isAbsolute()) {
+            // make absolute by resolving against java system tmp
+            String systemTmp = System.getProperty("java.io.tmpdir");
+            tmpDir = new File(systemTmp, tmpDir.getPath());
+        }
+        tmpDir.mkdirs();
+
+        if (!tmpDir.exists()) {
+            throw new Exception("Could not create tmp dir: " + tmpDir);
+        }
+
+        return tmpDir;
+    }
 
     Config(Properties userProperties) throws Exception {
         Properties defaultProperties = getHardcodedProperties();
@@ -231,7 +310,7 @@ public class Config extends TypedProperties {
         try {
             ClassLoader classLoader = ClassLoader.getSystemClassLoader();
             InputStream inputStream = classLoader
-                    .getResourceAsStream(PROPERTIES);
+                    .getResourceAsStream(PROPERTIES_FILE);
             if (inputStream != null) {
                 classpathProperties.load(inputStream);
                 logger.debug("loaded " + fileProperties.size()
@@ -241,15 +320,9 @@ public class Config extends TypedProperties {
             logger.warn("could not load properties from classpath", e);
         }
 
-        File configDir = getFileProperty(Config.CONFIG_DIR);
-        if (!configDir.isAbsolute()) {
-            // make absolute by resolving against user home directory
-            String userHome = System.getProperty("user.home");
-            configDir = new File(userHome, configDir.getPath());
-        }
-        this.configDir = configDir;
+        configDir = createConfigDir();
 
-        File configFile = new File(configDir, "config");
+        File configFile = new File(configDir, PROPERTIES_FILE);
         try {
             FileInputStream configFileStream = new FileInputStream(configFile);
             fileProperties.load(configFileStream);
@@ -261,19 +334,18 @@ public class Config extends TypedProperties {
 
         checkProperties("zorilla.", getValidKeys(), null, true);
 
-        File tmpDir = getFileProperty(Config.TMP_DIR);
-        if (!tmpDir.isAbsolute()) {
-            // make absolute by resolving against java system tmp
-            String systemTmp = System.getProperty("java.io.tmpdir");
-            tmpDir = new File(systemTmp, tmpDir.getPath());
-        }
-        this.tmpDir = tmpDir;
+        logDir = createLogDir();
+        tmpDir = createTmpDir();
     }
 
     public File getConfigDir() {
         return configDir;
     }
-    
+
+    public File getLogDir() {
+        return logDir;
+    }
+
     public File getTmpDir() {
         return tmpDir;
     }

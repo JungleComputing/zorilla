@@ -19,6 +19,8 @@ import org.apache.log4j.Logger;
 
 public class Invocation extends InputStream implements ObjectInput, ObjectOutput {
 
+    public static final long CONNECTION_TIMEOUT = 10 * 1000;
+    
     private static int READING = 0;
 
     private static int FINISHED_READING = 1;
@@ -82,7 +84,7 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
         }
 
         sendPort = ibis.createSendPort(Factory.replyType);
-        sendPort.connect(caller);
+        sendPort.connect(caller, CONNECTION_TIMEOUT, true);
 
         reply = sendPort.newMessage();
         state = WRITING;
@@ -139,7 +141,7 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
             if (state == FINISHED_READING) {
                 // send special "exception" message to caller
                 sendPort = ibis.createSendPort(Factory.replyType);
-                sendPort.connect(caller);
+                sendPort.connect(caller, CONNECTION_TIMEOUT, true);
                 WriteMessage reply = sendPort.newMessage();
                 reply.writeInt(EndPoint.REPLY);
                 reply.writeObject(id);

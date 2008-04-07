@@ -39,9 +39,6 @@ public final class Node implements Runnable {
 
     private final Config config;
 
-    // directory to store logs, stats, etc
-    private final File logDir;
-
     private final Network network;
 
     // ***** Services *****\\
@@ -134,31 +131,18 @@ public final class Node implements Runnable {
                 config.put(Config.NODE_NAME, name);
             }
         }
-        
-        config.getTmpDir().mkdirs();
-        config.getTmpDir().deleteOnExit();
-        if (!config.getTmpDir().exists()) {
-            throw new Exception("could not create tmp dir: " + config.getTmpDir());
-        }
-        
+
         if (config.isWorker()) {
             // TODO: start log forwarding service
-
-            logDir = null;
-        } else {
-            // save log locally
-            logDir = new File(config.getConfigDir(), name);
-
-            logDir.mkdirs();
-
-            File log4jFile = new File(logDir, "log");
-            FileAppender appender = new FileAppender(new PatternLayout(
-                    "%d{HH:mm:ss} %-5p [%t] %c - %m%n"), log4jFile
-                    .getAbsolutePath());
-            Logger.getRootLogger().addAppender(appender);
         }
 
-       
+        // start logging node logs
+        File log4jFile = new File(config.getLogDir(), name + ".log");
+        FileAppender appender = new FileAppender(new PatternLayout(
+                "%d{HH:mm:ss} %-5p [%t] %c - %m%n"), log4jFile
+                .getAbsolutePath());
+        Logger.getRootLogger().addAppender(appender);
+
         // INIT SERVICES
 
         // webservice is first, as it also keeps logs
@@ -202,22 +186,20 @@ public final class Node implements Runnable {
             deadline = Long.MAX_VALUE;
         }
 
-        logger.info("Saving statistics and logs to " + logDir);
+        logger.info("Read configuration from " + config.getConfigDir());
+        logger.info("Saving statistics and logs to " + config.getLogDir());
+        logger.info("Saving temporary files to " + config.getTmpDir());
         if (config.isMaster()) {
             logger.info("MASTER node " + name + " started");
         } else if (config.isWorker()) {
             logger.info("WORKER node " + name + " started");
         } else {
             logger.info("Node " + name + " started");
-        }            
+        }
     }
 
     public synchronized Config config() {
         return config;
-    }
-
-    public File getNodeDir() {
-        return logDir;
     }
 
     public UUID getID() {

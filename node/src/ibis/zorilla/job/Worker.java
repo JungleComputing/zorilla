@@ -318,6 +318,7 @@ public final class Worker implements Runnable {
 
     public void run() {
         ProcessBuilder processBuilder;
+        Process process = null;
         java.io.File workingDir;
         ZorillaPrintStream log;
         StreamWriter outWriter;
@@ -367,7 +368,6 @@ public final class Worker implements Runnable {
             logger.debug("working directory for worker = "
                     + processBuilder.directory());
 
-            Process process;
             try {
                 process = processBuilder.start();
                 setStatus(Status.RUNNING);
@@ -460,6 +460,16 @@ public final class Worker implements Runnable {
                 job.flush();
             } catch (Exception e2) {
                 // IGNORE
+            }
+        } finally {
+            //make sure the process is destroyed, and the worker officially ends
+            if (process != null) {
+                logger.warn("had to force-destroy worker");
+                process.destroy();
+            }
+            if (!finished()) {
+                logger.warn("had to force status of worker to error");
+                setStatus(Status.ERROR);
             }
         }
     }

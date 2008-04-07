@@ -36,23 +36,15 @@
 			<zipfileset dir="node/lib" />
 			<zipfileset dir="zoni/lib" />
 			<zipfileset dir="." includes="log4j.properties" />
-			<zipfileset dir="." includes="zorilla.properties" />
+			<zipfileset dir="." includes="zorilla.starter.properties" fullpath="zorilla.properties" />
 		</zip>
 
+		<echo message="uploading zip file..."/>
 		<exec executable="scp">
 			<arg value="zorilla-lib.zip" />
 			<arg value="ndrost@flits.cs.vu.nl:/home/ndrost/www" />
 		</exec>
-
-
-		<!--
-				<scp file="zorilla-lib.zip" 
-			todir="ndrost@flits.cs.vu.nl:/home/ndrost/www" verbose="true" />
-			-->
-
-
-
-
+		
 	</target>
 
 

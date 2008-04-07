@@ -54,7 +54,7 @@ public final class Copy extends Job implements Receiver, Runnable {
     // *** STATIC INFO ON JOB *** \\
 
     private ZorillaJobDescription jobDescription;
-    
+
     // *** FILES *** \\
 
     private InputFile[] preStageFiles;
@@ -531,7 +531,8 @@ public final class Copy extends Job implements Receiver, Runnable {
 
                 preStageFiles = new InputFile[call.readInt()];
                 for (int i = 0; i < preStageFiles.length; i++) {
-                    preStageFiles[i] = new InputFile(call, this, node.config().getTmpDir());
+                    preStageFiles[i] = new InputFile(call, this, node.config()
+                            .getTmpDir());
                 }
 
                 postStageFiles = new String[call.readInt()];
@@ -799,18 +800,17 @@ public final class Copy extends Job implements Receiver, Runnable {
         }
 
         try {
-            //dowbload input files
-            for(InputFile file: preStageFiles) {
+            // dowbload input files
+            for (InputFile file : preStageFiles) {
                 file.download();
             }
 
             while (true) {
-                if(removeFinishedLocalWorkers()) {
-                    //a worker ended in an error, stop creating new workers
-                    //for this job
+                if (removeFinishedLocalWorkers()) {
+                    // a worker ended in an error, stop creating new workers
+                    // for this job
                     moreWorkersPossible = false;
                 }
-                        
 
                 if (moreWorkersPossible) {
                     moreWorkersPossible = createNewLocalWorkers();
@@ -851,7 +851,9 @@ public final class Copy extends Job implements Receiver, Runnable {
             }
         } catch (Exception e) {
             log("exception while participating in job", e);
+            logger.warn("exception while participating in job: " + this, e);
             try {
+                killWorkers();
                 end(0);
                 finish();
             } catch (Exception e2) {
@@ -889,17 +891,20 @@ public final class Copy extends Job implements Receiver, Runnable {
 
     @Override
     public void writeStdin(InputStream in) throws Exception {
-        throw new Exception("can only write to standard in where job was submitted");
+        throw new Exception(
+                "can only write to standard in where job was submitted");
     }
 
     @Override
     public void readStderr(OutputStream out) throws Exception {
-        throw new Exception("can only read from standard err where job was submitted");
+        throw new Exception(
+                "can only read from standard err where job was submitted");
     }
 
     @Override
     public void readStdout(OutputStream out) throws Exception {
-        throw new Exception("can only read from standard out where job was submitted");
+        throw new Exception(
+                "can only read from standard out where job was submitted");
     }
 
     @Override
@@ -908,18 +913,19 @@ public final class Copy extends Job implements Receiver, Runnable {
     }
 
     @Override
-    public void readOutputFile(String sandboxPath, DataOutputStream out) throws Exception {
+    public void readOutputFile(String sandboxPath, DataOutputStream out)
+            throws Exception {
         throw new Exception("can only get output files where job was submitted");
     }
-    
+
     @Override
     public ZorillaJobDescription getDescription() {
         return jobDescription;
     }
 
-	@Override
-	public NodeInfo[] getConstituentInfos() {
-		return new NodeInfo[0];
-	}
+    @Override
+    public NodeInfo[] getConstituentInfos() {
+        return new NodeInfo[0];
+    }
 
 }

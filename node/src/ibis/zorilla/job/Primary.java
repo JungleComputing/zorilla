@@ -153,7 +153,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
         this.callback = callback;
 
-        logDir = new File(node.getNodeDir(), "job-" + id.toString());
+        logDir = new File(node.config().getLogDir(), "job-" + id.toString());
         logDir.mkdirs();
 
         logFiles = new ArrayList<PrimaryOutputStream>();
