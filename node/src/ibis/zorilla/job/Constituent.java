@@ -12,7 +12,7 @@ class Constituent implements Serializable {
 
     private static final long serialVersionUID = -3561973367471333047L;
 
-    public static final long EXPIRATION_TIMEOUT = 1200 * 1000;
+    public static final long EXPIRATION_TIMEOUT = 200 * 1000;
 
     private final UUID id;
 

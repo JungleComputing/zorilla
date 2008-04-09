@@ -48,7 +48,9 @@ public abstract class Job {
 
     public static final int CANCELLED = 8;
 
-    public static final int ERROR = 9;
+    public static final int USER_ERROR = 9;
+    
+    public static final int ERROR = 10;
 
     /**
      * create a constituent of the jobstate
@@ -93,6 +95,8 @@ public abstract class Job {
         } else if (phase == 8) {
             return "CANCELLED";
         } else if (phase == 9) {
+            return "USER_ERROR";
+        } else if (phase == 10) {
             return "ERROR";
         } else {
             return "ILLEGAL_PHASE";

@@ -74,11 +74,14 @@ public final class ZoniProtocol {
 
     public static final int PHASE_CANCELLED = 8;
 
-    public static final int PHASE_ERROR = 9;
+    public static final int PHASE_USER_ERROR = 9;
+    
+    public static final int PHASE_ERROR = 10;
+
 
     public static final String[] PHASES =
         { "UNKNOWN", "INITIAL", "PRE_STAGE", "SCHEDULING", "RUNNING", "CLOSED",
-                "POST_STAGING", "COMPLETED", "CANCELLED", "ERROR" };
+                "POST_STAGING", "COMPLETED", "CANCELLED", "USER_ERROR", "ERROR" };
 
     // types of peers
 

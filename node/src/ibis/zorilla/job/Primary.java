@@ -557,6 +557,10 @@ public final class Primary extends Job implements Runnable, Receiver {
                 + " with exit status " + status + "(" + theExitStatus
                 + ") now " + getNrOfWorkers() + " workers");
 
+        logger.info("removed worker " + workerID + " on " + constituent
+                + " with exit status " + status + "(" + theExitStatus
+                + ") now " + getNrOfWorkers() + " workers");
+        
         if (status != Status.DONE) {
             log("worker exited with status: " + status);
 
@@ -587,7 +591,7 @@ public final class Primary extends Job implements Runnable, Receiver {
                     || (status == Status.USER_ERROR && getStringAttribute(
                             JobAttributes.ON_USER_ERROR).equalsIgnoreCase("job.error"))) {
 
-                setPhase(ERROR);
+                setPhase(USER_ERROR);
             }
 
         }
@@ -606,14 +610,14 @@ public final class Primary extends Job implements Runnable, Receiver {
                     || (status == Status.USER_ERROR && getStringAttribute(
                             JobAttributes.ON_USER_ERROR).equalsIgnoreCase("job.error"))) {
 
-                setPhase(ERROR);
+                setPhase(USER_ERROR);
             }
         }
 
         if (phase == RUNNING && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
             setPhase(CLOSED);
         }
-
+        
         log("now " + getNrOfWorkers() + " workers");
     }
 
@@ -665,6 +669,7 @@ public final class Primary extends Job implements Runnable, Receiver {
                 } else {
                     iterator.remove();
                     log("removed expired constituent: " + constituent);
+                    logger.warn("removed expired constituent: " + constituent);
                 }
             }
         }
@@ -881,6 +886,8 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             log("adding new constituent: "
                     + constituentID.toString().substring(0, 7));
+            logger.info("adding new constituent: "
+                    + constituentID.toString().substring(0, 7));
 
             constituents.put(constituentID, constituent);
         }
@@ -984,6 +991,8 @@ public final class Primary extends Job implements Runnable, Receiver {
 
         log("removed constituent "
                 + constituent.getID().toString().substring(0, 7));
+        logger.info("removed constituent "
+                + constituent.getID().toString().substring(0, 7));
 
         if (constituent.nrOfWorkers() > 0) {
             throw new Exception("removed constituent with workers remaining");
@@ -1018,6 +1027,7 @@ public final class Primary extends Job implements Runnable, Receiver {
             synchronized (this) {
                 constituent = constituents.get(constituentID);
             }
+            constituent.resetExpirationDate();
 
             if (constituent == null) {
                 throw new Exception("unknown costituent ("
