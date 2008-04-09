@@ -45,6 +45,9 @@
         <jar destfile="lib/${ant.project.name}.jar" 
             basedir="tmp" 
             includes="**/*.class">
+            <manifest>
+                <attribute name="Main-Class" value="ibis.zorilla.starter.Starter" />
+            </manifest>
         </jar>
 
         <delete dir="tmp" />

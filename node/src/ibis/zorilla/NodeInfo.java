@@ -64,7 +64,7 @@ public class NodeInfo implements Serializable {
     }
 
     public String toString() {
-        return name;
+        return name + "(" + id.toString().substring(7) + ")";
     }
     
     public String getName() {

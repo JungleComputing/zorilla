@@ -212,16 +212,16 @@ public final class PageServlet extends HttpServlet {
 
         out.println("<table border=frame rules=all cellspacing=15>"
                 + "<tr><th>Name</th>" + 
-                // "<th>ID</th>" +
-                // "<th>Address</th>" +
+                 "<th>ID</th>" +
+//                "<th>Address</th>" +
                 "<th>Vivaldi Coordinate</th>" + "<th>Distance</th>");
 
         for (NodeInfo info : nodes) {
             out.println("<tr>");
             out.println("<td><a href=" + WebService.linkTo(info) + "/>"
                     + info.getName() + "</a></td>");
-//            out.println("<td>" + info.getID() + "</td>");
-            //out.println("<td>" + info.getAddress() + "</td>");
+            out.println("<td>" + info.getID() + "</td>");
+//            out.println("<td>" + info.getAddress() + "</td>");
             out.println("<td>" + info.getCoordinates() + "</td>");
 //            out.println("<td title=\"Coordinate: " + info.getCoordinates()
 //                    + "\">");

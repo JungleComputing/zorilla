@@ -9,6 +9,8 @@ import ibis.ipl.PortType;
 import java.util.Properties;
 
 public class Factory {
+	
+	public static final long CONNECTION_TIMEOUT = 60 * 1000;
 
     public static final PortType callType = new PortType(
             PortType.SERIALIZATION_OBJECT, PortType.COMMUNICATION_RELIABLE,

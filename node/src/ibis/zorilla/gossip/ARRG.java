@@ -163,7 +163,7 @@ class ARRG implements GossipAlgorithm, Runnable {
             cache.removeRandom();
         }
 
-        return new GossipMessage(service.getNodeInfo(), request.getSender(),
+        return new GossipMessage(self, request.getSender(),
                 replyEntries, true, name);
     }
 

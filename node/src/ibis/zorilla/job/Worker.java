@@ -102,16 +102,12 @@ public final class Worker implements Runnable {
                         + " exists in sandbox!");
 
                 // set exe bit (first try)
-                String[] command = { "/bin/chmod", "u+x",
-                        sandboxExeFile.getAbsolutePath() };
-
-                new RunProcess(command, new String[0], workingDir);
+                new RunProcess("/bin/chmod", "u+x",
+                        sandboxExeFile.getAbsolutePath()).run();
 
                 // set exe bit (second try)
-                String[] command2 = { "/usr/bin/chmod", "u+x",
-                        sandboxExeFile.getAbsolutePath() };
-
-                new RunProcess(command2, new String[0], workingDir);
+                new RunProcess("/usr/bin/chmod", "u+x",
+                        sandboxExeFile.getAbsolutePath()).run();
 
                 // override exe location
                 location = sandboxExeFile.getAbsolutePath();

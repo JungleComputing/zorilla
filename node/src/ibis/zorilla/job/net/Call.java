@@ -20,8 +20,6 @@ public final class Call implements ObjectInput, ObjectOutput {
     
     Logger logger = Logger.getLogger(Call.class);
     
-    public static final long CONNECTION_TIMEOUT = 10 * 1000;
-    
     private final UUID id;
     
     private SendPort sendPort;
@@ -39,7 +37,7 @@ public final class Call implements ObjectInput, ObjectOutput {
         receivePort = ibis.createReceivePort(Factory.replyType, Node.generateUUID().toString());
         receivePort.enableConnections();
         
-        sendPort.connect(destination, CONNECTION_TIMEOUT, true);
+        sendPort.connect(destination, Factory.CONNECTION_TIMEOUT, true);
 
         request = sendPort.newMessage();
         
@@ -59,7 +57,7 @@ public final class Call implements ObjectInput, ObjectOutput {
         receivePort = ibis.createReceivePort(Factory.replyType, Node.generateUUID().toString());
         receivePort.enableConnections();
         
-        sendPort.connect(target, port, CONNECTION_TIMEOUT, true);
+        sendPort.connect(target, port, Factory.CONNECTION_TIMEOUT, true);
 
         request = sendPort.newMessage();
         
@@ -85,7 +83,7 @@ public final class Call implements ObjectInput, ObjectOutput {
         request = null;
         sendPort = null;
 
-        reply = receivePort.receive(CONNECTION_TIMEOUT);
+        reply = receivePort.receive(Factory.CONNECTION_TIMEOUT);
 
         if (reply == null) {
             throw new Exception("reply not received");
