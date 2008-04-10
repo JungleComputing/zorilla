@@ -494,7 +494,7 @@ public final class Primary extends Job implements Runnable, Receiver {
     }
 
     @Override
-    public synchronized boolean zombie() {
+    public boolean zombie() {
         // primary jobs are NEVER removable from the job list.
         return false;
     }
