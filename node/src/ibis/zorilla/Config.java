@@ -218,13 +218,16 @@ public class Config extends TypedProperties {
 
     private File createConfigDir() throws Exception {
         File configDir = getFileProperty(Config.CONFIG_DIR);
-        if (!configDir.isAbsolute()) {
-            // make absolute by resolving against user home directory
-            String userHome = System.getProperty("user.home");
-            configDir = new File(userHome, configDir.getPath());
-        }
 
-        configDir.mkdirs();
+        if (!configDir.equals("?")) {
+            if (!configDir.isAbsolute()) {
+                // make absolute by resolving against user home directory
+                String userHome = System.getProperty("user.home");
+                configDir = new File(userHome, configDir.getPath());
+            }
+
+            configDir.mkdirs();
+        }
 
         if (!configDir.exists()) {
             File systemTmpDir = new File(System.getProperty("java.io.tmpdir"));

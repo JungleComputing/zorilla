@@ -109,7 +109,7 @@ public final class FloodService implements Service {
 
             double initialRadius = node.clusterService()
                     .distanceToClosestNeighbour();
-            if (initialRadius == Double.POSITIVE_INFINITY) {
+            if (initialRadius < 1.0) {
                 initialRadius = 1.0;
             }
 
