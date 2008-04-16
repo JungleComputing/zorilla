@@ -1,6 +1,5 @@
 package ibis.zorilla.cluster;
 
-import ibis.util.ThreadPool;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.net.Network;

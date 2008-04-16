@@ -4,8 +4,6 @@ import ibis.zorilla.util.SizeOf;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Random;
-
 
 import org.apache.log4j.Logger;
 
