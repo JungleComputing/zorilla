@@ -2,8 +2,6 @@ package ibis.zorilla.zoni;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
-
 import org.apache.log4j.Logger;
 
 public class OutputForwarder extends Thread {

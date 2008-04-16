@@ -1,12 +1,6 @@
 package ibis.zorilla.apps;
 
 import ibis.zorilla.zoni.ZoniConnection;
-import ibis.zorilla.zoni.ZoniProtocol;
-
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-
 import org.apache.log4j.Logger;
 
 

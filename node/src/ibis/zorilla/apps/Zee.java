@@ -4,10 +4,6 @@ import ibis.zorilla.zoni.JobInfo;
 import ibis.zorilla.zoni.ZoniConnection;
 import ibis.zorilla.zoni.ZoniProtocol;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.Map;
 

@@ -21,7 +21,6 @@ import ibis.zorilla.zoni.ZorillaJobDescription;
 import ibis.zorilla.zoni.ZoniInputFile;
 import ibis.zorilla.zoni.ZoniFileInfo;
 
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;

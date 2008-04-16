@@ -10,7 +10,6 @@ import ibis.zorilla.util.PropertyUndefinedException;
 import ibis.zorilla.zoni.ZoniFileInfo;
 import ibis.zorilla.zoni.ZorillaJobDescription;
 
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,8 +17,6 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.UUID;
-
-import org.apache.log4j.Logger;
 
 /**
  * A job in the zorilla system. May be created either from a description of the
@@ -29,7 +26,6 @@ import org.apache.log4j.Logger;
 public abstract class Job {
 
     // Status of jobs
-    private static final Logger logger = Logger.getLogger(Job.class);
 
     public static final int UNKNOWN = 0;
 
