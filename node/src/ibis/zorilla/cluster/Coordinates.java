@@ -145,11 +145,8 @@ public final class Coordinates implements Serializable {
     public Coordinates() {
         error = 1.0; // no confidence, high error
 
-        // initiate coordinates on origin
-        coordinates = new double[DIMENSIONS];
-        for (int i = 0; i < DIMENSIONS; i++) {
-            coordinates[i] = Math.random();
-        }
+        // initiate coordinates on some random coordinate (within 0.0 to 1.0)
+        coordinates = randomVector();
     }
 
     public Coordinates(double[] coordinates, double error) {
