@@ -4,6 +4,7 @@ import ibis.zorilla.util.SizeOf;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Random;
 
 
 import org.apache.log4j.Logger;
@@ -147,7 +148,7 @@ public final class Coordinates implements Serializable {
         // initiate coordinates on origin
         coordinates = new double[DIMENSIONS];
         for (int i = 0; i < DIMENSIONS; i++) {
-            coordinates[i] = 0.0;
+            coordinates[i] = Math.random();
         }
     }
 

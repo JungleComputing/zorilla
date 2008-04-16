@@ -16,7 +16,7 @@ import org.apache.log4j.Logger;
 
 import ibis.smartsockets.direct.DirectSocket;
 
-public class Neighbour implements Runnable {
+public class Neighbour {
 
     /**
      * if true, the avarage of the ping history is used. by default the mimimm
@@ -25,8 +25,6 @@ public class Neighbour implements Runnable {
     public static final boolean AVERAGE_PING_TIMES = false;
 
     public static final int REQUEST_TIMEOUT = 10 * 1000;
-
-    public static final int TIMEOUT = 60 * 1000;
 
     public static final int MAX_FAIL_COUNT = 5;
 
@@ -58,7 +56,6 @@ public class Neighbour implements Runnable {
 
         this.pingTimes = new LinkedList<Double>();
 
-        ThreadPool.createNew(this, "neighbour thread");
     }
 
     public synchronized NodeInfo getInfo() {
@@ -69,7 +66,7 @@ public class Neighbour implements Runnable {
         return id;
     }
 
-    private void updateInfo() {
+    void ping() {
         DirectSocket socket = null;
         try {
             NodeInfo oldInfo = getInfo();
@@ -145,8 +142,8 @@ public class Neighbour implements Runnable {
             return Double.POSITIVE_INFINITY; // unreachable a.k.a _very_ far
         }
 
-        if (pingTimes.size() < PING_HISTORY_LENGTH) {
-            return Double.NEGATIVE_INFINITY; // unknown (yet)
+        if (pingTimes.size() == 0) {
+            return Double.NEGATIVE_INFINITY; // not known yet
         }
 
         if (AVERAGE_PING_TIMES) {
@@ -175,28 +172,6 @@ public class Neighbour implements Runnable {
 
     public String toString() {
         return info + "(" + distanceMs() + " ms)";
-    }
-
-    public void run() {
-        // do a number of distance measurements to get a first distance estimate
-        while (distanceMs() == Double.NEGATIVE_INFINITY) {
-            updateInfo();
-        }
-
-        while (distanceMs() != Double.POSITIVE_INFINITY) {
-            updateInfo();
-
-            try {
-                Thread.sleep(Node.randomTimeout(TIMEOUT));
-            } catch (InterruptedException e) {
-                // IGNORE
-            }
-        }
-
-    }
-
-    synchronized void end() {
-        ended = true;
     }
 
 }

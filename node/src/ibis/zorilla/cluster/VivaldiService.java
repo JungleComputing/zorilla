@@ -70,6 +70,7 @@ public class VivaldiService implements Service, Runnable {
         for (int i = 0; i < TRIES; i++) {
             long start = System.nanoTime();
             out.write(i);
+            out.flush();
             int reply = in.read();
             long end = System.nanoTime();
             if (reply != i) {
@@ -95,6 +96,7 @@ public class VivaldiService implements Service, Runnable {
     }
 
     public void handleConnection(DirectSocket socket) {
+        Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
         try {
             socket.setTcpNoDelay(true);
 
@@ -103,16 +105,20 @@ public class VivaldiService implements Service, Runnable {
 
             // send coordinates
             out.write(getCoordinates().toBytes());
+            out.flush();
 
             for (int i = 0; i < TRIES; i++) {
                 int read = in.read();
                 out.write(read);
+                out.flush();
             }
             socket.close();
         } catch (IOException e) {
             logger.error("error on handling ping", e);
         }
+        Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
     }
+    
 
     public void start() {
         ThreadPool.createNew(this, "vivaldi");
@@ -129,6 +135,7 @@ public class VivaldiService implements Service, Runnable {
     }
 
     public void run() {
+        Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
         while (true) {
             NodeInfo neighbour = node.clusterService().getRandomNeighbour();
             if (neighbour != null) {

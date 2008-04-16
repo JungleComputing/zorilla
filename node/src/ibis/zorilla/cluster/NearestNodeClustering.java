@@ -31,13 +31,13 @@ public class NearestNodeClustering extends ClusterService implements Runnable {
     // how many candidates do we have
     public static final int CANDIDATES = 3;
 
-    public static final int TIMEOUT = 10 * 1000;
+    public static final int TIMEOUT = 60 * 1000;
 
     private HashMap<UUID, Neighbour> neighbours;
 
     public NearestNodeClustering(Node node) throws IOException {
         super(node);
-        
+
         maxNeighbours = node.config().getIntProperty(Config.MAX_CLUSTER_SIZE);
 
         neighbours = new HashMap<UUID, Neighbour>();
@@ -56,6 +56,10 @@ public class NearestNodeClustering extends ClusterService implements Runnable {
     public synchronized Neighbour[] getSortedNeighbours() {
         return sortNeighboursByDistance(neighbours.values()).toArray(
                 new Neighbour[0]);
+    }
+
+    public synchronized Neighbour[] getNeighbours() {
+        return neighbours.values().toArray(new Neighbour[0]);
     }
 
     public synchronized NodeInfo[] getNeighbourInfos() {
@@ -193,7 +197,6 @@ public class NearestNodeClustering extends ClusterService implements Runnable {
             Neighbour removed = sorted.remove(sorted.size() - 1);
             neighbours.remove(removed.getID());
             logger.debug("removing " + removed + " from neighbour list");
-            removed.end();
         }
 
         int newCandidates = CANDIDATES - nrOfCandidates;
@@ -206,8 +209,9 @@ public class NearestNodeClustering extends ClusterService implements Runnable {
         }
 
         NodeInfo[] newCandidateInfos = node.gossipService().getNodesList();
-        
-        sortNodesByDistance(newCandidateInfos, node.vivaldiService().getCoordinates());
+
+        sortNodesByDistance(newCandidateInfos, node.vivaldiService()
+                .getCoordinates());
 
         int added = 0;
         for (NodeInfo newInfo : newCandidateInfos) {
@@ -227,6 +231,10 @@ public class NearestNodeClustering extends ClusterService implements Runnable {
 
     public void run() {
         while (true) {
+            for(Neighbour neighbour: getNeighbours()) {
+                neighbour.ping();
+            }
+                
             updateNeighbourList();
 
             try {
