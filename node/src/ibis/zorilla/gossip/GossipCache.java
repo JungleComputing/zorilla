@@ -1,5 +1,6 @@
 package ibis.zorilla.gossip;
 
+import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 
 import java.util.ArrayList;
@@ -8,13 +9,12 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
-
 final class GossipCache {
 
     private ArrayList<GossipCacheEntry> cache;
 
     private Random random;
-    
+
     private final UUID self;
 
     public GossipCache(UUID self) {
@@ -114,11 +114,11 @@ final class GossipCache {
 
     protected synchronized void add(GossipCacheEntry entry) {
         if (entry.getInfo().getID().equals(self)) {
-            //do not add ourselves to cache
+            // do not add ourselves to cache
             return;
         }
         cache.add(entry);
-        purgeDuplicates();
+        cleanup();
     }
 
     protected synchronized void add(List<GossipCacheEntry> entries) {
@@ -127,7 +127,7 @@ final class GossipCache {
                 cache.add(entry);
             }
         }
-        purgeDuplicates();
+        cleanup();
     }
 
     protected synchronized void incrementEntries() {
@@ -140,7 +140,10 @@ final class GossipCache {
         return cache.size();
     }
 
-    private synchronized void purgeDuplicates() {
+    /**
+     * remove duplicates and expired entries
+     */
+    private synchronized void cleanup() {
         for (int i = 0; i < cache.size(); i++) {
             for (int j = i + 1; j < cache.size(); j++) {
                 if (cache.get(i).sameNodeAs(cache.get(j))) {
@@ -152,6 +155,15 @@ final class GossipCache {
                 }
             }
         }
+
+        long version = Node.getVersion();
+        for (int i = 0; i < cache.size(); i++) {
+            if (cache.get(i).hasExpired() || version != cache.get(i).getInfo().getVersion()) {
+                cache.remove(i);
+                i--;
+            }
+        }
+
     }
 
     protected synchronized void remove(GossipCacheEntry entry) {
@@ -163,7 +175,7 @@ final class GossipCache {
             }
         }
     }
-    
+
     protected synchronized boolean contains(GossipCacheEntry entry) {
         for (int i = 0; i < cache.size(); i++) {
             if (cache.get(i).sameNodeAs(entry)) {
@@ -200,11 +212,11 @@ final class GossipCache {
             }
         }
 
-        //add new entry to the back of the list
+        // add new entry to the back of the list
         cache.add(peer);
 
-        //remove some entries until we reach the desired size 
-        //(but NOT the last one we just added)
+        // remove some entries until we reach the desired size
+        // (but NOT the last one we just added)
         while (cache.size() > maximum_size) {
             cache.remove(random.nextInt(cache.size() - 1)).getInfo();
         }
@@ -214,7 +226,7 @@ final class GossipCache {
         cache.clear();
     }
 
-    public synchronized  int size() {
+    public synchronized int size() {
         return cache.size();
     }
 

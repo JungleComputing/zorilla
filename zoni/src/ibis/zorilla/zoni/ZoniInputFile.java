@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 public class ZoniInputFile implements Serializable {
@@ -52,10 +54,10 @@ public class ZoniInputFile implements Serializable {
     /**
      * Constructor to receive input files.
      */
-    ZoniInputFile(ZoniInputStream in, File tmpDir) throws IOException {
-        sandboxPath = in.readString();
+    ZoniInputFile(ObjectInputStream in, File tmpDir) throws IOException, ClassNotFoundException {
+        sandboxPath = in.readUTF();
         size = in.readLong();
-        File file = in.readFile();
+        File file = (File) in.readObject();
         boolean contentIncluded = in.readBoolean();
 
         // file send by value, not by reference
@@ -91,10 +93,10 @@ public class ZoniInputFile implements Serializable {
     /**
      * Write an input file to a stream
      */
-    void writeTo(ZoniOutputStream out, boolean writeContent) throws IOException {
-        out.writeString(sandboxPath);
+    void writeTo(ObjectOutputStream out, boolean writeContent) throws IOException {
+        out.writeUTF(sandboxPath);
         out.writeLong(size);
-        out.writeFile(file);
+        out.writeObject(file);
         out.writeBoolean(writeContent);
 
         // file send by value, not send-by-reference

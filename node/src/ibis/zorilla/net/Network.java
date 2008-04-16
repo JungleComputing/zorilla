@@ -6,8 +6,11 @@ import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.log4j.Logger;
+
+import ibis.io.Conversion;
 import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectServerSocket;
 import ibis.smartsockets.direct.DirectSocket;
@@ -38,6 +41,12 @@ public class Network implements Runnable {
 
     public static final byte ZONI_SERVICE = 9;
 
+    // node types
+
+    public static final byte TYPE_NODE = 1;
+
+    public static final byte TYPE_USER = 2;
+
     // sockets et al.
 
     private final DirectSocketFactory socketFactory;
@@ -45,6 +54,8 @@ public class Network implements Runnable {
     private final DirectServerSocket serverSocket;
 
     private final Node node;
+
+    private final byte[] versionBytes;
 
     public Network(Node node) throws IOException, Exception {
         this.node = node;
@@ -58,31 +69,17 @@ public class Network implements Runnable {
             factoryProperties.put("smartsockets.networks.name", cluster);
         }
 
-        if (node.config().isMaster()) {
-            // start smartsockets hub
-            factoryProperties.put(SmartSocketsProperties.START_HUB, "true");
-            factoryProperties.put(SmartSocketsProperties.HUB_DELEGATE, "true");
-        } else if (node.config().isWorker()) {
-            String masterAddressString = node.config().getProperty(
-                    Config.MASTER_ADDRESS);
-
-            if (masterAddressString != null) {
-
-                DirectSocketAddress masterAddress = DirectSocketAddress
-                        .getByAddress(masterAddressString);
-
-                logger.info("Master address = " + masterAddress);
-
-                factoryProperties.put(SmartSocketsProperties.HUB_ADDRESSES,
-                        masterAddress.toString());
-            }
-        }
-
         socketFactory = DirectSocketFactory.getSocketFactory(factoryProperties);
 
         serverSocket = socketFactory.createServerSocket(node.config()
                 .getIntProperty(Config.PORT), 0, null);
 
+        // Create byte array out of version string. Use the fact that
+        // It is made out of only numbers.
+        long version = Node.getVersion();
+        versionBytes = new byte[Long.SIZE];
+
+        Conversion.defaultConversion.long2byte(version, versionBytes, 0);
     }
 
     public void start() {
@@ -109,6 +106,8 @@ public class Network implements Runnable {
         DirectSocket result = socketFactory.createSocket(peer.getAddress(),
                 timeout, 0, null);
 
+        result.getOutputStream().write(TYPE_NODE);
+        result.getOutputStream().write(versionBytes);
         result.getOutputStream().write(serviceID);
 
         return result;
@@ -118,7 +117,9 @@ public class Network implements Runnable {
             int timeout) throws IOException {
         DirectSocket result = socketFactory.createSocket(address, timeout, 0,
                 null);
-
+        
+        result.getOutputStream().write(TYPE_NODE);
+        result.getOutputStream().write(versionBytes);
         result.getOutputStream().write(serviceID);
 
         return result;
@@ -143,11 +144,31 @@ public class Network implements Runnable {
         }
 
         try {
+            byte service;
 
-            byte service = (byte) socket.getInputStream().read();
+            InputStream in = socket.getInputStream();
+
+            byte type = (byte) in.read();
+
+            if (type == TYPE_NODE) {
+
+                for (int i = 0; i < versionBytes.length; i++) {
+                    if (versionBytes[i] != (byte) in.read()) {
+                        throw new IOException(
+                                "remote version of node not equal to version");
+                    }
+                }
+
+                service = (byte) in.read();
+
+            } else if (type == TYPE_USER) {
+                service = ZONI_SERVICE;
+            } else {
+                throw new IOException("unknown connection type: " + type);
+            }
 
             logger.debug("new connection received for service number: "
-                    + service);
+                    + service + " from node type " + type);
 
             switch (service) {
             case DISCOVERY_SERVICE:

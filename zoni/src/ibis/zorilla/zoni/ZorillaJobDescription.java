@@ -2,6 +2,8 @@ package ibis.zorilla.zoni;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,17 +54,18 @@ public class ZorillaJobDescription implements Serializable {
         interactive = false;
     }
 
-    public ZorillaJobDescription(ZoniInputStream in, File tmpDir)
-            throws IOException {
-        executable = in.readString();
-        arguments = in.readStringArray();
-        environment = in.readStringMap();
-        attributes = in.readStringMap();
+    @SuppressWarnings("unchecked")
+    public ZorillaJobDescription(ObjectInputStream in, File tmpDir)
+            throws IOException, ClassNotFoundException {
+        executable = (String) in.readObject();
+        arguments = (String[]) in.readObject();
+        environment = (Map<String, String>) in.readObject();
+        attributes = (Map<String, String>) in.readObject();
 
-        javaSystemProperties = in.readStringMap();
-        javaMain = in.readString();
-        javaArguments = in.readStringArray();
-        javaClassPath = in.readString();
+        javaSystemProperties = (Map<String, String>) in.readObject();
+        javaMain = (String) in.readObject();
+        javaArguments = (String[]) in.readObject();
+        javaClassPath = (String) in.readObject();
 
         interactive = in.readBoolean();
 
@@ -72,171 +75,151 @@ public class ZorillaJobDescription implements Serializable {
             inputFiles.add(new ZoniInputFile(in, tmpDir));
         }
 
-        outputFiles = new HashMap<String, File>();
-        int nrOfOutputFiles = in.readInt();
-        for (int i = 0; i < nrOfOutputFiles; i++) {
-            outputFiles.put(in.readString(), in.readFile());
-        }
+        outputFiles = (Map<String, File>) in.readObject();
 
-        stdinFile = in.readFile();
-        stdoutFile = in.readFile();
-        stderrFile = in.readFile();
+        stdinFile = (File) in.readObject();
+        stdoutFile = (File) in.readObject();
+        stderrFile = (File) in.readObject();
     }
 
-    public void addInputFile(ZoniInputFile file) {
+    public synchronized void addInputFile(ZoniInputFile file) {
         inputFiles.add(file);
     }
 
-    public void addOutputFile(String sandboxPath, File file) {
+    public synchronized void addOutputFile(String sandboxPath, File file) {
         outputFiles.put(sandboxPath, file);
     }
 
-    public String[] getArguments() {
+    public synchronized String[] getArguments() {
         return arguments.clone();
     }
 
-    public Map<String, String> getAttributes() {
+    public synchronized Map<String, String> getAttributes() {
         return attributes;
     }
 
-    public Map<String, String> getEnvironment() {
+    public synchronized Map<String, String> getEnvironment() {
         return environment;
     }
 
-    public String getExecutable() {
+    public synchronized String getExecutable() {
         return executable;
     }
 
-    public ZoniInputFile[] getInputFiles() {
+    public synchronized ZoniInputFile[] getInputFiles() {
         return inputFiles.toArray(new ZoniInputFile[0]);
     }
 
-    public String[] getJavaArguments() {
+    public synchronized String[] getJavaArguments() {
         return javaArguments.clone();
     }
 
-    public String getJavaMain() {
+    public synchronized String getJavaMain() {
         return javaMain;
     }
 
-    public String getJavaClassPath() {
+    public synchronized String getJavaClassPath() {
         return javaClassPath;
     }
 
-    public Map<String, String> getJavaSystemProperties() {
+    public synchronized Map<String, String> getJavaSystemProperties() {
         return javaSystemProperties;
     }
 
-    public Map<String, File> getOutputFiles() {
+    public synchronized Map<String, File> getOutputFiles() {
         return outputFiles;
     }
 
-    public File getStderrFile() {
+    public synchronized File getStderrFile() {
         return stderrFile;
     }
 
-    public File getStdinFile() {
+    public synchronized File getStdinFile() {
         return stdinFile;
     }
 
-    public File getStdoutFile() {
+    public synchronized File getStdoutFile() {
         return stdoutFile;
     }
 
-    public boolean isInteractive() {
+    public synchronized boolean isInteractive() {
         return interactive;
     }
 
-    public boolean isJava() {
+    public synchronized boolean isJava() {
         return (javaMain != null) && (javaMain.length() != 0);
     }
 
-    public void setArguments(String[] arguments) {
+    public synchronized void setArguments(String[] arguments) {
         this.arguments = arguments.clone();
     }
 
-    public void setAttribute(String key, String value) {
+    public synchronized void setAttribute(String key, String value) {
         attributes.put(key, value);
     }
 
-    public void setAttributes(Map<String, String> attributes) {
+    public synchronized void setAttributes(Map<String, String> attributes) {
         this.attributes = new HashMap<String, String>(attributes);
     }
 
-    public void setEnvironment(Map<String, String> environment) {
+    public synchronized void setEnvironment(Map<String, String> environment) {
         this.attributes = new HashMap<String, String>(environment);
     }
 
-    public void setEnvironment(String key, String value) {
+    public synchronized void setEnvironment(String key, String value) {
         environment.put(key, value);
     }
 
-    public void setExecutable(String executable) {
+    public synchronized void setExecutable(String executable) {
         this.executable = executable;
     }
 
-    public void setInteractive(boolean interactive) {
+    public synchronized void setInteractive(boolean interactive) {
         this.interactive = interactive;
     }
 
-    public void setJavaArguments(String[] javaArguments) {
+    public synchronized void setJavaArguments(String[] javaArguments) {
         this.javaArguments = javaArguments.clone();
     }
 
-    public void setJavaMain(String javaMain) {
+    public synchronized void setJavaMain(String javaMain) {
         this.javaMain = javaMain;
     }
 
-    public void setJavaClassPath(String javaClassPath) {
+    public synchronized void setJavaClassPath(String javaClassPath) {
         this.javaClassPath = javaClassPath;
     }
 
-    public void setJavaSystemProperties(Map<String, String> properties) {
+    public synchronized void setJavaSystemProperties(Map<String, String> properties) {
         this.javaSystemProperties = new HashMap<String, String>(properties);
     }
 
-    public void setJavaSystemProperty(String key, String value) {
+    public synchronized void setJavaSystemProperty(String key, String value) {
         javaSystemProperties.put(key, value);
     }
 
-    public void setStderrFile(File file) {
+    public synchronized void setStderrFile(File file) {
         this.stderrFile = file.getAbsoluteFile();
     }
 
-    public void setStdinFile(File file) {
+    public synchronized void setStdinFile(File file) {
         this.stdinFile = file.getAbsoluteFile();
     }
 
-    public void setStdoutFile(File file) {
+    public synchronized void setStdoutFile(File file) {
         this.stdoutFile = file.getAbsoluteFile();
     }
 
-    void writeTo(ZoniOutputStream out) throws IOException {
-    	//FIXME: remove all these flushes :(
-    	
-        out.writeString(executable);
-        out.flush();
-        out.writeStringArray(arguments);
-        out.flush();
-
-        out.writeStringMap(environment);
-        out.flush();
-
-        out.writeStringMap(attributes);
-        out.flush();
-
-        out.writeStringMap(javaSystemProperties);
-        out.flush();
-
-        out.writeString(javaMain);
-        out.flush();
-
-        out.writeStringArray(javaArguments);
-        out.flush();
-
-        out.writeString(javaClassPath);
-        out.flush();
-
+    synchronized void writeTo(ObjectOutputStream out) throws IOException {
+        out.writeObject(executable);
+        out.writeObject(arguments);
+        out.writeObject(environment);
+        out.writeObject(attributes);
+        out.writeObject(javaSystemProperties);
+        out.writeObject(javaMain);
+        out.writeObject(javaArguments);
+        out.writeObject(javaClassPath);
+        
         out.writeBoolean(interactive);
 
         out.writeInt(inputFiles.size());
@@ -244,15 +227,11 @@ public class ZorillaJobDescription implements Serializable {
             file.writeTo(out, interactive);
         }
 
-        out.writeInt(outputFiles.size());
-        for (Map.Entry<String, File> entry : outputFiles.entrySet()) {
-            out.writeString(entry.getKey());
-            out.writeFile(entry.getValue());
-        }
+        out.writeObject(outputFiles);
 
-        out.writeFile(stdinFile);
-        out.writeFile(stdoutFile);
-        out.writeFile(stderrFile);
+        out.writeObject(stdinFile);
+        out.writeObject(stdoutFile);
+        out.writeObject(stderrFile);
     }
 
     private String toNewLineString(Map<String, String> map) {

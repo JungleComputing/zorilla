@@ -5,7 +5,7 @@
 
 	<!-- set a timestamp -->
 	<tstamp>
-		<format property="timestamp" pattern="yyyyMMdd-HHmm-ss" />
+		<format property="timestamp" pattern="yyyyMMddHHmmss" />
 	</tstamp>
 
 	<!-- empty version by default -->

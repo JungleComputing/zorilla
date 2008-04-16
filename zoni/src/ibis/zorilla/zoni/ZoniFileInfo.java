@@ -1,8 +1,10 @@
 package ibis.zorilla.zoni;
 
-import java.io.IOException;
+import java.io.Serializable;
 
-public class ZoniFileInfo {
+public class ZoniFileInfo implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final String sandboxPath;
 
@@ -18,30 +20,6 @@ public class ZoniFileInfo {
         this.name = name;
         this.isDirectory = isDirectory;
         this.children = children.clone();
-    }
-
-    public ZoniFileInfo(ZoniInputStream in) throws IOException {
-        sandboxPath = in.readString();
-        name = in.readString();
-        isDirectory = in.readBoolean();
-        children = new ZoniFileInfo[in.readInt()];
-
-        // recursive :)
-        for (int i = 0; i < children.length; i++) {
-            children[i] = new ZoniFileInfo(in);
-        }
-    }
-
-    public void writeTo(ZoniOutputStream out) throws IOException {
-        out.writeString(sandboxPath);
-        out.writeString(name);
-        out.writeBoolean(isDirectory);
-
-        out.writeInt(children.length);
-        // recursive :)
-        for (ZoniFileInfo file : children) {
-            file.writeTo(out);
-        }
     }
 
     public boolean isDirectory() {

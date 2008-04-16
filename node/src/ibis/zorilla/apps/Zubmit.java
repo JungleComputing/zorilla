@@ -120,7 +120,7 @@ public final class Zubmit {
     }
 
     private static void copyOutputFile(String sandboxPath, File file,
-            ZoniConnection connection, String jobID) throws IOException {
+            ZoniConnection connection, String jobID) throws Exception {
 
         logger.debug("copying: " + sandboxPath + " to file " + file);
 
@@ -178,8 +178,7 @@ public final class Zubmit {
         boolean verbose = false;
 
         try {
-            InetSocketAddress nodeSocketAddress = new InetSocketAddress(
-                    InetAddress.getByName(null), ZoniProtocol.DEFAULT_PORT);
+            String nodeSocketAddress = "localhost";
 
             ZorillaJobDescription jobDescription = new ZorillaJobDescription();
             File stdin = null;
@@ -209,7 +208,7 @@ public final class Zubmit {
                 } else if (command[i].equals("-na")
                         || command[i].equals("--node_address")) {
                     i++;
-                    nodeSocketAddress = parseSocketAddress(command[i]);
+                    nodeSocketAddress = command[i];
                 } else if (command[i].equals("-i")
                         || command[i].equals("--input")) {
                     i++;
@@ -323,7 +322,7 @@ public final class Zubmit {
             }
 
             ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
-                    null, ZoniProtocol.TYPE_CLIENT);
+                    null);
 
             String jobID;
             jobID = connection.submitJob(jobDescription, null);
@@ -408,11 +407,11 @@ public final class Zubmit {
     }
 
     private static class Shutdown extends Thread {
-        private final  InetSocketAddress nodeSocketAddress;
+        private final  String nodeSocketAddress;
 
         private final String jobID;
 
-        Shutdown(InetSocketAddress nodeSocketAddress, String jobID) {
+        Shutdown(String nodeSocketAddress, String jobID) {
             this.nodeSocketAddress = nodeSocketAddress;
             this.jobID = jobID;
         }
@@ -420,7 +419,7 @@ public final class Zubmit {
         public void run() {
             try {
                     ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
-                            null, ZoniProtocol.TYPE_CLIENT);
+                            null);
                     logger.debug("shutdown hook triggered, cancelling job");
                     
                     connection.cancelJob(jobID);

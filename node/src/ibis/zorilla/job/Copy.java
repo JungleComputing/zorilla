@@ -21,6 +21,7 @@ import ibis.zorilla.zoni.ZorillaJobDescription;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -913,7 +914,7 @@ public final class Copy extends Job implements Receiver, Runnable {
     }
 
     @Override
-    public void readOutputFile(String sandboxPath, DataOutputStream out)
+    public void readOutputFile(String sandboxPath, ObjectOutputStream out)
             throws Exception {
         throw new Exception("can only get output files where job was submitted");
     }

@@ -3,13 +3,13 @@ package ibis.zorilla.net;
 import ibis.util.ThreadPool;
 import ibis.zorilla.job.Callback;
 import ibis.zorilla.job.Job;
-import ibis.zorilla.zoni.ZoniInputStream;
-import ibis.zorilla.zoni.ZoniOutputStream;
 import ibis.zorilla.zoni.ZoniProtocol;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
@@ -74,25 +74,25 @@ public class ZoniCallback implements Runnable, Callback {
 
         try {
 
-            ZoniInputStream in =
-                new ZoniInputStream(new BufferedInputStream(
+            ObjectInputStream in =
+                new ObjectInputStream(new BufferedInputStream(
                         socket.getInputStream()));
-            ZoniOutputStream out =
-                new ZoniOutputStream(new BufferedOutputStream(
+            ObjectOutputStream out =
+                new ObjectOutputStream(new BufferedOutputStream(
                         socket.getOutputStream()));
 
             out.writeInt(ZoniProtocol.VERSION);
             out.writeInt(ZoniProtocol.CALLBACK_JOBINFO);
-            out.writeString(job.getID().toString());
-            out.writeString(job.getDescription().getExecutable().toString());
-            out.writeStringMap(job.getAttributes().getStringMap());
-            out.writeStringMap(job.getStats());
+            out.writeUTF(job.getID().toString());
+            out.writeUTF(job.getDescription().getExecutable().toString());
+            out.writeObject(job.getAttributes().getStringMap());
+            out.writeObject(job.getStats());
             out.writeInt(phase);
             out.writeInt(job.getExitStatus());
             out.flush();
 
             int status = in.readInt();
-            String message = in.readString();
+            String message = in.readUTF();
 
             if (status != ZoniProtocol.STATUS_OK) {
                 throw new IOException("error on doing callback: " + message);

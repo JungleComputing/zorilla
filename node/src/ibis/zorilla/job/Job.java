@@ -14,6 +14,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.UUID;
@@ -161,7 +162,7 @@ public abstract class Job {
      * Write the given file to the given output stream. Blocks until this job
      * has finished
      */
-    public abstract void readOutputFile(String sandboxPath, DataOutputStream out)
+    public abstract void readOutputFile(String sandboxPath, ObjectOutputStream out)
             throws Exception;
 
     /**

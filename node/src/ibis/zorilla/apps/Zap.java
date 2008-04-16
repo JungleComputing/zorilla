@@ -14,47 +14,6 @@ public final class Zap {
 
     private static final Logger logger = Logger.getLogger(Zap.class);
 
-    private static int parsePort(String string) {
-        int port = 0;
-        try {
-            port = Integer.parseInt(string);
-        } catch (NumberFormatException e) {
-            System.err.println("invalid port: " + string);
-            System.exit(1);
-        }
-
-        if (port <= 0) {
-            System.err.println("invalid port "
-                + "(must be non-zero positive number): " + string);
-        }
-        return port;
-    }
-
-    private static InetSocketAddress parseSocketAddress(String string) {
-        int port = ZoniProtocol.DEFAULT_PORT;
-
-        String[] strings = string.split(":");
-
-        if (strings.length > 2) {
-            System.err.println("illegal address format: " + string);
-            System.exit(1);
-        } else if (strings.length == 2) {
-            // format was "host:port, extract port number"
-            port = parsePort(strings[1]);
-        }
-
-        InetAddress address = null;
-        try {
-            address = InetAddress.getByName(strings[0]);
-        } catch (UnknownHostException e) {
-            System.err.println("invalid address: " + string + " exception: "
-                + e);
-            System.exit(1);
-        }
-
-        return new InetSocketAddress(address, port);
-    }
-
     private static void usage() {
         System.out
             .println("zap: Kills running Zorilla jobs(default) or nodes\n"
@@ -72,14 +31,13 @@ public final class Zap {
         boolean killNetwork = false;
 
         try {
-            InetSocketAddress nodeSocketAddress = new InetSocketAddress(
-                InetAddress.getByName(null), ZoniProtocol.DEFAULT_PORT);
+            String nodeSocketAddress = "localhost";
 
             for (int i = 0; i < command.length; i++) {
                 if (command[i].equals("-na")
                     || command[i].equals("--node_address")) {
                     i++;
-                    nodeSocketAddress = parseSocketAddress(command[i]);
+                    nodeSocketAddress = command[i];
                 } else if (command[i].equals("-k")) {
                     killNode = true;
                 } else if (command[i].equals("-K")) {
@@ -103,7 +61,7 @@ public final class Zap {
             }
 
             ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
-                null, ZoniProtocol.TYPE_CLIENT);
+                null);
 
             if (killNode) {
                 System.out.println("killing node (kill network = "

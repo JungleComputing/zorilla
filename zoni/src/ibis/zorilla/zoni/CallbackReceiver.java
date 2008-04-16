@@ -6,6 +6,8 @@ import ibis.util.ThreadPool;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -59,17 +61,18 @@ public class CallbackReceiver extends Thread {
         return result;
     }
 
-    private void handleJobInfo(ZoniInputStream in, ZoniOutputStream out,
-            Socket socket) throws IOException {
-        String id = in.readString();
-        String executable = in.readString();
-        Map<String, String> attributes = in.readStringMap();
-        Map<String, String> jobStatus = in.readStringMap();
+    @SuppressWarnings("unchecked")
+    private void handleJobInfo(ObjectInputStream in, ObjectOutputStream out,
+            Socket socket) throws IOException, ClassNotFoundException {
+        String id = in.readUTF();
+        String executable = in.readUTF();
+        Map<String, String> attributes = (Map<String, String>)in.readObject();
+        Map<String, String> jobStatus = (Map<String, String>)in.readObject();
         int phase = in.readInt(); // phase
         int exitStatus = in.readInt();
 
         out.writeInt(ZoniProtocol.STATUS_OK);
-        out.writeString("OK");
+        out.writeUTF("OK");
 
         // close socket so node doesn't wait for it
         out.flush();
@@ -112,11 +115,11 @@ public class CallbackReceiver extends Thread {
 
             try {
 
-                ZoniInputStream in =
-                    new ZoniInputStream(new BufferedInputStream(
+                ObjectInputStream in =
+                    new ObjectInputStream(new BufferedInputStream(
                             socket.getInputStream()));
-                ZoniOutputStream out =
-                    new ZoniOutputStream(new BufferedOutputStream(
+                ObjectOutputStream out =
+                    new ObjectOutputStream(new BufferedOutputStream(
                             socket.getOutputStream()));
 
                 int protocolVersion = in.readInt();
@@ -133,7 +136,7 @@ public class CallbackReceiver extends Thread {
                     throw new IOException("unknown opcode " + opcode
                             + " in callback");
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.error("Zorilla: error on handling callback", e);
             } finally {
                 if (socket != null) {

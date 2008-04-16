@@ -10,8 +10,8 @@ public final class ZoniProtocol {
     // only authentication so far...
     public static final int AUTHENTICATION_NONE = 0;
 
-    public static final int DEFAULT_PORT = 5445;
-
+    public static final int DEFAULT_PORT = 5444;
+    
     // opcodes for client-to-node commands
 
     public static final int OPCODE_CLOSE_CONNECTION = 0;
@@ -85,9 +85,7 @@ public final class ZoniProtocol {
 
     // types of peers
 
-    public static final int TYPE_CLIENT = 1;
-
-    public static final int TYPE_WORKER = 2;
+    public static final int TYPE_USER = 2;
 
     public static final int MAX_BLOCK_SIZE = 32 * 1024; // bytes
 

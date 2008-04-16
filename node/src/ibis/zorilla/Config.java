@@ -54,11 +54,11 @@ public class Config extends TypedProperties {
 
     public static final String PORT = PREFIX + "port";
 
-    public static final String ZONI_PORT = PREFIX + "zoni.port";
+//    public static final String ZONI_PORT = PREFIX + "zoni.port";
 
     public static final String WWW_PORT = PREFIX + "www.port";
 
-    public static final String DISCOVERY_PORT = PREFIX + "discovery.port";
+//    public static final String DISCOVERY_PORT = PREFIX + "discovery.port";
 
     public static final String MAX_RUNTIME = PREFIX + "max.runtime";
 
@@ -121,15 +121,15 @@ public class Config extends TypedProperties {
             { PEERS, null,
                     "Comma seperated list of peer nodes used for bootstrapping" },
 
-            { PORT, "5444", "TCP port number used for the P2P network" },
+            { PORT, "5444", "TCP/UDP port used" },
 
-            { ZONI_PORT, "5445",
-                    "TCP port for connections from clients (users,applications) to Zorilla" },
+//            { ZONI_PORT, "5445",
+//                    "TCP port for connections from clients (users,applications) to Zorilla" },
 
             { WWW_PORT, "5446", "TCP port used for the web interface" },
 
-            { DISCOVERY_PORT, "5447",
-                    "UDP port used for discovery of other nodes on the local network" },
+//            { DISCOVERY_PORT, "5447",
+//                    "UDP port used for discovery of other nodes on the local network" },
 
             { MAX_RUNTIME, null, "Maximum runtime (in seconds) of this node" },
 
@@ -413,6 +413,10 @@ public class Config extends TypedProperties {
 
     public boolean isMaster() {
         return getBooleanProperty(MASTER);
+    }
+
+    public int getPort() {
+        return getIntProperty(PORT);
     }
 
 }

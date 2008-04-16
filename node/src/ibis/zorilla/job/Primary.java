@@ -25,6 +25,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
@@ -1371,7 +1372,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         stdout.streamTo(out);
     }
 
-    public void readOutputFile(String sandboxPath, DataOutputStream out)
+    public void readOutputFile(String sandboxPath, ObjectOutputStream out)
             throws Exception {
         PrimaryOutputStream file = getOutputFile(sandboxPath);
 

@@ -46,14 +46,14 @@ public final class Main {
         out.println("--port PORT_NR");
         out.println("\t" + properties.get(Config.PORT));
 
-        out.println("--zoni-port PORT_NR");
-        out.println("\t" + properties.get(Config.ZONI_PORT));
+//        out.println("--zoni-port PORT_NR");
+//        out.println("\t" + properties.get(Config.ZONI_PORT));
 
         out.println("--www-port PORT_NR");
         out.println("\t" + properties.get(Config.WWW_PORT));
 
-        out.println("--discovery-port PORT_NR");
-        out.println("\t" + properties.get(Config.DISCOVERY_PORT));
+//        out.println("--discovery-port PORT_NR");
+//        out.println("\t" + properties.get(Config.DISCOVERY_PORT));
 
         out.println("--no-native-jobs");
         out
@@ -120,15 +120,15 @@ public final class Main {
             } else if (args[i].equalsIgnoreCase("--port")) {
                 i++;
                 commandLineProperties.put(Config.PORT, args[i]);
-            } else if (args[i].equalsIgnoreCase("--zoni-port")) {
-                i++;
-                commandLineProperties.put(Config.ZONI_PORT, args[i]);
+//            } else if (args[i].equalsIgnoreCase("--zoni-port")) {
+//                i++;
+//                commandLineProperties.put(Config.ZONI_PORT, args[i]);
             } else if (args[i].equalsIgnoreCase("--www-port")) {
                 i++;
                 commandLineProperties.put(Config.WWW_PORT, args[i]);
-            } else if (args[i].equalsIgnoreCase("--discovery-port")) {
-                i++;
-                commandLineProperties.put(Config.DISCOVERY_PORT, args[i]);
+//            } else if (args[i].equalsIgnoreCase("--discovery-port")) {
+//                i++;
+//                commandLineProperties.put(Config.DISCOVERY_PORT, args[i]);
             } else if (args[i].equalsIgnoreCase("--native-jobs")) {
                 commandLineProperties.put(Config.NATIVE_JOBS, "true");
             } else if (args[i].equalsIgnoreCase("--no-native-jobs")) {
@@ -138,9 +138,9 @@ public final class Main {
                 commandLineProperties.put(Config.MAX_WORKERS, args[i]);
             } else if (args[i].equalsIgnoreCase("--random-ports")) {
                 commandLineProperties.put(Config.PORT, "0");
-                commandLineProperties.put(Config.ZONI_PORT, "0");
+//                commandLineProperties.put(Config.ZONI_PORT, "0");
                 commandLineProperties.put(Config.WWW_PORT, "0");
-                commandLineProperties.put(Config.DISCOVERY_PORT, "0");
+//                commandLineProperties.put(Config.DISCOVERY_PORT, "0");
             } else if (args[i].equalsIgnoreCase("--worker")) {
                 commandLineProperties.put(Config.WORKER, "true");
             } else if (args[i].equalsIgnoreCase("--master")) {

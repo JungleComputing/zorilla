@@ -2,7 +2,6 @@ package ibis.zorilla.zoni;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetSocketAddress;
 
 public class InputForwarder extends Thread {
 
@@ -12,9 +11,8 @@ public class InputForwarder extends Thread {
     
     private final InputStream stream;
 
-    public InputForwarder(InetSocketAddress nodeAddress, String jobID, InputStream stream) throws IOException {
-        connection = new ZoniConnection(nodeAddress, null,
-                ZoniProtocol.TYPE_CLIENT);
+    public InputForwarder(String nodeAddress, String jobID, InputStream stream) throws IOException {
+        connection = new ZoniConnection(nodeAddress, null);
         
         this.jobID = jobID;
         this.stream = stream;

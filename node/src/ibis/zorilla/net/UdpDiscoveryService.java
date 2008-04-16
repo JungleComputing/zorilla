@@ -92,10 +92,10 @@ public final class UdpDiscoveryService implements Runnable, Service {
 
         knownNodes = new HashMap<UUID, LocalNode>();
 
-        int port = node.config().getIntProperty(Config.DISCOVERY_PORT);
+        int port = node.config().getIntProperty(Config.PORT);
 
         if (port == 0) {
-            logger.info(Config.DISCOVERY_PORT
+            logger.info(Config.PORT
                     + " set to 0, Disabling UDP Discovery service");
             channel = null;
             selector = null;

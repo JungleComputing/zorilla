@@ -1,0 +1,6 @@
+#!/bin/bash
+
+JAR_LOCATION=$ZORILLA_HOME/starter/lib/zorilla-starter.jar
+JAVA_EXEC=`which java`
+
+/sbin/start-stop-daemon -p /tmp/zorilla-starter -S -m -x $JAVA_EXEC -- -jar $JAR_LOCATION

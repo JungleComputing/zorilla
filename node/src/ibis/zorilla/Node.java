@@ -37,6 +37,16 @@ public final class Node implements Runnable {
 
     private static final Random random = new Random();
 
+    private static final long version;
+
+    static {
+        version = Long.parseLong(Package.getPackage("ibis.zorilla").getImplementationVersion());
+    }
+
+    public static long getVersion() {
+        return version;
+    }
+
     private final Config config;
 
     private final Network network;
@@ -85,10 +95,7 @@ public final class Node implements Runnable {
         return UUID.randomUUID();
     }
 
-    public static String getVersion() {
-        return Package.getPackage("ibis.zorilla").getImplementationVersion();
-    }
-
+ 
     Node(Properties properties) throws Exception {
         // Log.initLog4J("ibis.zorilla", Level.INFO);
 
@@ -212,7 +219,7 @@ public final class Node implements Runnable {
 
     public NodeInfo getInfo() {
         return new NodeInfo(id, name, config.getProperty(Config.CLUSTER_NAME),
-                vivaldiService.getCoordinates(), network.getAddress());
+                vivaldiService.getCoordinates(), network.getAddress(), version);
     }
 
     public long getStartTime() {
@@ -272,7 +279,7 @@ public final class Node implements Runnable {
         Map<String, String> result = new LinkedHashMap<String, String>();
 
         result.put("Name", name);
-        result.put("Version", getVersion());
+        result.put("Version", Long.toString(version));
         result.put("ID", id.toString());
         result.put("Start.Time", new Date(startTime).toString());
 
