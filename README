@@ -18,7 +18,9 @@ you need to:
    Alternatively you can join an existing network. Use the zorilla or
    zorilla.bat script for this purpose (see below for more info)
    
-2) Submit nodes to your local node. Use zubmit or zubmit.bat
+2a) Submit nodes to your local node. Use zubmit or zubmit.bat
+
+2b) Alternatively, use the JavaGAT
 
 3) Done!
 
@@ -27,13 +29,9 @@ The Zorilla distribution consists of 4 sub parts:
 
 1) node     The main Zorilla damon type application which is able to join a 
 	    Zorilla P2P network, find resources, schedule jobs, etc.
-2) apps     Utility applications usefull to submit jobs, list information on
-            a zorilla node, etc
 3) zoni     An implementation of the Zorilla Node Interface used to contact
             a running zorilla node from a client. Used in the apps, the Zorilla
             GAT adaptor, etc.
-4) bamboo   Customized version of the Bamboo DHT (www.bamboo-dht.org) system
-            created by Sean Rhea see bamboo/LICENSE for the license of bamboo
 
 ***** RUNNING ZORILLA *****
 
