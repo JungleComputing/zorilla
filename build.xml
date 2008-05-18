@@ -9,7 +9,7 @@
 	</tstamp>
 
 	<!-- empty version by default -->
-	<property name="version" value="" />
+	<property name="version" value="-1.0-beta1" />
 
 	<target name="build" description="build everything">
 		<ant dir="zoni" />
@@ -58,14 +58,9 @@
 		<delete dir="dist" />
 		<mkdir dir="dist" />
 
-		<tar destfile="dist/zorilla${VERSION}.tar.gz" compression="gzip">
-			<tarfileset dir="." prefix="zorilla${VERSION}" includes="zorilla-src.zip, README, */lib/**, */javadoc/**, log4j.properties, LICENSE" />
-			<tarfileset dir="." prefix="zorilla${VERSION}" mode="755" includes="bin/**" />
-		</tar>
-
-		<zip destfile="dist/zorilla${VERSION}.zip">
-			<zipfileset dir="." prefix="zorilla${VERSION}" includes="zorilla-src.zip, README, */lib/**, */javadoc/**, log4j.properties, LICENSE" />
-			<zipfileset dir="." prefix="zorilla${VERSION}" filemode="755" includes="bin/**" />
+		<zip destfile="dist/zorilla${version}.zip">
+			<zipfileset dir="." prefix="zorilla${version}" includes="zorilla-src.zip, README, node/lib/**, zoni/lib/*, node/javadoc/**, zoni/javadoc/**, log4j.properties, LICENSE" />
+			<zipfileset dir="." prefix="zorilla${version}" filemode="755" includes="bin/**" excludes="bin/zorilla-starter, bin/zorilla-daemon" />
 		</zip>
 
 	</target>

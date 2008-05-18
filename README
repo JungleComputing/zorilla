@@ -14,24 +14,27 @@ Zorilla nodes join together in a P2P network to cooperate in running
 supercomputing applications. So, to run applications on your own "p2p grid" 
 you need to:
 
-1) Start one or more Zorilla nodes and tell them about each other.
+1) install a recent Java virtual machine (Java 1.6 recommended, though 1.5 may also work)
+
+2) Start one or more Zorilla nodes and tell them about each other.
    Alternatively you can join an existing network. Use the zorilla or
    zorilla.bat script for this purpose (see below for more info)
    
-2a) Submit nodes to your local node. Use zubmit or zubmit.bat
+3a) Submit nodes to your local node. Use zubmit or zubmit.bat
 
-2b) Alternatively, use the JavaGAT
+3b) Alternatively, use the JavaGAT
 
-3) Done!
+4) Done!
 
 
 The Zorilla distribution consists of 4 sub parts:
 
 1) node     The main Zorilla damon type application which is able to join a 
 	    Zorilla P2P network, find resources, schedule jobs, etc.
-3) zoni     An implementation of the Zorilla Node Interface used to contact
+2) zoni     An implementation of the Zorilla Node Interface used to contact
             a running zorilla node from a client. Used in the apps, the Zorilla
             GAT adaptor, etc.
+
 
 ***** RUNNING ZORILLA *****
 
@@ -44,8 +47,7 @@ bin/zet         set attributes of jobs and nodes
 bin/zap         kill jobs and nodes
 
 All these scripts need a ZORILLA_HOME environment variable set to the location
-of your zorilla installation and JAVA_HOME set to the location of your java
-installation
+of your zorilla installation
 
 use the --help option of each script to find out about the options. using no
 options at all should suffice for most scripts though.
