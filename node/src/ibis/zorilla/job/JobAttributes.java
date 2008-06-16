@@ -73,8 +73,8 @@ public class JobAttributes extends TypedProperties {
             { PROJECT, null, "unused" },
             { DRY_RUN, null, "unused" },
             { MEMORY_MIN, null, "unused" },
-            { MEMORY_MAX, "768", "Memory needed per executable in MB" },
-            { DISK_SPACE, "100", "Diskspace needed per executable in MB" },
+            { MEMORY_MAX, "64", "Memory needed per executable in MB" },
+            { DISK_SPACE, "25", "Diskspace needed per executable in MB" },
             { SAVE_STATE, null, "unused" },
             { RESTART, null, "unused" },
             { ON_USER_EXIT, "close.world",
@@ -160,6 +160,11 @@ public class JobAttributes extends TypedProperties {
         }
 
         long lifetime = getLongProperty(WALLTIME_MAX);
+        if (lifetime == 0) {
+            //FIXME: fix! :)
+            setProperty(WALLTIME_MAX, "120");
+        }
+            
         if (lifetime > MAX_JOB_LIFETIME) {
             throw new Exception("job lifetime cannot be more than "
                     + MAX_JOB_LIFETIME);

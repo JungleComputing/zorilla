@@ -166,6 +166,11 @@ public final class JobService implements Service, Runnable {
                 throw new Exception("job service already killed");
             }
         }
+        
+        
+        if (logger.isDebugEnabled()) {
+            logger.debug("New job submitted: " + description.toString());
+        }
 
         Job job = new Primary(description, callback, node);
 

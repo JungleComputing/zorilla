@@ -18,7 +18,7 @@ public class ZorillaJobDescription implements Serializable {
 
     private String[] arguments;
 
-    private final Map<String, String> environment;
+    private Map<String, String> environment;
 
     private Map<String, String> attributes;
 
@@ -159,11 +159,19 @@ public class ZorillaJobDescription implements Serializable {
     }
 
     public synchronized void setAttributes(Map<String, String> attributes) {
-        this.attributes = new HashMap<String, String>(attributes);
+        if (attributes == null) {
+            this.attributes = new HashMap<String, String>();
+        } else {
+            this.attributes = new HashMap<String, String>(attributes);
+        }
     }
 
     public synchronized void setEnvironment(Map<String, String> environment) {
-        this.attributes = new HashMap<String, String>(environment);
+        if (environment == null) {
+            this.environment = new HashMap<String, String>();
+        } else {
+            this.environment = new HashMap<String, String>(environment);
+        }
     }
 
     public synchronized void setEnvironment(String key, String value) {
@@ -190,8 +198,13 @@ public class ZorillaJobDescription implements Serializable {
         this.javaClassPath = javaClassPath;
     }
 
-    public synchronized void setJavaSystemProperties(Map<String, String> properties) {
-        this.javaSystemProperties = new HashMap<String, String>(properties);
+    public synchronized void setJavaSystemProperties(
+            Map<String, String> properties) {
+        if (properties == null) {
+            this.javaSystemProperties = new HashMap<String, String>();
+        } else {
+            this.javaSystemProperties = new HashMap<String, String>(properties);
+        }
     }
 
     public synchronized void setJavaSystemProperty(String key, String value) {
@@ -219,7 +232,7 @@ public class ZorillaJobDescription implements Serializable {
         out.writeObject(javaMain);
         out.writeObject(javaArguments);
         out.writeObject(javaClassPath);
-        
+
         out.writeBoolean(interactive);
 
         out.writeInt(inputFiles.size());
@@ -245,7 +258,7 @@ public class ZorillaJobDescription implements Serializable {
         }
         return result;
     }
-    
+
     private String toString(Map<String, String> map) {
         if (map == null || map.size() == 0) {
             return "";
@@ -277,12 +290,12 @@ public class ZorillaJobDescription implements Serializable {
         result.put("arguments", toString(arguments));
         result.put("environment", toString(environment));
         result.put("attributes", toString(attributes));
-        
+
         result.put("java.system.properties", toString(javaSystemProperties));
         result.put("java Main", javaMain);
         result.put("java Arguments", toString(javaArguments));
         result.put("java Classpath", javaClassPath);
-        
+
         result.put("interactive", Boolean.toString(interactive));
 
         String inputFileString = "";
@@ -300,7 +313,7 @@ public class ZorillaJobDescription implements Serializable {
 
         result.put("stdin", "" + stdinFile);
         result.put("stdout", "" + stdoutFile);
-        
+
         result.put("stderr", "" + stderrFile);
 
         return result;
@@ -313,7 +326,8 @@ public class ZorillaJobDescription implements Serializable {
         result += "\nArguments = " + toString(arguments);
         result += "\nEnvironment:" + toNewLineString(environment);
         result += "\nAttributes:" + toNewLineString(attributes);
-        result += "\nJava System Properties:" + toNewLineString(javaSystemProperties);
+        result += "\nJava System Properties:"
+                + toNewLineString(javaSystemProperties);
         result += "\nJava Main = " + javaMain;
         result += "\nJava Arguments = " + toString(javaArguments);
         result += "\nJava Classpath = " + javaClassPath;
