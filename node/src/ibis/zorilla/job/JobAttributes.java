@@ -73,7 +73,7 @@ public class JobAttributes extends TypedProperties {
             { PROJECT, null, "unused" },
             { DRY_RUN, null, "unused" },
             { MEMORY_MIN, null, "unused" },
-            { MEMORY_MAX, "64", "Memory needed per executable in MB" },
+            { MEMORY_MAX, "512", "Memory needed per executable in MB" },
             { DISK_SPACE, "25", "Diskspace needed per executable in MB" },
             { SAVE_STATE, null, "unused" },
             { RESTART, null, "unused" },

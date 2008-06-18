@@ -663,7 +663,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         while (iterator.hasNext()) {
             Constituent constituent = iterator.next();
             if (constituent.expired()) {
-                if (constituent.getID().equals(endPoint.getID())) {
+                if (constituent.getID().equals(id)) {
                     // expired ourselves :(
                     constituent.resetExpirationDate();
                 } else {
