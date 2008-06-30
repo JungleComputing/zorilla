@@ -1,0 +1,87 @@
+<project name="zolo" default="build" basedir=".">
+    <description>
+    Build file for Zolo
+    </description>
+
+    <!-- Global properties -->
+    <property name="src" location="src" />
+    <property name="tmp" location="tmp" />
+    <property name="lib" location="lib" />
+    <property name="javadoc" location="javadoc" />
+    <property name="external" location="external" />
+    <property name="wrapper" location="wrapper/lib" />
+    <property name="sources" value="sources" />
+
+    <property name="version" value="-1.0" />
+
+    <property name="jar" location="${lib}/${ant.project.name}${version}.jar" />
+    <property name="sources-filename" value="${ant.project.name}${version}" />
+
+    <path id="classpath">
+        <fileset dir="${external}" includes="**/*.jar" />
+        <fileset dir="wrapper/lib" includes="**/*.jar" />
+    </path>
+
+    <target name="build">
+        <!-- Create the time stamp -->
+        <tstamp />
+
+        <!-- Create the build directory structure used by compile -->
+        <delete dir="${lib}" />
+        <delete dir="${tmp}" />
+        <delete dir="${javadoc}" />
+        <delete dir="${sources}" />
+
+        <mkdir dir="${tmp}" />
+        <mkdir dir="${lib}" />
+        <mkdir dir="${javadoc}" />
+        <mkdir dir="${sources}" />
+
+        <!-- Compile the java code from ${src} into ${tmp} -->
+        <javac srcdir="${src}"
+                   destdir="${tmp}"
+                   debug="on"
+                   source="1.5"
+                   target="1.5"
+                   classpathref="classpath">
+            <compilerarg value="-Xlint:unchecked" />
+        </javac>
+
+        <!-- Create the distribution directory -->
+        <mkdir dir="${lib}" />
+
+        <!-- create the javadoc -->
+        <javadoc destdir="javadoc" access="public" sourcepath="${src}">
+            <classpath refid="classpath" />
+            <link href="http://java.sun.com/j2se/1.5.0/docs/api/" />
+        </javadoc>
+
+        <!-- Put everything in ${tmp} into the jar file -->
+        <jar jarfile="${jar}" basedir="${tmp}">
+            <manifest>
+                <attribute name="Main-Class" value="Zolo"/>
+            </manifest>
+        </jar>
+
+        <!-- create a zip file with the sources -->
+        <zip destfile="${sources}/${sources-filename}.zip">
+            <zipfileset dir="src"
+                        includes="**/*.java"
+                        prefix="${sources-filename}" />
+            <zipfileset dir="."
+                        includes="LICENSE.txt"
+                        prefix="${sources-filename}" />
+        </zip>
+
+        <!-- And delete the build dir -->
+        <delete dir="${tmp}" />
+    </target>
+
+    <target name="clean" description="clean up">
+        <delete dir="${lib}" />
+        <delete dir="${tmp}" />
+        <delete dir="${javadoc}" />
+        <delete dir="${sources}" />
+    </target>
+
+</project>
