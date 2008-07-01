@@ -37,8 +37,6 @@ public final class JobService implements Service, Runnable {
 
     private final Resources availableResources;
 
-    private final int maxWorkers;
-
     private final Map<UUID, Resources> usedResources;
 
     private static int totalMemory() {
@@ -62,31 +60,27 @@ public final class JobService implements Service, Runnable {
         createWorkerSecurityFile(new File(node.config().getConfigDir(),
                 "worker.security.policy"));
 
-        int defaultWorkers;
+        int availableCores;
         if (node.config().isMaster()) {
-            defaultWorkers = 0;
+            availableCores = 0;
         } else {
-            defaultWorkers = Runtime.getRuntime().availableProcessors();
+            availableCores = Runtime.getRuntime().availableProcessors();
         }
 
-        maxWorkers = node.config().getIntProperty(Config.MAX_WORKERS,
-                defaultWorkers);
-        logger.info("Maximum of workers on this node: " + maxWorkers);
-        
+        availableCores = node.config().getIntProperty(Config.AVAILABLE_CORES,
+                availableCores);
+        logger.info("Available cores on this node: " + availableCores);
+
         int totalMemory = totalMemory();
         logger.info("Total memory available: " + totalMemory + " Mb");
-        
+
         int usableDiskSpace = (int) (node.config().getTmpDir().getUsableSpace() / 1024.0 / 1024.0);
         logger.info("Total diskspace available: " + usableDiskSpace + " Mb");
 
-        availableResources = new Resources(false, maxWorkers, totalMemory,
+        availableResources = new Resources(availableCores, totalMemory,
                 usableDiskSpace);
 
         usedResources = new HashMap<UUID, Resources>();
-    }
-
-    public int getMaxWorkers() {
-        return maxWorkers;
     }
 
     private static void createWorkerSecurityFile(File file) throws Exception {
@@ -166,8 +160,7 @@ public final class JobService implements Service, Runnable {
                 throw new Exception("job service already killed");
             }
         }
-        
-        
+
         if (logger.isDebugEnabled()) {
             logger.debug("New job submitted: " + description.toString());
         }
@@ -298,6 +291,10 @@ public final class JobService implements Service, Runnable {
         synchronized (this) {
             killed = true;
         }
+    }
+
+    public Resources getResources() {
+        return availableResources;
     }
 
 }

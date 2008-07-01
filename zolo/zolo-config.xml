@@ -25,9 +25,9 @@
         <timer>60</timer>
         <intervals>
           <interval>
-            <start-hour>19</start-hour>
-            <start-minute>0</start-minute>
-            <end-hour>23</end-hour>
+            <start-hour>05</start-hour>
+            <start-minute>39</start-minute>
+            <end-hour>22</end-hour>
             <end-minute>15</end-minute>
           </interval>
         </intervals>
@@ -47,10 +47,10 @@
         <timer>60</timer>
         <intervals>
           <interval>
-            <start-hour>19</start-hour>
+            <start-hour>10</start-hour>
             <start-minute>0</start-minute>
-            <end-hour>23</end-hour>
-            <end-minute>15</end-minute>
+            <end-hour>13</end-hour>
+            <end-minute>46</end-minute>
           </interval>
         </intervals>
         <active>true</active>

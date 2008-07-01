@@ -160,7 +160,7 @@ public final class Worker implements Runnable {
         if (job.getBooleanAttribute("ibis")) {
 
             result.command().add(
-                    "-Dibis.pool.size=" + job.getAttributes().getMaxWorkers());
+                    "-Dibis.pool.size=" + job.getAttributes().getProcessCount());
 
             // result.command().add("-Dibis.pool.cluster=" + job.cluster());
         }

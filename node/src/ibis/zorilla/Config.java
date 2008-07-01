@@ -54,15 +54,11 @@ public class Config extends TypedProperties {
 
     public static final String PORT = PREFIX + "port";
 
-//    public static final String ZONI_PORT = PREFIX + "zoni.port";
-
     public static final String WWW_PORT = PREFIX + "www.port";
-
-//    public static final String DISCOVERY_PORT = PREFIX + "discovery.port";
 
     public static final String MAX_RUNTIME = PREFIX + "max.runtime";
 
-    public static final String MAX_WORKERS = PREFIX + "max.workers";
+    public static final String AVAILABLE_CORES = PREFIX + "available.cores";
 
     public static final String FIREWALL = PREFIX + "firewall";
 
@@ -134,7 +130,7 @@ public class Config extends TypedProperties {
             { MAX_RUNTIME, null, "Maximum runtime (in seconds) of this node" },
 
             {
-                    MAX_WORKERS,
+                    AVAILABLE_CORES,
                     null,
                     "Maximum number of workers on this node (defaults to number of processors available)" },
 

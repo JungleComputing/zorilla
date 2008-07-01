@@ -135,7 +135,7 @@ public final class Main {
                 commandLineProperties.put(Config.NATIVE_JOBS, "false");
             } else if (args[i].equalsIgnoreCase("--max-workers")) {
                 i++;
-                commandLineProperties.put(Config.MAX_WORKERS, args[i]);
+                commandLineProperties.put(Config.AVAILABLE_CORES, args[i]);
             } else if (args[i].equalsIgnoreCase("--random-ports")) {
                 commandLineProperties.put(Config.PORT, "0");
 //                commandLineProperties.put(Config.ZONI_PORT, "0");

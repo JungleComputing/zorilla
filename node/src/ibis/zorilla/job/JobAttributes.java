@@ -20,9 +20,14 @@ public class JobAttributes extends TypedProperties {
 
     public static final String DIRECTORY = "directory";
 
+    public static final String PROCESS_COUNT = "count";
+
+    // deprecated
     public static final String COUNT = "count";
 
     public static final String HOST_COUNT = "host.count";
+
+    public static final String CORES_PER_PROCESS = "cores.per.process";
 
     public static final String TIME_MAX = "time.max";
 
@@ -51,8 +56,11 @@ public class JobAttributes extends TypedProperties {
     public static final String ON_USER_ERROR = "on.user.error";
 
     public static final String MALLEABLE = "malleable";
+
     public static final String CLASSPATH = "classpath";
+
     public static final String SPLIT_STDOUT = "split.stdout";
+
     public static final String SPLIT_STDERR = "split.stderr";
 
     public static final String ADVERT_METRIC = "advert.metric";
@@ -63,7 +71,7 @@ public class JobAttributes extends TypedProperties {
 
     private static final String[][] propertiesList = {
             { DIRECTORY, null, "unused" },
-            { COUNT, null, "Number of executables started" },
+            { PROCESS_COUNT, null, "Number of executables started" },
             { HOST_COUNT, null, "Number of machines used" },
             { TIME_MAX, null, "unused" },
             { WALLTIME_MAX, "15",
@@ -113,20 +121,16 @@ public class JobAttributes extends TypedProperties {
             logger.warn("invalid attributes: " + wrong.toString());
         }
 
-        if (getIntProperty(JobAttributes.COUNT, 1) < 1) {
-            throw new Exception("count must be a positive integer");
+        if (getIntProperty(JobAttributes.PROCESS_COUNT, 1) < 1) {
+            throw new Exception(JobAttributes.PROCESS_COUNT
+                    + " must be a positive integer");
         }
 
         if (getIntProperty(JobAttributes.HOST_COUNT, 1) < 1) {
-            throw new Exception("host count must be a positive integer");
+            throw new Exception(JobAttributes.HOST_COUNT
+                    + " must be a positive integer");
         }
 
-        if (getProperty(JobAttributes.COUNT) == null
-                && getProperty(JobAttributes.HOST_COUNT) == null) {
-            throw new Exception("must either specify " + JobAttributes.COUNT
-                    + " or " + JobAttributes.HOST_COUNT);
-        }
-       
         if (getIntProperty(MEMORY_MAX, 1) < 0) {
             throw new Exception("max.memory attribute invalid: "
                     + getProperty("max.memory"));
@@ -161,10 +165,10 @@ public class JobAttributes extends TypedProperties {
 
         long lifetime = getLongProperty(WALLTIME_MAX);
         if (lifetime == 0) {
-            //FIXME: fix! :)
+            // FIXME: fix! :)
             setProperty(WALLTIME_MAX, "120");
         }
-            
+
         if (lifetime > MAX_JOB_LIFETIME) {
             throw new Exception("job lifetime cannot be more than "
                     + MAX_JOB_LIFETIME);
@@ -223,16 +227,25 @@ public class JobAttributes extends TypedProperties {
         return new File(getProperty(key));
     }
 
-    public int getMaxWorkers() {
-        if (getProperty(COUNT) != null) {
-            return getIntProperty(COUNT);
+    protected int getProcessCount() {
+        if (containsKey(PROCESS_COUNT)) {
+            return getIntProperty(PROCESS_COUNT, 1);
+        } else {
+            return getIntProperty(COUNT, 1);
         }
+    }
 
-        if (getProperty(HOST_COUNT) != null) {
-            return getIntProperty(HOST_COUNT);
+    protected int getCoresPerProcess() {
+        // if cores per process isn't set, try to approximate it by dividing
+        // process.count by host.count
+        if (!containsKey(CORES_PER_PROCESS) && containsKey(HOST_COUNT)) {
+            int hostCount = getIntProperty(HOST_COUNT, -1);
+            int processCount = getIntProperty(PROCESS_COUNT, 1);
+            if (hostCount > 0 && processCount >= hostCount) {
+                return processCount / hostCount;
+            }
         }
-
-        return 1;
+        return getIntProperty(CORES_PER_PROCESS, 1);
     }
 
     public Map<String, String> getStringMap() {
@@ -240,7 +253,7 @@ public class JobAttributes extends TypedProperties {
 
         for (Enumeration<?> e = propertyNames(); e.hasMoreElements();) {
             String name = (String) e.nextElement();
-            
+
             result.put(name, getProperty(name));
         }
 

@@ -300,7 +300,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     private int maxNrOfWorkers() {
         try {
-            return attributes.getIntProperty(JobAttributes.COUNT);
+            return attributes.getProcessCount();
         } catch (NumberFormatException e) {
             log("could not find nr of workers", e);
             setPhase(ERROR);
@@ -327,7 +327,7 @@ public final class Primary extends Job implements Runnable, Receiver {
     public synchronized void updateAttributes(Map<String, String> attributes)
             throws Exception {
         for (String key : attributes.keySet()) {
-            if (!(key.equalsIgnoreCase(JobAttributes.COUNT) && getBooleanAttribute(JobAttributes.MALLEABLE))) {
+            if (!(key.equalsIgnoreCase(JobAttributes.PROCESS_COUNT) && getBooleanAttribute(JobAttributes.MALLEABLE))) {
                 throw new Exception("can not update attribute " + key
                         + " while the job is running");
             }
