@@ -118,9 +118,6 @@ public class CallbackReceiver extends Thread {
                 ObjectInputStream in =
                     new ObjectInputStream(new BufferedInputStream(
                             socket.getInputStream()));
-                ObjectOutputStream out =
-                    new ObjectOutputStream(new BufferedOutputStream(
-                            socket.getOutputStream()));
 
                 int protocolVersion = in.readInt();
                 
@@ -130,6 +127,9 @@ public class CallbackReceiver extends Thread {
                 
                 int opcode = in.readInt();
 
+                ObjectOutputStream out =
+                    new ObjectOutputStream(new BufferedOutputStream(
+                            socket.getOutputStream()));
                 if (opcode == ZoniProtocol.CALLBACK_JOBINFO) {
                     handleJobInfo(in, out, socket);
                 } else {

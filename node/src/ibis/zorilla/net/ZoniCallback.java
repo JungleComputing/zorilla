@@ -74,9 +74,6 @@ public class ZoniCallback implements Runnable, Callback {
 
         try {
 
-            ObjectInputStream in =
-                new ObjectInputStream(new BufferedInputStream(
-                        socket.getInputStream()));
             ObjectOutputStream out =
                 new ObjectOutputStream(new BufferedOutputStream(
                         socket.getOutputStream()));
@@ -91,6 +88,10 @@ public class ZoniCallback implements Runnable, Callback {
             out.writeInt(job.getExitStatus());
             out.flush();
 
+            ObjectInputStream in =
+                new ObjectInputStream(new BufferedInputStream(
+                        socket.getInputStream()));
+            
             int status = in.readInt();
             String message = in.readUTF();
 
