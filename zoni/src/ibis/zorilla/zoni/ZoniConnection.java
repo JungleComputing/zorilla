@@ -44,6 +44,9 @@ public final class ZoniConnection {
 		TypedProperties factoryProperties = SmartSocketsProperties
 				.getDefaultProperties();
 
+		factoryProperties.put("smartsockets.modules.direct.ssh.in", "true");
+		factoryProperties.put("smartsockets.modules.direct.ssh.out", "true");
+
 		DirectSocketFactory socketFactory = DirectSocketFactory
 				.getSocketFactory(factoryProperties);
 
@@ -289,8 +292,7 @@ public final class ZoniConnection {
 		return in;
 	}
 
-	public OutputStream getInput(String jobID)
-			throws IOException {
+	public OutputStream getInput(String jobID) throws IOException {
 		logger.debug("writing stdin");
 
 		out.writeInt(ZoniProtocol.OPCODE_PUT_STDIN);

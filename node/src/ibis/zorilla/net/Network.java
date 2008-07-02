@@ -68,6 +68,12 @@ public class Network implements Runnable {
         if (cluster != null) {
             factoryProperties.put("smartsockets.networks.name", cluster);
         }
+        
+        if (node.config().isMaster()) {
+        	//master also does/accepts ssh connections
+            factoryProperties.put("smartsockets.modules.direct.ssh.in", "true");
+            factoryProperties.put("smartsockets.modules.direct.ssh.out", "true");
+        }
 
         socketFactory = DirectSocketFactory.getSocketFactory(factoryProperties);
 

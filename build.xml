@@ -51,7 +51,7 @@
 		<echo message="uploading zip file to grid5000"/>
 		<exec executable="scp">
 			<arg value="zorilla-lib.zip" />
-			<arg value="ndrost@sophia:zorilla/" />
+			<arg value="ndrost@sophia.grid5000.inria.fr:zorilla/" />
 		</exec>
 			
 	</target>
