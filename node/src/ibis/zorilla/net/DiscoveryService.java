@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-
 import org.apache.log4j.Logger;
 
 import ibis.smartsockets.direct.DirectSocket;
@@ -46,17 +45,26 @@ public class DiscoveryService implements Service, Runnable {
         nodes = new HashMap<UUID, NodeInfo>();
 
         Set<DirectSocketAddress> addresses = new HashSet<DirectSocketAddress>();
-        
-        for (String string:node.config().getStringList(Config.PEERS)) {
-            addresses.add(DirectSocketAddress.getByAddress(string));
+
+        for (String string : node.config().getStringList(Config.PEERS)) {
+            try {
+                addresses.add(DirectSocketAddress.getByAddress(string));
+            } catch (Exception e) {
+                logger.warn("invalid peer address: " + string, e);
+            }
         }
-        
-        //also add master (if available)
-        String masterAddress = node.config().getProperty(Config.MASTER_ADDRESS); 
+
+        // also add master (if available)
+        String masterAddress = node.config().getProperty(Config.MASTER_ADDRESS);
         if (node.config().isWorker() && masterAddress != null) {
-            addresses.add(DirectSocketAddress.getByAddress(masterAddress));
+            try {
+                addresses.add(DirectSocketAddress.getByAddress(masterAddress));
+            } catch (Exception e) {
+                logger.warn("invalid master address: " + masterAddress, e);
+            }
+
         }
-        
+
         this.addresses = addresses.toArray(new DirectSocketAddress[0]);
     }
 
@@ -64,11 +72,11 @@ public class DiscoveryService implements Service, Runnable {
         ThreadPool.createNew(this, "discovery");
         logger.info("Started Discovery service");
     }
-    
+
     public NodeInfo[] getNodesList() {
         return nodes.values().toArray(new NodeInfo[0]);
     }
-    
+
     private void doRequests(DirectSocketAddress peer) {
         for (int i = 0; i < MAX_TRIES; i++) {
             try {
@@ -137,8 +145,6 @@ public class DiscoveryService implements Service, Runnable {
         }
     }
 
-   
-    
     public void run() {
         while (true) {
             for (DirectSocketAddress peer : addresses) {
@@ -148,14 +154,14 @@ public class DiscoveryService implements Service, Runnable {
             try {
                 Thread.sleep(DISCOVERY_INTERVAL);
             } catch (InterruptedException e) {
-                //IGNORE
+                // IGNORE
             }
         }
     }
 
     public synchronized Map<String, String> getStats() {
-        Map<String,String> result = new HashMap<String,String>();
-        
+        Map<String, String> result = new HashMap<String, String>();
+
         return result;
 
     }
