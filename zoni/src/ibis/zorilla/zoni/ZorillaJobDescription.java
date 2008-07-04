@@ -50,6 +50,9 @@ public class ZorillaJobDescription implements Serializable {
         javaSystemProperties = new HashMap<String, String>();
         inputFiles = new ArrayList<ZoniInputFile>();
         outputFiles = new HashMap<String, File>();
+        
+        arguments = new String[0];
+        javaArguments = new String[0];
 
         interactive = false;
     }
@@ -151,7 +154,11 @@ public class ZorillaJobDescription implements Serializable {
     }
 
     public synchronized void setArguments(String[] arguments) {
-        this.arguments = arguments.clone();
+    	if (arguments == null) {
+    		this.arguments = new String[0];
+    	} else {
+    		this.arguments = arguments.clone();
+    	}
     }
 
     public synchronized void setAttribute(String key, String value) {
@@ -187,7 +194,11 @@ public class ZorillaJobDescription implements Serializable {
     }
 
     public synchronized void setJavaArguments(String[] javaArguments) {
+    	if (javaArguments == null) {
+    		this.javaArguments = new String[0];
+    	} else {
         this.javaArguments = javaArguments.clone();
+    	}
     }
 
     public synchronized void setJavaMain(String javaMain) {

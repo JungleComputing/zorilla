@@ -164,7 +164,7 @@ public final class Zee {
 
             connection.close();
         } catch (Exception e) {
-            System.err.println("exception on running job: " + e);
+            System.err.println("exception on running zee: " + e);
             e.printStackTrace(System.err);
             System.exit(1);
         }
