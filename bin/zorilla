@@ -1,28 +1,7 @@
 #!/bin/sh
 
-if [ -z $ZORILLA_HOME ];  then
-	echo please set ZORILLA_HOME to the location of your zorilla installation
-	exit
-fi
+#run this script from the directory zorilla is installed in
 
-LIBCLASSPATH=""
-add_to_libclasspath () {
-    JARFILES=`cd "$1" && ls * 2>/dev/null`
-    for i in ${JARFILES} ; do
-        if [ -z "$LIBCLASSPATH" ] ; then
-            LIBCLASSPATH="$1/$i"
-        else
-            LIBCLASSPATH="$LIBCLASSPATH:$1/$i"
-        fi
-    done
-}
-
-add_to_libclasspath "${ZORILLA_HOME}"/zoni/lib
-add_to_libclasspath "${ZORILLA_HOME}"/node/lib
-
-java \
-    -classpath $CLASSPATHL:$LIBCLASSPATH \
-    -Dlog4j.configuration=file:$ZORILLA_HOME/log4j.properties \
-    ibis.zorilla.Main \
-    $@
+#classpath includes cwd for log4j.properties
+java -cp .:zoni/lib/*:node/lib/* ibis.zorilla.Main $@
 
