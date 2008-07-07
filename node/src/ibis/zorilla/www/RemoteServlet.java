@@ -26,7 +26,7 @@ import ibis.zorilla.net.Network;
 public final class RemoteServlet extends HttpServlet {
 
     // short connection timeout, as this is interactive
-    public static final int CONNECT_TIMEOUT = 1000;
+    public static final int CONNECT_TIMEOUT = 10000;
 
     private static final long serialVersionUID = 1L;
 

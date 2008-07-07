@@ -162,7 +162,7 @@ public class Config extends TypedProperties {
             { ADDITIONAL_GOSSIP_ALGORITHMS, "false",
                     "boolean: if true, additional gossiping algorithms will be run" },
 
-            { GOSSIP_INTERVAL, "1",
+            { GOSSIP_INTERVAL, "10",
                     "Integer: average number of seconds between two consecutive gossip attempts" },
 
             { GOSSIP_CACHE_SIZE, "100", "Integer: size of gossip cache" },
