@@ -31,7 +31,7 @@ public class NearestNodeClustering extends ClusterService implements Runnable {
     // how many candidates do we have
     public static final int CANDIDATES = 3;
 
-    public static final int TIMEOUT = 60 * 1000;
+    public static final int TIMEOUT = 10 * 1000;
 
     private HashMap<UUID, Neighbour> neighbours;
 

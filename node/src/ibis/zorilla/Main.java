@@ -79,9 +79,6 @@ public final class Main {
         out
                 .println("\t make this node a worker node (does not accept job submissions)");
 
-        out.println("--worker-address");
-        out.println("\t address of master node");
-
         out.println();
         out.println("PROPERTY=VALUE");
         out.println("\tSet a property, as if it was set in a configuration");

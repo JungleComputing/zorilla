@@ -162,7 +162,7 @@ public class Config extends TypedProperties {
             { ADDITIONAL_GOSSIP_ALGORITHMS, "false",
                     "boolean: if true, additional gossiping algorithms will be run" },
 
-            { GOSSIP_INTERVAL, "10",
+            { GOSSIP_INTERVAL, "1",
                     "Integer: average number of seconds between two consecutive gossip attempts" },
 
             { GOSSIP_CACHE_SIZE, "100", "Integer: size of gossip cache" },
@@ -183,7 +183,8 @@ public class Config extends TypedProperties {
                     "false",
                     "Boolean: if true, this node will act as a master (not start any workers, start smartsockets hub for communication)" },
 
-            { MASTER_ADDRESS, null, "Address of the master node" }, };
+//            { MASTER_ADDRESS, null, "Address of the master node" }, 
+            };
 
     // public static final long JOB_STATE_EXPIRATION_TIMEOUT = 30 * 60 * 1000;
     // public static final long JOB_STATE_REFRESH_TIMEOUT = 60 * 1000;

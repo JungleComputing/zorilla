@@ -65,6 +65,8 @@ public class JobAttributes extends TypedProperties {
 
     public static final String ADVERT_METRIC = "advert.metric";
 
+    public static final String MTBF = "mtbf";
+    
     // constants
 
     public static final long MAX_JOB_LIFETIME = 8 * 60; // 8 hours
@@ -96,7 +98,12 @@ public class JobAttributes extends TypedProperties {
             { SPLIT_STDOUT, "false",
                     "if true, stdout is a directory with a file for each worker" },
             { SPLIT_STDERR, "false",
-                    "if true, stdout is a directory with a file for each worker" }, };
+                    "if true, stdout is a directory with a file for each worker" },
+            { MTBF, "0",
+                    "Integer: mean time between failure in seconds for the workers" },
+    
+            };
+
 
     JobAttributes(Map<String, String> values) throws Exception {
         super(getHardcodedProperties());
@@ -246,6 +253,10 @@ public class JobAttributes extends TypedProperties {
             }
         }
         return getIntProperty(CORES_PER_PROCESS, 1);
+    }
+    
+    protected int getMTBF() {
+        return getIntProperty(MTBF, 0);
     }
 
     public Map<String, String> getStringMap() {

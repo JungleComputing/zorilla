@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 public final class Worker implements Runnable {
 
     public enum Status {
-        INIT, PRE_STAGE, RUNNING, POST_STAGE, DONE, KILLED, USER_ERROR, ERROR;
+        INIT, PRE_STAGE, RUNNING, POST_STAGE, DONE, KILLED, FAILED, USER_ERROR, ERROR;
 
         public static Status fromOrdinal(int ordinal) throws Exception {
             for (Status status : Status.class.getEnumConstants()) {
@@ -42,6 +42,9 @@ public final class Worker implements Runnable {
 
     // port on which the node is listening for connections
     private final int nodePort;
+
+    // predetermined time when this worker will "fail"
+    private final long failureDate;
 
     // deadline for this process. set to "infinite" for starters...
     private long deadline = Long.MAX_VALUE;
@@ -68,6 +71,15 @@ public final class Worker implements Runnable {
 
         status = Status.INIT;
         exitStatus = -1;
+
+        int mtbf = job.getAttributes().getMTBF();
+
+        if (mtbf == 0) {
+            failureDate = Long.MAX_VALUE;
+        } else {
+            failureDate = System.currentTimeMillis()
+                    + (Node.randomTimeout(mtbf) * 1000);
+        }
     }
 
     public void start() {
@@ -102,12 +114,12 @@ public final class Worker implements Runnable {
                         + " exists in sandbox!");
 
                 // set exe bit (first try)
-                new RunProcess("/bin/chmod", "u+x",
-                        sandboxExeFile.getAbsolutePath()).run();
+                new RunProcess("/bin/chmod", "u+x", sandboxExeFile
+                        .getAbsolutePath()).run();
 
                 // set exe bit (second try)
-                new RunProcess("/usr/bin/chmod", "u+x",
-                        sandboxExeFile.getAbsolutePath()).run();
+                new RunProcess("/usr/bin/chmod", "u+x", sandboxExeFile
+                        .getAbsolutePath()).run();
 
                 // override exe location
                 location = sandboxExeFile.getAbsolutePath();
@@ -148,8 +160,13 @@ public final class Worker implements Runnable {
                 "-Djava.security.policy==file:"
                         + securityFile.getAbsolutePath());
 
-        result.command().add(
-                "-Xmx" + job.getStringAttribute(JobAttributes.MEMORY_MAX) + "m");
+        result
+                .command()
+                .add(
+                        "-Xmx"
+                                + job
+                                        .getStringAttribute(JobAttributes.MEMORY_MAX)
+                                + "m");
 
         // node port
         result.command().add("-Dzorilla.node.port=" + nodePort);
@@ -159,8 +176,10 @@ public final class Worker implements Runnable {
         // Ibis support
         if (job.getBooleanAttribute("ibis")) {
 
-            result.command().add(
-                    "-Dibis.pool.size=" + job.getAttributes().getProcessCount());
+            result.command()
+                    .add(
+                            "-Dibis.pool.size="
+                                    + job.getAttributes().getProcessCount());
 
             // result.command().add("-Dibis.pool.cluster=" + job.cluster());
         }
@@ -320,6 +339,7 @@ public final class Worker implements Runnable {
         StreamWriter outWriter;
         StreamWriter errWriter;
         boolean killed = false; // true if we killed the process ourselves
+        boolean failed = false; // true if this worker "failed" on porpose
 
         logger.info("starting worker " + this + " for " + job);
 
@@ -421,6 +441,8 @@ public final class Worker implements Runnable {
 
                     if (killed) {
                         setStatus(Status.KILLED);
+                    } else if (failed) {
+                        setStatus(Status.FAILED);
                     } else if (result == 0) {
                         setStatus(Status.DONE);
                     } else {
@@ -436,6 +458,10 @@ public final class Worker implements Runnable {
                             // kill process
                             process.destroy();
                             killed = true;
+                        } else if (currentTime >= failureDate) {
+                            // kill process
+                            process.destroy();
+                            failed = true;
                         } else {
                             try {
                                 long timeout = Math.min(deadline - currentTime,
@@ -458,9 +484,10 @@ public final class Worker implements Runnable {
                 // IGNORE
             }
         } finally {
-            //make sure the process is destroyed, and the worker officially ends
+            // make sure the process is destroyed, and the worker officially
+            // ends
             if (process != null) {
-                logger.warn("had to force-destroy worker");
+                // logger.warn("had to force-destroy worker");
                 process.destroy();
             }
             if (!finished()) {
