@@ -42,18 +42,22 @@
 
 	<target name="upload" depends="lib" description="upload lib zip file">
 
-		<echo message="uploading zip file to website"/>
+		<echo message="uploading zip file to website" />
 		<exec executable="scp">
 			<arg value="zorilla-lib.zip" />
-			<arg value="ndrost@flits.cs.vu.nl:/home/ndrost/www" />
+			<arg value="starter/lib/zorilla-starter.jar" />
+			<arg value="bin/zorilla-starter" />
+			<arg value="ndrost@zorilla.cs.vu.nl:/home/ndrost/www" />
 		</exec>
 
+		<!--	
 		<echo message="uploading zip file to grid5000"/>
 		<exec executable="scp">
 			<arg value="zorilla-lib.zip" />
 			<arg value="ndrost@sophia.grid5000.inria.fr:zorilla/" />
 		</exec>
-			
+		-->
+
 	</target>
 
 
