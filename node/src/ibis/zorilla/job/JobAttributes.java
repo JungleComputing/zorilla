@@ -89,7 +89,7 @@ public class JobAttributes extends TypedProperties {
             { RESTART, null, "unused" },
             { ON_USER_EXIT, "close.world",
                     "Action taken when a worker exists with status 0" },
-            { ON_USER_ERROR, "job.error",
+            { ON_USER_ERROR, "close.world",
                     "Action taken when a worker exists with non 0 status" },
 
             { MALLEABLE, "true",
