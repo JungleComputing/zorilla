@@ -76,7 +76,7 @@ public class JobAttributes extends TypedProperties {
             { PROCESS_COUNT, null, "Number of executables started" },
             { HOST_COUNT, null, "Number of machines used" },
             { TIME_MAX, null, "unused" },
-            { WALLTIME_MAX, "15",
+            { WALLTIME_MAX, "60",
                     "Maximum run time of each executable in minutes" },
             { CPUTIME_MAX, null, "unused" },
             { JOB_TYPE, null, "unused" },
