@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -62,11 +63,12 @@ public class Starter {
      *         or -1 if retrieving the timestamp failed
      */
     private long getTimestamp() {
-        URLConnection connection;
+        URLConnection connection = null;
         try {
             connection = location.openConnection();
             connection.setConnectTimeout(TIMEOUT);
             connection.setReadTimeout(TIMEOUT);
+            connection.connect();
             long result = connection.getLastModified();
 
             if (result == 0) {
@@ -78,8 +80,11 @@ public class Starter {
             System.err.println("could not get timestamp");
             e.printStackTrace(System.err);
             return -1;
+        } finally {
+            if (connection != null && connection instanceof HttpURLConnection) {
+                ((HttpURLConnection) connection).disconnect();
+            }
         }
-
     }
 
     private void delete(File file) {
@@ -96,7 +101,7 @@ public class Starter {
     private void download() throws IOException {
         delete(zipFile);
 
-        URLConnection connection;
+        URLConnection connection = null;
         try {
             connection = location.openConnection();
 
@@ -133,7 +138,12 @@ public class Starter {
         } catch (IOException e) {
             timestamp = 0;
             throw e;
+        } finally {
+            if (connection != null && connection instanceof HttpURLConnection) {
+                ((HttpURLConnection) connection).disconnect();
+            }
         }
+
     }
 
     private void unzip() throws IOException {

@@ -166,7 +166,7 @@ public class GossipService implements Service {
             
 
             return reply;
-        } catch (ClassNotFoundException e) {
+        } catch (Throwable e) {
             throw new IOException("could not read reply object: " + e);
         }
     }
@@ -217,7 +217,7 @@ public class GossipService implements Service {
             }
 
             socket.close();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.error("error on handling request", e);
             try {
                 socket.close();
