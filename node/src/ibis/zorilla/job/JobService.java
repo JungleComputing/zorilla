@@ -77,7 +77,8 @@ public final class JobService implements Service, Runnable {
         int usableDiskSpace = (int) (node.config().getTmpDir().getUsableSpace() / 1024.0 / 1024.0);
         logger.info("Total diskspace available: " + usableDiskSpace + " Mb");
 
-        availableResources = new Resources(availableCores, totalMemory,
+        //1 node available
+        availableResources = new Resources(1, availableCores, totalMemory,
                 usableDiskSpace);
 
         usedResources = new HashMap<UUID, Resources>();

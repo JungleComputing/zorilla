@@ -410,8 +410,6 @@ public final class Copy extends Job implements Receiver, Runnable {
                 log("copy received message with unknown opcode: " + opcode);
             }
 
-            log("state update received in copy");
-
             readDynamicState(message);
             message.finish();
 

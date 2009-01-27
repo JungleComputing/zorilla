@@ -20,14 +20,11 @@ public class JobAttributes extends TypedProperties {
 
     public static final String DIRECTORY = "directory";
 
-    public static final String PROCESS_COUNT = "count";
+    public static final String PROCESS_COUNT = "process.count";
 
-    // deprecated
-    public static final String COUNT = "count";
+    public static final String RESOURCE_COUNT = "resource.count";
 
-    public static final String HOST_COUNT = "host.count";
-
-    public static final String CORES_PER_PROCESS = "cores.per.process";
+    public static final String SCHEDULE_NODES = "schedule.nodes";
 
     public static final String TIME_MAX = "time.max";
 
@@ -66,7 +63,7 @@ public class JobAttributes extends TypedProperties {
     public static final String ADVERT_METRIC = "advert.metric";
 
     public static final String MTBF = "mtbf";
-    
+
     // constants
 
     public static final long MAX_JOB_LIFETIME = 8 * 60; // 8 hours
@@ -74,7 +71,9 @@ public class JobAttributes extends TypedProperties {
     private static final String[][] propertiesList = {
             { DIRECTORY, null, "unused" },
             { PROCESS_COUNT, null, "Number of executables started" },
-            { HOST_COUNT, null, "Number of machines used" },
+            { RESOURCE_COUNT, null, "Number of cores/nodes used" },
+            { SCHEDULE_NODES, "false",
+                    "If true, schedule nodes instead of cores" },
             { TIME_MAX, null, "unused" },
             { WALLTIME_MAX, "60",
                     "Maximum run time of each executable in minutes" },
@@ -101,9 +100,8 @@ public class JobAttributes extends TypedProperties {
                     "if true, stdout is a directory with a file for each worker" },
             { MTBF, "0",
                     "Integer: mean time between failure in seconds for the workers" },
-    
-            };
 
+    };
 
     JobAttributes(Map<String, String> values) throws Exception {
         super(getHardcodedProperties());
@@ -133,9 +131,14 @@ public class JobAttributes extends TypedProperties {
                     + " must be a positive integer");
         }
 
-        if (getIntProperty(JobAttributes.HOST_COUNT, 1) < 1) {
-            throw new Exception(JobAttributes.HOST_COUNT
+        if (getIntProperty(JobAttributes.RESOURCE_COUNT, 1) < 1) {
+            throw new Exception(JobAttributes.RESOURCE_COUNT
                     + " must be a positive integer");
+        }
+
+        if (getProcessCount() % getResourceCount() != 0) {
+            throw new Exception(JobAttributes.PROCESS_COUNT
+                    + " must be a multiple of " + JobAttributes.RESOURCE_COUNT);
         }
 
         if (getIntProperty(MEMORY_MAX, 1) < 0) {
@@ -235,26 +238,17 @@ public class JobAttributes extends TypedProperties {
     }
 
     protected int getProcessCount() {
-        if (containsKey(PROCESS_COUNT)) {
-            return getIntProperty(PROCESS_COUNT, 1);
-        } else {
-            return getIntProperty(COUNT, 1);
-        }
+        return getIntProperty(PROCESS_COUNT, 1);
+    }
+
+    protected int getResourceCount() {
+        return getIntProperty(RESOURCE_COUNT, 1);
     }
 
     protected int getCoresPerProcess() {
-        // if cores per process isn't set, try to approximate it by dividing
-        // process.count by host.count
-        if (!containsKey(CORES_PER_PROCESS) && containsKey(HOST_COUNT)) {
-            int hostCount = getIntProperty(HOST_COUNT, -1);
-            int processCount = getIntProperty(PROCESS_COUNT, 1);
-            if (hostCount > 0 && processCount >= hostCount) {
-                return processCount / hostCount;
-            }
-        }
-        return getIntProperty(CORES_PER_PROCESS, 1);
+        return getProcessCount() / getResourceCount();
     }
-    
+
     protected int getMTBF() {
         return getIntProperty(MTBF, 0);
     }
