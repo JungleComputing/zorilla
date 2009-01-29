@@ -370,7 +370,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         result.put("total.workers", String.valueOf(getNrOfWorkers()));
         result.put("local.workers", String.valueOf(localWorkers.size()));
         result.put("phase", phaseString());
-        result.put("deadline", Long.toString(deadline));
+        result.put("deadline", new Date(deadline).toString());
         result.put("submission.time", new Date(submissiontime).toString());
         result.put("start.time", new Date(starttime).toString());
         result.put("stop.time", new Date(stoptime).toString());
