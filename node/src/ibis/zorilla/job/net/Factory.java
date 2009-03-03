@@ -30,7 +30,7 @@ public class Factory {
         properties.setProperty(IbisProperties.POOL_NAME, pool);
         properties.setProperty(IbisProperties.REGISTRY_IMPLEMENTATION,
                 "ibis.ipl.impl.registry.NullRegistry");
-        properties.setProperty(IbisProperties.IMPLEMENTATION, "tcp");
+        properties.setProperty(IbisProperties.IMPLEMENTATION, "smartsockets");
 
         // no capabilities needed from ibis
         IbisCapabilities capabilities = new IbisCapabilities();
