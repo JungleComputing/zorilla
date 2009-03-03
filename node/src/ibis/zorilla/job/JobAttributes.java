@@ -24,8 +24,6 @@ public class JobAttributes extends TypedProperties {
 
     public static final String RESOURCE_COUNT = "resource.count";
 
-    public static final String SCHEDULE_NODES = "schedule.nodes";
-
     public static final String TIME_MAX = "time.max";
 
     public static final String WALLTIME_MAX = "walltime.max";
@@ -71,9 +69,7 @@ public class JobAttributes extends TypedProperties {
     private static final String[][] propertiesList = {
             { DIRECTORY, null, "unused" },
             { PROCESS_COUNT, null, "Number of executables started" },
-            { RESOURCE_COUNT, null, "Number of cores/nodes used" },
-            { SCHEDULE_NODES, "false",
-                    "If true, schedule nodes instead of cores" },
+            { RESOURCE_COUNT, null, "Number of nodes used. Can either be 0 (auto), or equal to " + PROCESS_COUNT},
             { TIME_MAX, null, "unused" },
             { WALLTIME_MAX, "60",
                     "Maximum run time of each executable in minutes" },
@@ -128,17 +124,17 @@ public class JobAttributes extends TypedProperties {
 
         if (getIntProperty(JobAttributes.PROCESS_COUNT, 1) < 1) {
             throw new Exception(JobAttributes.PROCESS_COUNT
-                    + " must be a positive integer");
+                    + " must be a non-zero positive integer");
         }
 
-        if (getIntProperty(JobAttributes.RESOURCE_COUNT, 1) < 1) {
+        if (getIntProperty(JobAttributes.RESOURCE_COUNT, 0) < 0) {
             throw new Exception(JobAttributes.RESOURCE_COUNT
                     + " must be a positive integer");
         }
 
-        if (getProcessCount() % getResourceCount() != 0) {
-            throw new Exception(JobAttributes.PROCESS_COUNT
-                    + " must be a multiple of " + JobAttributes.RESOURCE_COUNT);
+        if (getResourceCount() != 0 && getProcessCount() != getResourceCount()) {
+            throw new Exception(JobAttributes.RESOURCE_COUNT
+                    + " must be either 0 or equal to " + JobAttributes.PROCESS_COUNT);
         }
 
         if (getIntProperty(MEMORY_MAX, 1) < 0) {
@@ -242,11 +238,7 @@ public class JobAttributes extends TypedProperties {
     }
 
     protected int getResourceCount() {
-        return getIntProperty(RESOURCE_COUNT, 1);
-    }
-
-    protected int getCoresPerProcess() {
-        return getProcessCount() / getResourceCount();
+        return getIntProperty(RESOURCE_COUNT, 0);
     }
 
     protected int getMTBF() {

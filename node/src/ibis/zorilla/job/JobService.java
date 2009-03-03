@@ -39,13 +39,14 @@ public final class JobService implements Service, Runnable {
 
     private final Map<UUID, Resources> usedResources;
 
-    private static int totalMemory() {
+    //return 80% of free physical memory as max memory available
+    private static int freeMemory() {
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
             long result = (Long) server.getAttribute(new ObjectName(
                     "java.lang:type=OperatingSystem"),
-                    "TotalPhysicalMemorySize");
-            return (int) (result / 1024.0 / 1024.0);
+                    "FreePhysicalMemorySize");
+            return (int) ((result / 1024.0 / 1024.0) * 0.8) ;
         } catch (Throwable t) {
             logger.error("could not determine"
                     + " total memory of this machine, using 1Gb", t);
@@ -71,14 +72,14 @@ public final class JobService implements Service, Runnable {
                 availableCores);
         logger.info("Available cores on this node: " + availableCores);
 
-        int totalMemory = totalMemory();
-        logger.info("Total memory available: " + totalMemory + " Mb");
+        int freeMemory = freeMemory();
+        logger.info("Total memory available: " + freeMemory + " Mb");
 
         int usableDiskSpace = (int) (node.config().getTmpDir().getUsableSpace() / 1024.0 / 1024.0);
         logger.info("Total diskspace available: " + usableDiskSpace + " Mb");
 
         //1 node available
-        availableResources = new Resources(1, availableCores, totalMemory,
+        availableResources = new Resources(1, availableCores, freeMemory,
                 usableDiskSpace);
 
         usedResources = new HashMap<UUID, Resources>();

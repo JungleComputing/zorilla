@@ -221,6 +221,8 @@ public class Starter {
         builder.command().add(javaExecutable);
         builder.command().add("-server");
 
+        builder.command().add("-server");
+
         builder.command().add("-cp");
         builder.command().add(buildClasspath(libDir));
 
