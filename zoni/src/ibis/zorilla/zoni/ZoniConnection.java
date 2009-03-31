@@ -32,6 +32,8 @@ public final class ZoniConnection {
     private final ObjectOutputStream out;
 
     private final String peerID;
+    
+    private final VirtualSocketFactory socketFactory;
 
     private static DirectSocketAddress createAddressFromString(String address,
             int defaultPort) throws Exception {
@@ -84,7 +86,7 @@ public final class ZoniConnection {
                     localHub);
         }
 
-        VirtualSocketFactory socketFactory = VirtualSocketFactory
+        socketFactory = VirtualSocketFactory
                 .createSocketFactory(factoryProperties, true);
         
         try {
@@ -135,7 +137,7 @@ public final class ZoniConnection {
 
         logger.debug("reply from peer: status = " + status + ", message = "
                 + message + ", id = " + peerID);
-
+        
     }
 
     public String peerID() {
@@ -458,6 +460,7 @@ public final class ZoniConnection {
                 logger.debug("IOException on closing socket", e);
             }
         }
+        socketFactory.end();
     }
 
     public boolean isClosed() {
