@@ -17,69 +17,71 @@ import ibis.zorilla.io.ObjectInput;
 import ibis.zorilla.io.ObjectOutput;
 
 public final class Call implements ObjectInput, ObjectOutput {
-    
+
     Logger logger = Logger.getLogger(Call.class);
-    
+
     private final UUID id;
-    
+
     private SendPort sendPort;
     private WriteMessage request;
 
     private ReceivePort receivePort;
     private ReadMessage reply;
-    
+
     Call(ReceivePortIdentifier destination, Ibis ibis) throws IOException {
         id = Node.generateUUID();
-        
+
         logger.debug("creating call: " + id);
-        
+
         sendPort = ibis.createSendPort(Factory.callType);
-        receivePort = ibis.createReceivePort(Factory.replyType, Node.generateUUID().toString());
+        receivePort = ibis.createReceivePort(Factory.replyType, Node
+                .generateUUID().toString());
         receivePort.enableConnections();
-        
+
         sendPort.connect(destination, Factory.CONNECTION_TIMEOUT, true);
 
         request = sendPort.newMessage();
-        
+
         writeInt(EndPoint.REQUEST);
         writeObject(id);
         writeObject(receivePort.identifier());
-        
+
         reply = null;
     }
-    
+
     Call(IbisIdentifier target, String port, Ibis ibis) throws IOException {
         id = Node.generateUUID();
-        
+
         logger.debug("creating call: " + id);
-        
+
         sendPort = ibis.createSendPort(Factory.callType);
-        receivePort = ibis.createReceivePort(Factory.replyType, Node.generateUUID().toString());
+        receivePort = ibis.createReceivePort(Factory.replyType, Node
+                .generateUUID().toString());
         receivePort.enableConnections();
-        
+
         sendPort.connect(target, port, Factory.CONNECTION_TIMEOUT, true);
 
         request = sendPort.newMessage();
-        
+
         writeInt(EndPoint.REQUEST);
         writeObject(id);
         writeObject(receivePort.identifier());
-        
+
         reply = null;
     }
-    
+
     public synchronized void call() throws Exception, IOException {
         logger.debug("doing call #" + id);
 
         if (request == null) {
             throw new Exception("call already done");
         }
-        
+
         logger.debug("finishing request, closing sendport, waiting for reply");
-        
+
         request.finish();
         sendPort.close();
-        //let go of handle to request and sendport
+        // let go of handle to request and sendport
         request = null;
         sendPort = null;
 
@@ -88,43 +90,43 @@ public final class Call implements ObjectInput, ObjectOutput {
         if (reply == null) {
             throw new Exception("reply not received");
         }
-        
+
         try {
             int type = readInt();
             UUID replyID = (UUID) readObject();
-            
+
             if (type != EndPoint.REPLY) {
                 throw new Exception("unknown reply message type: " + type);
             }
             if (!replyID.equals(id)) {
                 throw new Exception("reply received for unknown call");
             }
-            
+
         } catch (ClassNotFoundException e) {
             throw new Exception("unknown class in reading reply", e);
         }
-        
+
         int result = readInt();
-        
+
         logger.debug("reply (" + result + ") recieved");
-        
+
         if (result == EndPoint.OK) {
             return;
         } else if (result == EndPoint.EXCEPTION) {
             Exception exception;
             try {
-            exception = (Exception) reply.readObject();
+                exception = (Exception) reply.readObject();
             } catch (ClassNotFoundException e) {
                 throw new IOException("unknown class in reading excepton: " + e);
             }
             logger.debug("exception in result: " + exception);
-            
+
             throw new Exception("REMOTE exception received", exception);
         } else {
             throw new IOException("unknown result in reply message: " + result);
         }
     }
-    
+
     public synchronized void finish() throws IOException {
         if (request != null) {
             throw new IOException("call finished while request not done");
@@ -141,23 +143,23 @@ public final class Call implements ObjectInput, ObjectOutput {
         if (request == null) {
             throw new IOException("writing to request while call already done");
         }
-    //    logger.debug("writing", new Exception());
+        // logger.debug("writing", new Exception());
         return request;
     }
-    
+
     private synchronized ReadMessage getReply() throws IOException {
         if (reply == null) {
-            throw new IOException("trying to read reply while call" +
-                    " not done yet");
+            throw new IOException("trying to read reply while call"
+                    + " not done yet");
         }
-    //    logger.debug("reading", new Exception());
+        // logger.debug("reading", new Exception());
         return reply;
     }
 
     UUID getID() {
         return id;
     }
-    
+
     public void writeString(String val) throws IOException {
         getRequest().writeString(val);
     }
@@ -198,35 +200,43 @@ public final class Call implements ObjectInput, ObjectOutput {
         getRequest().writeDouble(value);
     }
 
-    public void writeArray(boolean[] source, int offset, int length) throws IOException {
+    public void writeArray(boolean[] source, int offset, int length)
+            throws IOException {
         getRequest().writeArray(source, offset, length);
     }
 
-    public void writeArray(byte[] source, int offset, int length) throws IOException {
+    public void writeArray(byte[] source, int offset, int length)
+            throws IOException {
         getRequest().writeArray(source, offset, length);
     }
 
-    public void writeArray(char[] source, int offset, int length) throws IOException {
+    public void writeArray(char[] source, int offset, int length)
+            throws IOException {
         getRequest().writeArray(source, offset, length);
     }
 
-    public void writeArray(short[] source, int offset, int length) throws IOException {
+    public void writeArray(short[] source, int offset, int length)
+            throws IOException {
         getRequest().writeArray(source, offset, length);
     }
 
-    public void writeArray(int[] source, int offset, int length) throws IOException {
+    public void writeArray(int[] source, int offset, int length)
+            throws IOException {
         getRequest().writeArray(source, offset, length);
     }
 
-    public void writeArray(long[] source, int offset, int length) throws IOException {
+    public void writeArray(long[] source, int offset, int length)
+            throws IOException {
         getRequest().writeArray(source, offset, length);
     }
 
-    public void writeArray(float[] source, int offset, int length) throws IOException {
+    public void writeArray(float[] source, int offset, int length)
+            throws IOException {
         getRequest().writeArray(source, offset, length);
     }
 
-    public void writeArray(double[] source, int offset, int length) throws IOException {
+    public void writeArray(double[] source, int offset, int length)
+            throws IOException {
         getRequest().writeArray(source, offset, length);
     }
 
@@ -261,7 +271,7 @@ public final class Call implements ObjectInput, ObjectOutput {
     public void writeArray(double[] source) throws IOException {
         getRequest().writeArray(source);
     }
-    
+
     public String readString() throws IOException {
         return getReply().readString();
     }
@@ -291,12 +301,12 @@ public final class Call implements ObjectInput, ObjectOutput {
     }
 
     public int readUnsignedByte() throws IOException {
-        //FIXME: implement
+        // FIXME: implement
         throw new IOException("read unsigned byte not implemented");
     }
 
     public int readUnsignedShort() throws IOException {
-        //FIXME: implement
+        // FIXME: implement
         throw new IOException("read unsigned short not implemented");
     }
 
@@ -312,35 +322,43 @@ public final class Call implements ObjectInput, ObjectOutput {
         return getReply().readDouble();
     }
 
-    public void readArray(boolean[] destination, int offset, int length) throws IOException {
+    public void readArray(boolean[] destination, int offset, int length)
+            throws IOException {
         getReply().readArray(destination, offset, length);
     }
 
-    public void readArray(byte[] destination, int offset, int length) throws IOException {
+    public void readArray(byte[] destination, int offset, int length)
+            throws IOException {
         getReply().readArray(destination, offset, length);
     }
 
-    public void readArray(char[] destination, int offset, int length) throws IOException {
+    public void readArray(char[] destination, int offset, int length)
+            throws IOException {
         getReply().readArray(destination, offset, length);
     }
 
-    public void readArray(short[] destination, int offset, int length) throws IOException {
+    public void readArray(short[] destination, int offset, int length)
+            throws IOException {
         getReply().readArray(destination, offset, length);
     }
 
-    public void readArray(int[] destination, int offset, int length) throws IOException {
+    public void readArray(int[] destination, int offset, int length)
+            throws IOException {
         getReply().readArray(destination, offset, length);
     }
 
-    public void readArray(long[] destination, int offset, int length) throws IOException {
+    public void readArray(long[] destination, int offset, int length)
+            throws IOException {
         getReply().readArray(destination, offset, length);
     }
 
-    public void readArray(float[] destination, int offset, int length) throws IOException {
+    public void readArray(float[] destination, int offset, int length)
+            throws IOException {
         getReply().readArray(destination, offset, length);
     }
 
-    public void readArray(double[] destination, int offset, int length) throws IOException {
+    public void readArray(double[] destination, int offset, int length)
+            throws IOException {
         getReply().readArray(destination, offset, length);
     }
 

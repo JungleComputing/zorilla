@@ -17,7 +17,7 @@ class Constituent implements Serializable {
     private final UUID id;
 
     private final ReceivePortIdentifier receivePort;
-    
+
     private final NodeInfo info;
 
     private Set<UUID> workers;
@@ -83,7 +83,7 @@ class Constituent implements Serializable {
         return id.toString().substring(0, 8);
     }
 
-	public NodeInfo getInfo() {
-		return info;
-	}
+    public NodeInfo getInfo() {
+        return info;
+    }
 }

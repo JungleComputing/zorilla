@@ -5,23 +5,23 @@ package ibis.zorilla.security;
  */
 public class MembershipCertificate {
 
-    //** START OF CERTIFIED FIELDS **\\
+    // ** START OF CERTIFIED FIELDS **\\
 
     private User user;
-    
+
     private Group group;
-    
+
     private long expirationDate;
 
-    //** END OF CERTIFIED FIELDS **\\
-    
+    // ** END OF CERTIFIED FIELDS **\\
+
     private byte[] userSignature;
-    
+
     private byte[] groupSignature;
-    
+
     public boolean valid() {
-        //FIXME: implement
+        // FIXME: implement
         return false;
     }
-    
+
 }

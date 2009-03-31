@@ -12,14 +12,13 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import ibis.smartsockets.direct.DirectSocket;
-import ibis.zorilla.Config;
+import ibis.smartsockets.virtual.VirtualSocket;
+import ibis.zorilla.ZorillaTypedProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
 import ibis.zorilla.cluster.Coordinates;
 import ibis.zorilla.job.Advert;
-
 
 public final class FloodService implements Service {
 
@@ -57,7 +56,7 @@ public final class FloodService implements Service {
 
         for (NodeInfo neighbour : neighbours) {
             try {
-                DirectSocket socket = node.network().connect(
+                VirtualSocket socket = node.network().connect(
                         neighbour.getAddress(), Network.FLOOD_SERVICE,
                         REQUEST_TIMEOUT);
                 socket.getOutputStream().write(OPCODE_NETWORK_KILL);
@@ -76,7 +75,7 @@ public final class FloodService implements Service {
         }
     }
 
-    private void handleNetworkKill(DirectSocket socket) {
+    private void handleNetworkKill(VirtualSocket socket) {
         try {
             DataInputStream in = new DataInputStream(socket.getInputStream());
             int radius = in.readInt();
@@ -85,7 +84,7 @@ public final class FloodService implements Service {
 
             killNetwork(radius - 1);
 
-            node.stop(NETWORK_KILL_TIMEOUT);
+            node.end(NETWORK_KILL_TIMEOUT);
 
         } catch (Exception e) {
             logger.error("could not handle/forward job advert", e);
@@ -94,11 +93,12 @@ public final class FloodService implements Service {
 
     public void advertise(Advert advert) {
         logger.debug("advertizing : " + advert);
-        
+
         String metric = advert.getMetric();
-        
+
         if (metric == null) {
-            metric = node.config().getProperty(Config.DEFAULT_FLOOD_METRIC);
+            metric = node.config().getProperty(
+                    ZorillaTypedProperties.DEFAULT_FLOOD_METRIC);
         }
 
         if (metric.equalsIgnoreCase("hops")) {
@@ -117,7 +117,7 @@ public final class FloodService implements Service {
 
             advertiseLatency(advert, radius);
         } else if (metric.equalsIgnoreCase("neighbours")) {
-            //only send to neighbours
+            // only send to neighbours
             advertiseHops(advert, 1);
         } else {
             logger.error("unknown flood metric: " + metric);
@@ -135,7 +135,7 @@ public final class FloodService implements Service {
         for (NodeInfo neighbour : neighbours) {
             logger.debug("sending out advert: " + advert + " to " + neighbour);
             try {
-                DirectSocket socket = node.network().connect(
+                VirtualSocket socket = node.network().connect(
                         neighbour.getAddress(), Network.FLOOD_SERVICE,
                         REQUEST_TIMEOUT);
                 socket.getOutputStream().write(OPCODE_JOB_ADVERT_HOPS);
@@ -154,7 +154,7 @@ public final class FloodService implements Service {
         }
     }
 
-    private void handleJobAdvertHops(DirectSocket socket) {
+    private void handleJobAdvertHops(VirtualSocket socket) {
         try {
             ObjectInputStream in = new ObjectInputStream(socket
                     .getInputStream());
@@ -192,7 +192,7 @@ public final class FloodService implements Service {
                 logger.debug("sending advert to " + info + ": "
                         + distanceToNode + " < " + distance);
                 try {
-                    DirectSocket socket = node.network().connect(
+                    VirtualSocket socket = node.network().connect(
                             info.getAddress(), Network.FLOOD_SERVICE,
                             REQUEST_TIMEOUT);
                     socket.getOutputStream().write(OPCODE_JOB_ADVERT_LATENCY);
@@ -207,7 +207,7 @@ public final class FloodService implements Service {
 
                 } catch (IOException e) {
                     logger.error("could not send out advert to " + info, e);
-                    //logger.debug("could not send out advert to " + info, e);
+                    // logger.debug("could not send out advert to " + info, e);
                 }
             } else {
                 logger.debug("not sending advert to " + info
@@ -218,7 +218,7 @@ public final class FloodService implements Service {
         }
     }
 
-    private void handleJobAdvertLatency(DirectSocket socket) {
+    private void handleJobAdvertLatency(VirtualSocket socket) {
         try {
             ObjectInputStream in = new ObjectInputStream(socket
                     .getInputStream());
@@ -241,7 +241,7 @@ public final class FloodService implements Service {
         killNetwork(KILL_NETWORK_RADIUS);
     }
 
-    public void handleConnection(DirectSocket socket) {
+    public void handleConnection(VirtualSocket socket) {
         try {
             byte opcode = (byte) socket.getInputStream().read();
 

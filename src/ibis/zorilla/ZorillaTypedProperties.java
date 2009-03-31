@@ -17,18 +17,20 @@ import org.apache.log4j.Logger;
 /**
  * @author Niels Drost
  * 
- * Class representing configuration parameters of Zorilla. It is possible to
- * override parameters using a config file or system properties. The default
- * location of the config file is {user.home}/.zorilla but it is possible to
- * override this location by setting the "zorilla.config.file" system property
+ *         Class representing configuration parameters of Zorilla. It is
+ *         possible to override parameters using a config file or system
+ *         properties. The default location of the config file is
+ *         {user.home}/.zorilla but it is possible to override this location by
+ *         setting the "zorilla.config.file" system property
  * 
- * Setting preference order:
- * <UL>
- * <ITEM>System property</ITEM> <ITEM>Config file</ITEM> <ITEM>Default</ITEM>
- * </UL>
+ *         Setting preference order:
+ *         <UL>
+ *         <ITEM>System property</ITEM> <ITEM>Config file</ITEM>
+ *         <ITEM>Default</ITEM>
+ *         </UL>
  * 
  */
-public class Config extends TypedProperties {
+public class ZorillaTypedProperties extends TypedProperties {
 
     private static final long serialVersionUID = 1L;
 
@@ -93,7 +95,8 @@ public class Config extends TypedProperties {
     public static final String MASTER = PREFIX + "master";
     public static final String MASTER_ADDRESS = PREFIX + "master.address";
 
-    private static final Logger logger = Logger.getLogger(Config.class);
+    private static final Logger logger = Logger
+            .getLogger(ZorillaTypedProperties.class);
 
     private static final String[][] propertiesList = {
 
@@ -119,13 +122,15 @@ public class Config extends TypedProperties {
 
             { PORT, "5444", "TCP/UDP port used" },
 
-//            { ZONI_PORT, "5445",
-//                    "TCP port for connections from clients (users,applications) to Zorilla" },
+            // { ZONI_PORT, "5445",
+            // "TCP port for connections from clients (users,applications) to Zorilla"
+            // },
 
             { WWW_PORT, "5446", "TCP port used for the web interface" },
 
-//            { DISCOVERY_PORT, "5447",
-//                    "UDP port used for discovery of other nodes on the local network" },
+            // { DISCOVERY_PORT, "5447",
+            // "UDP port used for discovery of other nodes on the local network"
+            // },
 
             { MAX_RUNTIME, null, "Maximum runtime (in seconds) of this node" },
 
@@ -183,8 +188,8 @@ public class Config extends TypedProperties {
                     "false",
                     "Boolean: if true, this node will act as a master (not start any workers, start smartsockets hub for communication)" },
 
-//            { MASTER_ADDRESS, null, "Address of the master node" }, 
-            };
+    // { MASTER_ADDRESS, null, "Address of the master node" },
+    };
 
     // public static final long JOB_STATE_EXPIRATION_TIMEOUT = 30 * 60 * 1000;
     // public static final long JOB_STATE_REFRESH_TIMEOUT = 60 * 1000;
@@ -214,7 +219,7 @@ public class Config extends TypedProperties {
     private final File tmpDir;
 
     private File createConfigDir() throws Exception {
-        File configDir = getFileProperty(Config.CONFIG_DIR);
+        File configDir = getFileProperty(ZorillaTypedProperties.CONFIG_DIR);
 
         if (!configDir.equals("?")) {
             if (!configDir.isAbsolute()) {
@@ -246,7 +251,7 @@ public class Config extends TypedProperties {
     }
 
     private File createLogDir() throws Exception {
-        File logDir = getFileProperty(Config.LOG_DIR);
+        File logDir = getFileProperty(ZorillaTypedProperties.LOG_DIR);
         if (!logDir.isAbsolute()) {
             // make absolute by resolving against user home directory
             String userHome = System.getProperty("user.home");
@@ -276,7 +281,7 @@ public class Config extends TypedProperties {
     }
 
     private File createTmpDir() throws Exception {
-        File tmpDir = getFileProperty(Config.TMP_DIR);
+        File tmpDir = getFileProperty(ZorillaTypedProperties.TMP_DIR);
         if (!tmpDir.isAbsolute()) {
             // make absolute by resolving against java system tmp
             String systemTmp = System.getProperty("java.io.tmpdir");
@@ -291,16 +296,16 @@ public class Config extends TypedProperties {
         return tmpDir;
     }
 
-    Config(Properties userProperties) throws Exception {
+    ZorillaTypedProperties(Properties userProperties) throws Exception {
         Properties defaultProperties = getHardcodedProperties();
         Properties classpathProperties = new Properties(defaultProperties);
         Properties fileProperties = new Properties(classpathProperties);
 
         Properties systemProperties = new Properties(fileProperties);
-        // copy systemproperties to new map
+        // copy system properties to new map
         systemProperties.putAll(System.getProperties());
 
-        // make propeties stack defaults of this properties object
+        // make properties stack defaults of this properties object
         defaults = systemProperties;
 
         // add user properties to top-level properties

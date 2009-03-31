@@ -8,16 +8,16 @@ public class PropertyUndefinedException extends Exception {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Constructs an <code>PropertyUndefinedException</code> with <code>null</code> as
-     * its error detail message.
+     * Constructs an <code>PropertyUndefinedException</code> with
+     * <code>null</code> as its error detail message.
      */
     public PropertyUndefinedException() {
         super();
     }
 
     /**
-     * Constructs an <code>PropertyUndefinedException</code> with the specified detail
-     * message.
+     * Constructs an <code>PropertyUndefinedException</code> with the specified
+     * detail message.
      * 
      * @param s
      *            the detail message
@@ -27,8 +27,8 @@ public class PropertyUndefinedException extends Exception {
     }
 
     /**
-     * Constructs an <code>PropertyUndefinedException</code> with the specified detail
-     * message and cause.
+     * Constructs an <code>PropertyUndefinedException</code> with the specified
+     * detail message and cause.
      * 
      * @param s
      *            the detail message
@@ -40,7 +40,8 @@ public class PropertyUndefinedException extends Exception {
     }
 
     /**
-     * Constructs an <code>PropertyUndefinedException</code> with the specified cause.
+     * Constructs an <code>PropertyUndefinedException</code> with the specified
+     * cause.
      * 
      * @param cause
      *            the cause

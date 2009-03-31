@@ -56,7 +56,7 @@ public class User {
     private PrivateKey privateKey;
 
     public User(UUID uuid, String id, String email, String pgpCertificateFile,
-        String x509CertificateFile, long expirationDate) {
+            String x509CertificateFile, long expirationDate) {
         this.uuid = uuid;
         this.id = id;
         this.email = email;
@@ -73,19 +73,18 @@ public class User {
 
         selfSignature = selfSign();
     }
-    
+
     private void encode(OutputStream out) throws IOException {
-      
-        //TODO: create
-        
+
+        // TODO: create
+
     }
-    
+
     private byte[] encode() {
-     //TODO: create
-        
+        // TODO: create
+
         return null;
-        
-        
+
     }
 
     private KeyPair generateKeyPair() {
@@ -111,7 +110,7 @@ public class User {
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     private byte[] readFile(String fileName) throws Exception {
         File file = new File(fileName);
 
@@ -119,7 +118,7 @@ public class User {
 
         if (length == 0L) {
             throw new Exception("file " + fileName
-                + " does not exist or is empty");
+                    + " does not exist or is empty");
         }
 
         try {
@@ -130,39 +129,42 @@ public class User {
             int position = 0;
 
             while (position < length) {
-                long bytesRead = in
-                    .read(result, position, length - position);
+                long bytesRead = in.read(result, position, length - position);
 
                 position += bytesRead;
             }
-            
+
             return result;
         } catch (IOException e) {
             throw new Exception("exception opening or reading file", e);
         }
     }
 
-    public synchronized void attachPgpSignature(String signatureFile) throws Exception {
+    public synchronized void attachPgpSignature(String signatureFile)
+            throws Exception {
         byte[] signature = readFile(signatureFile);
 
         if (!validPGPSignature(signature)) {
-            throw new Exception("invalid pgp signature in file: " + signatureFile);
+            throw new Exception("invalid pgp signature in file: "
+                    + signatureFile);
         }
-        
+
         this.pgpSignature = signature;
     }
 
-    public synchronized void attachX509Signature(String signatureFile) throws Exception {
+    public synchronized void attachX509Signature(String signatureFile)
+            throws Exception {
         byte[] signature = readFile(signatureFile);
 
         if (!validX509Signature(signature)) {
-            throw new Exception("invalid x509 signature in file: " + signatureFile);
+            throw new Exception("invalid x509 signature in file: "
+                    + signatureFile);
         }
-        
+
         this.x509Signature = signature;
 
     }
-    
+
     private boolean validSelfSignature() {
         // TODO Auto-generated method stub
         return false;
@@ -172,13 +174,13 @@ public class User {
         if (!validSelfSignature()) {
             return false;
         }
-        
+
         if (pgpPublicKey != null) {
             if (!validPGPSignature(pgpSignature)) {
                 return false;
             }
         }
-        
+
         if (x509Certificate != null) {
             if (!validX509Signature(x509Signature)) {
                 return false;
@@ -194,12 +196,12 @@ public class User {
     public PrivateKey privateKey() {
         return privateKey;
     }
-    
+
     private boolean validPGPSignature(byte[] signature) {
         // TODO Auto-generated method stub
         return false;
     }
-    
+
     private boolean validX509Signature(byte[] signature) {
         // TODO Auto-generated method stub
         return false;

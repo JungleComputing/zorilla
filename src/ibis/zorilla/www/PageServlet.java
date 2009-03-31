@@ -17,7 +17,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
 import org.apache.log4j.Logger;
 import org.mortbay.jetty.HttpException;
 
@@ -202,7 +201,8 @@ public final class PageServlet extends HttpServlet {
         out.println("</table>");
     }
 
-    private void printNodeList(NodeInfo[] nodes, PrintWriter out) throws Exception {
+    private void printNodeList(NodeInfo[] nodes, PrintWriter out)
+            throws Exception {
         if (nodes.length == 0) {
             out.println("- None -");
             return;
@@ -211,9 +211,8 @@ public final class PageServlet extends HttpServlet {
         Coordinates nodeCoordinates = node.vivaldiService().getCoordinates();
 
         out.println("<table border=frame rules=all cellspacing=15>"
-                + "<tr><th>Name</th>" + 
-                 "<th>ID</th>" +
-//                "<th>Address</th>" +
+                + "<tr><th>Name</th>" + "<th>ID</th>" +
+                // "<th>Address</th>" +
                 "<th>Vivaldi Coordinate</th>" + "<th>Distance</th>");
 
         for (NodeInfo info : nodes) {
@@ -221,15 +220,15 @@ public final class PageServlet extends HttpServlet {
             out.println("<td><a href=" + WebService.linkTo(info) + "/>"
                     + info.getName() + "</a></td>");
             out.println("<td>" + info.getID() + "</td>");
-//            out.println("<td>" + info.getAddress() + "</td>");
+            // out.println("<td>" + info.getAddress() + "</td>");
             out.println("<td>" + info.getCoordinates() + "</td>");
-//            out.println("<td title=\"Coordinate: " + info.getCoordinates()
-//                    + "\">");
+            // out.println("<td title=\"Coordinate: " + info.getCoordinates()
+            // + "\">");
             if (nodeCoordinates.isOrigin() || info.getCoordinates().isOrigin()) {
                 out.println("<td>UNKNOWN");
             } else {
-                out.println(String.format("<td align=center>%.2f", info.getCoordinates()
-                        .distance(nodeCoordinates)));
+                out.println(String.format("<td align=center>%.2f", info
+                        .getCoordinates().distance(nodeCoordinates)));
             }
 
             out.println("</td></tr>");
@@ -279,7 +278,8 @@ public final class PageServlet extends HttpServlet {
         out.println("</table>");
     }
 
-    private void writeJobDetailPage(PrintWriter out, String jobID) throws Exception {
+    private void writeJobDetailPage(PrintWriter out, String jobID)
+            throws Exception {
         out.println("<h2>Job " + jobID + "</h2>");
 
         Job job;
@@ -294,13 +294,11 @@ public final class PageServlet extends HttpServlet {
             return;
         }
 
-        
         out.println("<h3>Job Description</h3>");
         printMap(job.getDescription().toStringMap(), out);
-        
+
         out.println("<h3>Constituents</h3>");
         printNodeList(job.getConstituentInfos(), out);
-
 
         out.println("<h3>Stats</h3>");
         printMap(job.getStats(), out);
@@ -324,17 +322,17 @@ public final class PageServlet extends HttpServlet {
         Coordinates nodeCoordinates = node.vivaldiService().getCoordinates();
 
         out.println("<table border=frame rules=all cellspacing=15>"
-                + "<tr><th>Name</th>" 
-                //+ "<th>ID</th>"
+                + "<tr><th>Name</th>"
+                // + "<th>ID</th>"
                 + "<th>Vivaldi Coordinate</th>" + "<th>Vivaldi Distance</th>"
                 + "<th>Actual Distance</th>");
 
         for (Neighbour neighbour : neighbours) {
             NodeInfo info = neighbour.getInfo();
             out.println("<tr>");
-            out.println("<td><a href=" + WebService.linkTo(neighbour.getInfo()) + "/>"
-                    + info.getName() + "</a></td>");
-            //out.println("<td>" + info.getID() + "</td>");
+            out.println("<td><a href=" + WebService.linkTo(neighbour.getInfo())
+                    + "/>" + info.getName() + "</a></td>");
+            // out.println("<td>" + info.getID() + "</td>");
             out.println("<td>" + info.getCoordinates() + "</td>");
             if (nodeCoordinates.isOrigin() || info.getCoordinates().isOrigin()) {
                 out.println("<td>UNKNOWN</td>");
@@ -342,7 +340,8 @@ public final class PageServlet extends HttpServlet {
                 out.println(String.format("<td align=center>%.2f</td>", info
                         .getCoordinates().distance(nodeCoordinates)));
             }
-            out.println(String.format("<td align=center>%.2f</td>", neighbour.distanceMs()));
+            out.println(String.format("<td align=center>%.2f</td>", neighbour
+                    .distanceMs()));
 
             out.println("</tr>");
         }
@@ -351,7 +350,8 @@ public final class PageServlet extends HttpServlet {
 
     }
 
-    private void writeGossipPage(PrintWriter out, boolean remote) throws Exception {
+    private void writeGossipPage(PrintWriter out, boolean remote)
+            throws Exception {
         String linkPrefix = "";
         if (remote) {
             linkPrefix = WebService.linkTo(node.getInfo());

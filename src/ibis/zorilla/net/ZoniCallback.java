@@ -58,12 +58,11 @@ public class ZoniCallback implements Runnable, Callback {
 
         for (int i = 0; i < addresses.length && socket == null; i++) {
             try {
-                socket =
-                    new Socket(addresses[i].getAddress(),
-                            addresses[i].getPort());
+                socket = new Socket(addresses[i].getAddress(), addresses[i]
+                        .getPort());
             } catch (IOException e) {
                 logger.debug("could not connect to client at " + addresses[i],
-                    e);
+                        e);
             }
         }
 
@@ -74,9 +73,8 @@ public class ZoniCallback implements Runnable, Callback {
 
         try {
 
-            ObjectOutputStream out =
-                new ObjectOutputStream(new BufferedOutputStream(
-                        socket.getOutputStream()));
+            ObjectOutputStream out = new ObjectOutputStream(
+                    new BufferedOutputStream(socket.getOutputStream()));
 
             out.writeInt(ZoniProtocol.VERSION);
             out.writeInt(ZoniProtocol.CALLBACK_JOBINFO);
@@ -88,10 +86,9 @@ public class ZoniCallback implements Runnable, Callback {
             out.writeInt(job.getExitStatus());
             out.flush();
 
-            ObjectInputStream in =
-                new ObjectInputStream(new BufferedInputStream(
-                        socket.getInputStream()));
-            
+            ObjectInputStream in = new ObjectInputStream(
+                    new BufferedInputStream(socket.getInputStream()));
+
             int status = in.readInt();
             String message = in.readUTF();
 

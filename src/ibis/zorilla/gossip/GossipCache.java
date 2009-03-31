@@ -158,7 +158,8 @@ final class GossipCache {
 
         long version = Node.getVersion();
         for (int i = 0; i < cache.size(); i++) {
-            if (cache.get(i).hasExpired() || version != cache.get(i).getInfo().getVersion()) {
+            if (cache.get(i).hasExpired()
+                    || version != cache.get(i).getInfo().getVersion()) {
                 cache.remove(i);
                 i--;
             }

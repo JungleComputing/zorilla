@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 /**
  * @author Niels Drost
  * 
- * reads data from a stream and writes it to one or more OutputStreams.
+ *         reads data from a stream and writes it to one or more OutputStreams.
  */
 public final class StreamWriter implements Runnable {
 

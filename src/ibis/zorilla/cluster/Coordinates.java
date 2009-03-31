@@ -7,11 +7,9 @@ import java.io.Serializable;
 
 import org.apache.log4j.Logger;
 
-
 public final class Coordinates implements Serializable {
 
-    private static final Logger logger = Logger
-            .getLogger(Coordinates.class);
+    private static final Logger logger = Logger.getLogger(Coordinates.class);
 
     // nodes closer than this push each other off in some random direction
     public static final double CLOSEBY_THRESHOLD = 0.01;
@@ -190,8 +188,7 @@ public final class Coordinates implements Serializable {
     /**
      * Updates coordinate with new information...
      */
-    public Coordinates update(Coordinates remoteCoordinates,
-            double rtt) {
+    public Coordinates update(Coordinates remoteCoordinates, double rtt) {
         logger.debug("updating " + this + " with " + remoteCoordinates
                 + " at distance " + rtt);
 
@@ -259,9 +256,9 @@ public final class Coordinates implements Serializable {
     public double[] getCoordinates() {
         return coordinates.clone();
     }
-    
+
     public boolean isOrigin() {
-        for(int i = 0; i < DIMENSIONS;i++) {
+        for (int i = 0; i < DIMENSIONS; i++) {
             if (coordinates[i] != 0) {
                 return false;
             }

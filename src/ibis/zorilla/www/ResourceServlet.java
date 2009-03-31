@@ -56,7 +56,7 @@ public final class ResourceServlet extends HttpServlet {
             out.write(bytes, 0, read);
         }
     }
-    
+
     public void writeResource(String path, OutputStream out) throws IOException {
 
         logger.debug("loading resource: " + path);

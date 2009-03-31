@@ -2,7 +2,7 @@ package ibis.zorilla.job;
 
 import ibis.util.ThreadPool;
 import ibis.zorilla.Node;
-import ibis.zorilla.Config;
+import ibis.zorilla.ZorillaTypedProperties;
 import ibis.zorilla.Service;
 import ibis.zorilla.zoni.ZorillaJobDescription;
 
@@ -19,7 +19,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import org.apache.log4j.Logger;
 
-import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
 
 public final class JobService implements Service, Runnable {
 
@@ -39,14 +39,15 @@ public final class JobService implements Service, Runnable {
 
     private final Map<UUID, Resources> usedResources;
 
-    //return 80% of free physical memory as max memory available
+    // return 80% of free physical memory as max memory available
     private static int freeMemory() {
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            long result = (Long) server.getAttribute(new ObjectName(
-                    "java.lang:type=OperatingSystem"),
-                    "FreePhysicalMemorySize");
-            return (int) ((result / 1024.0 / 1024.0) * 0.8) ;
+            long result = (Long) server
+                    .getAttribute(new ObjectName(
+                            "java.lang:type=OperatingSystem"),
+                            "FreePhysicalMemorySize");
+            return (int) ((result / 1024.0 / 1024.0) * 0.8);
         } catch (Throwable t) {
             logger.error("could not determine"
                     + " total memory of this machine, using 1Gb", t);
@@ -68,8 +69,8 @@ public final class JobService implements Service, Runnable {
             availableCores = Runtime.getRuntime().availableProcessors();
         }
 
-        availableCores = node.config().getIntProperty(Config.AVAILABLE_CORES,
-                availableCores);
+        availableCores = node.config().getIntProperty(
+                ZorillaTypedProperties.AVAILABLE_CORES, availableCores);
         logger.info("Available cores on this node: " + availableCores);
 
         int freeMemory = freeMemory();
@@ -78,7 +79,7 @@ public final class JobService implements Service, Runnable {
         int usableDiskSpace = (int) (node.config().getTmpDir().getUsableSpace() / 1024.0 / 1024.0);
         logger.info("Total diskspace available: " + usableDiskSpace + " Mb");
 
-        //1 node available
+        // 1 node available
         availableResources = new Resources(1, availableCores, freeMemory,
                 usableDiskSpace);
 
@@ -248,7 +249,7 @@ public final class JobService implements Service, Runnable {
         logger.info("Started Job service");
     }
 
-    public void handleConnection(DirectSocket socket) {
+    public void handleConnection(VirtualSocket socket) {
         logger.error("Incoming connection to JobService");
     }
 

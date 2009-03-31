@@ -33,7 +33,10 @@
         <ant dir="starter" />
     </target>
 
-    <target name="build" description="build jar file" depends="clean,subprojects">
+    <target name="build"
+            description="build jar file"
+            depends="clean,subprojects"
+    >
         <mkdir dir="tmp" />
         <mkdir dir="lib" />
 
@@ -68,12 +71,13 @@
         <jar destfile="lib/${ant.project.name}${version}.jar" basedir="tmp">
             <manifest>
                 <attribute name="Implementation-Version" value="${timestamp}" />
+                <attribute name="Ibis-Service" value="ibis.zorilla.Node" />
             </manifest>
         </jar>
 
 
         <!-- add external stuff to lib -->
-        <copy todir="lib" flatten="true" includeEmptyDirs="false">
+        <copy todir="lib" includeEmptyDirs="false">
             <fileset dir="external" />
         </copy>
 
@@ -87,6 +91,7 @@
         <ant dir="starter" target="clean" />
 
         <delete dir="dist" />
+        <delete dir="lib" />
     </target>
 
     <target name="javadoc" description="create javadoc documentation">

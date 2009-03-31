@@ -19,31 +19,21 @@ import org.apache.log4j.Logger;
  */
 public final class EndPoint implements MessageUpcall {
     /*
-     * MESSAGE:
-     *      int                     MESSAGE
-     *      [PAYLOAD]
-     *      
-     * REQUEST:
-     *      int                     REQUEST
-     *      UUID                    callID
-     *      ReceivePortIdentifier   replyPort
-     *      [PAYLOAD]
-     *
-     * REPLY:
-     *      int                     REPLY
-     *      UUID                    callID
-     *      int                     result (OK, EXCEPTION)
-     *      [PAYLOAD] | [EXCEPTION]
-     */ 
-    
+     * MESSAGE: int MESSAGE [PAYLOAD]
+     * 
+     * REQUEST: int REQUEST UUID callID ReceivePortIdentifier replyPort
+     * [PAYLOAD]
+     * 
+     * REPLY: int REPLY UUID callID int result (OK, EXCEPTION) [PAYLOAD] |
+     * [EXCEPTION]
+     */
 
-    
     Logger logger = Logger.getLogger(EndPoint.class);
 
     static final int MESSAGE = 0;
     static final int REQUEST = 1;
     static final int REPLY = 2;
-    
+
     static final int OK = 0;
 
     static final int EXCEPTION = 1;
@@ -55,7 +45,7 @@ public final class EndPoint implements MessageUpcall {
     private Ibis ibis;
 
     public EndPoint(String name, Receiver reciever, Ibis ibis)
-        throws IOException {
+            throws IOException {
         this.receiver = reciever;
         this.ibis = ibis;
 
@@ -73,7 +63,7 @@ public final class EndPoint implements MessageUpcall {
     public Call call(IbisIdentifier target, String name) throws IOException {
         return new Call(target, name, ibis);
     }
-    
+
     public WriteMessage send(ReceivePortIdentifier receiver) throws IOException {
         return new WriteMessage(receiver, ibis);
     }
@@ -102,14 +92,14 @@ public final class EndPoint implements MessageUpcall {
                 invocation.finish();
             } catch (IOException userException) {
                 invocation.finish(new Exception(
-                    "Exception on handling request", userException));
+                        "Exception on handling request", userException));
             } catch (Exception userException) {
                 invocation.finish(userException);
             }
             break;
         default:
             logger.error("unknown message type received in upcall: "
-                + messageType);
+                    + messageType);
             break;
         }
 

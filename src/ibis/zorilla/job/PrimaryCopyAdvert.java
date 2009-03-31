@@ -38,7 +38,7 @@ public class PrimaryCopyAdvert extends Advert {
     public String getMetric() {
         return metric;
     }
-    
+
     @Override
     public int getCount() {
         return count;

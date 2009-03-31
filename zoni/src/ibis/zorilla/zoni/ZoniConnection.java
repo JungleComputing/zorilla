@@ -1,9 +1,11 @@
 package ibis.zorilla.zoni;
 
 import ibis.smartsockets.SmartSocketsProperties;
-import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
+import ibis.smartsockets.virtual.VirtualSocketAddress;
+import ibis.smartsockets.virtual.VirtualSocketFactory;
 import ibis.smartsockets.direct.DirectSocketAddress;
-import ibis.smartsockets.direct.DirectSocketFactory;
+import ibis.smartsockets.hub.servicelink.ServiceLink;
 import ibis.smartsockets.util.TypedProperties;
 
 import java.io.BufferedInputStream;
@@ -19,397 +21,446 @@ import org.apache.log4j.Logger;
 
 public final class ZoniConnection {
 
-	public static final int TIMEOUT = 10 * 1000;
+    public static final int TIMEOUT = 10 * 1000;
+
+    Logger logger = Logger.getLogger(ZoniConnection.class);
+
+    private final VirtualSocket socket;
+
+    private final ObjectInputStream in;
+
+    private final ObjectOutputStream out;
+
+    private final String peerID;
+
+    private static DirectSocketAddress createAddressFromString(String address,
+            int defaultPort) throws Exception {
+
+        if (address == null) {
+            throw new Exception("address of zorilla node undefined");
+        }
+
+        // maybe it is a DirectSocketAddress?
+        try {
+            return DirectSocketAddress.getByAddress(address);
+        } catch (Throwable e) {
+            // IGNORE
+        }
+
+        Throwable throwable = null;
+        // or only a host address
+        try {
+            return DirectSocketAddress.getByAddress(address, defaultPort);
+        } catch (Throwable e) {
+            throwable = e;
+            // IGNORE
+        }
+
+        throw new Exception("could not create node address from given string: "
+                + address, throwable);
+    }
+
+    public ZoniConnection(String address, String localHub, String id)
+            throws Exception {
+
+        DirectSocketAddress machine = createAddressFromString(address,
+                ZoniProtocol.DEFAULT_PORT);
+
+        if (machine == null) {
+            throw new Exception("cannot get address of node");
+        }
+
+        VirtualSocketAddress socketAddress = new VirtualSocketAddress(machine,
+                ZoniProtocol.VIRTUAL_PORT, machine, null);
+
+        TypedProperties factoryProperties = SmartSocketsProperties
+                .getDefaultProperties();
+        
+        factoryProperties.put("smartsockets.modules.virtual.ssh.in", "true");
+        factoryProperties.put("smartsockets.modules.virtual.ssh.out", "true");
+        
+        if (localHub != null) {
+            factoryProperties.put(SmartSocketsProperties.HUB_ADDRESSES,
+                    localHub);
+        }
+
+        VirtualSocketFactory socketFactory = VirtualSocketFactory
+                .createSocketFactory(factoryProperties, true);
+        
+        try {
+            ServiceLink sl = socketFactory.getServiceLink();
+            if (sl != null) {
+                sl.registerProperty("smartsockets.viz", "Z^ZONI Connection:,"
+                        + address.toString());
+            } else {
+                logger
+                        .warn("could not set smartsockets viz property: could not get smartsockets service link");
+            }
+        } catch (Throwable e) {
+            logger.warn("could not register smartsockets viz property", e);
+        }
+
+        socket = socketFactory.createClientSocket(socketAddress, TIMEOUT, true,
+                null);
+
+        // signal we are a user connection
+        socket.getOutputStream().write(ZoniProtocol.TYPE_USER);
+
+        logger.debug("connected");
+
+        out = new ObjectOutputStream(new BufferedOutputStream(socket
+                .getOutputStream()));
+
+        out.writeInt(ZoniProtocol.VERSION);
+        if (id == null) {
+            id = "anonymous";
+        }
+        out.writeUTF(id);
+        out.writeInt(ZoniProtocol.AUTHENTICATION_NONE);
+        out.flush();
+
+        logger.debug("send connection init");
+
+        in = new ObjectInputStream(new BufferedInputStream(socket
+                .getInputStream()));
 
-	Logger logger = Logger.getLogger(ZoniConnection.class);
+        int status = in.readInt();
+        String message = in.readUTF();
 
-	private final DirectSocket socket;
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("connecting failed, peer replied: " + message);
+        }
+        peerID = in.readUTF();
 
-	private final ObjectInputStream in;
+        logger.debug("reply from peer: status = " + status + ", message = "
+                + message + ", id = " + peerID);
 
-	private final ObjectOutputStream out;
+    }
 
-	private final String peerID;
+    public String peerID() {
+        return peerID;
+    }
 
-	public ZoniConnection(String address, String id) throws IOException {
-		DirectSocketAddress socketAddress;
+    public String submitJob(ZorillaJobDescription job,
+            CallbackReceiver callbackReceiver) throws IOException {
+        logger.debug("submitting job");
 
-		try {
-			socketAddress = DirectSocketAddress.getByAddress(address);
-		} catch (Exception e) {
-			socketAddress = DirectSocketAddress.getByAddress(address,
-					ZoniProtocol.DEFAULT_PORT);
-		}
+        out.writeInt(ZoniProtocol.OPCODE_SUBMIT_JOB);
+        job.writeTo(out);
 
-		TypedProperties factoryProperties = SmartSocketsProperties
-				.getDefaultProperties();
+        if (callbackReceiver != null) {
+            out.writeBoolean(true);
+            out.writeObject(callbackReceiver.addresses());
+        } else {
+            out.writeBoolean(false);
+        }
+
+        out.flush();
 
-		factoryProperties.put("smartsockets.modules.direct.ssh.in", "true");
-		factoryProperties.put("smartsockets.modules.direct.ssh.out", "true");
+        int status = in.readInt();
+        String message = in.readUTF();
 
-		DirectSocketFactory socketFactory = DirectSocketFactory
-				.getSocketFactory(factoryProperties);
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("submission failed: " + message);
+        }
 
-		socket = socketFactory.createSocket(socketAddress, TIMEOUT, 0, null);
+        String jobID = in.readUTF();
 
-		// signal we are a user connection
-		socket.getOutputStream().write(ZoniProtocol.TYPE_USER);
+        return jobID;
+    }
 
-		logger.debug("connected");
+    @SuppressWarnings("unchecked")
+    public JobInfo getJobInfo(String jobID) throws IOException {
+        try {
+            out.writeInt(ZoniProtocol.OPCODE_GET_JOB_INFO);
+            out.writeUTF(jobID);
+            out.flush();
 
-		out = new ObjectOutputStream(new BufferedOutputStream(socket
-				.getOutputStream()));
+            int status = in.readInt();
+            String message = in.readUTF();
 
-		out.writeInt(ZoniProtocol.VERSION);
-		if (id == null) {
-			id = "anonymous";
-		}
-		out.writeUTF(id);
-		out.writeInt(ZoniProtocol.AUTHENTICATION_NONE);
-		out.flush();
+            if (status != ZoniProtocol.STATUS_OK) {
+                close();
+                throw new IOException("exception on getting job info: "
+                        + message);
+            }
+
+            String id = in.readUTF();
+            String executable = in.readUTF();
+            Map<String, String> attributes = (Map<String, String>) in
+                    .readObject();
+            Map<String, String> jobStatus = (Map<String, String>) in
+                    .readObject();
+            int phase = in.readInt(); // phase
+            int exitStatus = in.readInt();
+
+            return new JobInfo(id, executable, attributes, jobStatus, phase,
+                    exitStatus);
+
+        } catch (ClassNotFoundException e) {
+            throw new IOException(e);
+        }
+
+    }
+
+    public void setJobAttributes(String jobID,
+            Map<String, String> updatedAttributes) throws IOException {
+
+        out.writeInt(ZoniProtocol.OPCODE_SET_JOB_ATTRIBUTES);
+        out.writeUTF(jobID);
 
-		logger.debug("send connection init");
+        out.writeObject(updatedAttributes);
 
-		in = new ObjectInputStream(new BufferedInputStream(socket
-				.getInputStream()));
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readUTF();
 
-		int status = in.readInt();
-		String message = in.readUTF();
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on setting job attributes: "
+                    + message);
+        }
+    }
+
+    public void cancelJob(String jobID) throws IOException {
+        if (jobID == null) {
+            return;
+        }
+
+        logger.debug("killing job " + jobID);
+        out.writeInt(ZoniProtocol.OPCODE_CANCEL_JOB);
+        out.writeUTF(jobID);
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readUTF();
+
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on cancelling job: " + message);
+        }
+    }
+
+    public String[] getJobList() throws IOException {
+        out.writeInt(ZoniProtocol.OPCODE_GET_JOB_LIST);
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readUTF();
+
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on getting job list: " + message);
+        }
+
+        int nrOfJobs = in.readInt();
+
+        String[] jobs = new String[nrOfJobs];
+
+        for (int i = 0; i < nrOfJobs; i++) {
+            jobs[i] = in.readUTF();
+        }
+        return jobs;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, String> getNodeInfo() throws IOException {
+        logger.debug("getting node info");
+
+        out.writeInt(ZoniProtocol.OPCODE_GET_NODE_INFO);
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readUTF();
+
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on getting node info: " + message);
+        }
+
+        try {
+            return (Map<String, String>) in.readObject();
+        } catch (ClassNotFoundException e) {
+            throw new IOException(e);
+        }
+    }
+
+    public ZoniFileInfo getFileInfo(String sandboxPath, String jobID)
+            throws IOException {
+        logger.debug("getting file info");
+
+        out.writeInt(ZoniProtocol.OPCODE_GET_FILE_INFO);
+        out.writeUTF(jobID);
+        out.writeUTF(sandboxPath);
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readUTF();
+
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on getting output files: "
+                    + message);
+        }
 
-		if (status != ZoniProtocol.STATUS_OK) {
-			close();
-			throw new IOException("connecting failed, peer replied: " + message);
-		}
-		peerID = in.readUTF();
+        try {
 
-		logger.debug("reply from peer: status = " + status + ", message = "
-				+ message + ", id = " + peerID);
+            return (ZoniFileInfo) in.readObject();
 
-	}
+        } catch (ClassNotFoundException e) {
+            throw new IOException(e);
+        }
+    }
 
-	public String peerID() {
-		return peerID;
-	}
+    /**
+     * Returns a stream for reading standard out/err of the given job. This
+     * connection cannot be used after this call.
+     */
+    public InputStream getOutput(String jobID, boolean stderr)
+            throws IOException {
+        logger.debug("getting stdout/stderr");
 
-	public String submitJob(ZorillaJobDescription job,
-			CallbackReceiver callbackReceiver) throws IOException {
-		logger.debug("submitting job");
+        if (stderr) {
+            out.writeInt(ZoniProtocol.OPCODE_GET_STDERR);
+        } else {
+            out.writeInt(ZoniProtocol.OPCODE_GET_STDOUT);
+        }
 
-		out.writeInt(ZoniProtocol.OPCODE_SUBMIT_JOB);
-		job.writeTo(out);
+        out.writeUTF(jobID);
+        out.flush();
 
-		if (callbackReceiver != null) {
-			out.writeBoolean(true);
-			out.writeObject(callbackReceiver.addresses());
-		} else {
-			out.writeBoolean(false);
-		}
+        int status = in.readInt();
+        String message = in.readUTF();
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on getting stdout/stderr: "
+                    + message);
+        }
 
-		out.flush();
+        return in;
+    }
 
-		int status = in.readInt();
-		String message = in.readUTF();
+    public OutputStream getInput(String jobID) throws IOException {
+        logger.debug("writing stdin");
 
-		if (status != ZoniProtocol.STATUS_OK) {
-			close();
-			throw new IOException("submission failed: " + message);
-		}
+        out.writeInt(ZoniProtocol.OPCODE_PUT_STDIN);
+        out.writeUTF(jobID);
+        out.flush();
 
-		String jobID = in.readUTF();
-
-		return jobID;
-	}
-
-	@SuppressWarnings("unchecked")
-	public JobInfo getJobInfo(String jobID) throws IOException {
-		try {
-			out.writeInt(ZoniProtocol.OPCODE_GET_JOB_INFO);
-			out.writeUTF(jobID);
-			out.flush();
-
-			int status = in.readInt();
-			String message = in.readUTF();
-
-			if (status != ZoniProtocol.STATUS_OK) {
-				close();
-				throw new IOException("exception on getting job info: "
-						+ message);
-			}
-
-			String id = in.readUTF();
-			String executable = in.readUTF();
-			Map<String, String> attributes = (Map<String, String>) in
-					.readObject();
-			Map<String, String> jobStatus = (Map<String, String>) in
-					.readObject();
-			int phase = in.readInt(); // phase
-			int exitStatus = in.readInt();
-
-			return new JobInfo(id, executable, attributes, jobStatus, phase,
-					exitStatus);
-
-		} catch (ClassNotFoundException e) {
-			throw new IOException(e);
-		}
-
-	}
-
-	public void setJobAttributes(String jobID,
-			Map<String, String> updatedAttributes) throws IOException {
-
-		out.writeInt(ZoniProtocol.OPCODE_SET_JOB_ATTRIBUTES);
-		out.writeUTF(jobID);
-
-		out.writeObject(updatedAttributes);
-
-		out.flush();
-
-		int status = in.readInt();
-		String message = in.readUTF();
-
-		if (status != ZoniProtocol.STATUS_OK) {
-			close();
-			throw new IOException("exception on setting job attributes: "
-					+ message);
-		}
-	}
-
-	public void cancelJob(String jobID) throws IOException {
-		if (jobID == null) {
-			return;
-		}
-
-		logger.debug("killing job " + jobID);
-		out.writeInt(ZoniProtocol.OPCODE_CANCEL_JOB);
-		out.writeUTF(jobID);
-		out.flush();
-
-		int status = in.readInt();
-		String message = in.readUTF();
-
-		if (status != ZoniProtocol.STATUS_OK) {
-			close();
-			throw new IOException("exception on cancelling job: " + message);
-		}
-	}
-
-	public String[] getJobList() throws IOException {
-		out.writeInt(ZoniProtocol.OPCODE_GET_JOB_LIST);
-		out.flush();
-
-		int status = in.readInt();
-		String message = in.readUTF();
-
-		if (status != ZoniProtocol.STATUS_OK) {
-			close();
-			throw new IOException("exception on getting job list: " + message);
-		}
-
-		int nrOfJobs = in.readInt();
-
-		String[] jobs = new String[nrOfJobs];
-
-		for (int i = 0; i < nrOfJobs; i++) {
-			jobs[i] = in.readUTF();
-		}
-		return jobs;
-	}
-
-	@SuppressWarnings("unchecked")
-	public Map getNodeInfo() throws IOException {
-		logger.debug("getting node info");
-
-		out.writeInt(ZoniProtocol.OPCODE_GET_NODE_INFO);
-		out.flush();
-
-		int status = in.readInt();
-		String message = in.readUTF();
-
-		if (status != ZoniProtocol.STATUS_OK) {
-			close();
-			throw new IOException("exception on getting node info: " + message);
-		}
-
-		try {
-			return (Map<String, String>) in.readObject();
-		} catch (ClassNotFoundException e) {
-			throw new IOException(e);
-		}
-	}
-
-	public ZoniFileInfo getFileInfo(String sandboxPath, String jobID)
-			throws IOException {
-		logger.debug("getting file info");
-
-		out.writeInt(ZoniProtocol.OPCODE_GET_FILE_INFO);
-		out.writeUTF(jobID);
-		out.writeUTF(sandboxPath);
-		out.flush();
-
-		int status = in.readInt();
-		String message = in.readUTF();
-
-		if (status != ZoniProtocol.STATUS_OK) {
-			close();
-			throw new IOException("exception on getting output files: "
-					+ message);
-		}
-
-		try {
-
-			return (ZoniFileInfo) in.readObject();
-
-		} catch (ClassNotFoundException e) {
-			throw new IOException(e);
-		}
-	}
-
-	/**
-	 * Returns a stream for reading standard out/err of the given job. This
-	 * connection cannot be used after this call.
-	 */
-	public InputStream getOutput(String jobID, boolean stderr)
-			throws IOException {
-		logger.debug("getting stdout/stderr");
-
-		if (stderr) {
-			out.writeInt(ZoniProtocol.OPCODE_GET_STDERR);
-		} else {
-			out.writeInt(ZoniProtocol.OPCODE_GET_STDOUT);
-		}
-
-		out.writeUTF(jobID);
-		out.flush();
-
-		int status = in.readInt();
-		String message = in.readUTF();
-		if (status != ZoniProtocol.STATUS_OK) {
-			close();
-			throw new IOException("exception on getting stdout/stderr: "
-					+ message);
-		}
-
-		return in;
-	}
-
-	public OutputStream getInput(String jobID) throws IOException {
-		logger.debug("writing stdin");
-
-		out.writeInt(ZoniProtocol.OPCODE_PUT_STDIN);
-		out.writeUTF(jobID);
-		out.flush();
-
-		int status = in.readInt();
-		String message = in.readUTF();
-		if (status != ZoniProtocol.STATUS_OK) {
-			close();
-			throw new IOException("exception on putting stdin: " + message);
-		}
-
-		return out;
-	}
-
-	/**
-	 * Writes an output file to the given stream.
-	 * 
-	 * @throws IOException
-	 *             in case of trouble
-	 */
-	public void getOutputFile(OutputStream stream, String sandboxPath,
-			String jobID) throws IOException {
-		logger.debug("getting file");
-
-		out.writeInt(ZoniProtocol.OPCODE_GET_FILE);
-
-		out.writeUTF(jobID);
-		out.writeUTF(sandboxPath);
-		out.flush();
-
-		int status = in.readInt();
-		String message = in.readUTF();
-
-		if (status != ZoniProtocol.STATUS_OK) {
-			close();
-			throw new IOException("exception on getting output file: "
-					+ message);
-		}
-
-		long size = in.readLong();
-		logger.debug("getting file " + sandboxPath + " of size " + size);
-
-		byte[] buffer = new byte[1024];
-
-		while (size > 0) {
-
-			int tryRead = (int) Math.min(size, buffer.length);
-
-			int read = in.read(buffer, 0, tryRead);
-
-			if (read == -1) {
-				throw new IOException("EOF on reading input file");
-			}
-
-			stream.write(buffer, 0, read);
-
-			size = size - read;
-		}
-
-	}
-
-	public void setNodeAttributes(Map<String, String> updatedAttributes)
-			throws IOException {
-		out.writeInt(ZoniProtocol.OPCODE_SET_NODE_ATTRIBUTES);
-
-		out.writeObject(updatedAttributes);
-
-		out.flush();
-
-		int status = in.readInt();
-		String message = in.readUTF();
-
-		if (status != ZoniProtocol.STATUS_OK) {
-			close();
-			throw new IOException("exception on setting peer attributes: "
-					+ message);
-		}
-
-	}
-
-	public void kill(boolean recursive) throws IOException {
-		logger.debug("killing peer (recursive = " + recursive + ")");
-
-		out.writeInt(ZoniProtocol.OPCODE_KILL_NODE);
-		out.writeBoolean(recursive);
-		out.flush();
-
-		int status = in.readInt();
-		String message = in.readUTF();
-
-		// kill always closes the connecton
-		close();
-
-		if (status != ZoniProtocol.STATUS_OK) {
-			throw new IOException("exception on killing peer: " + message);
-		}
-	}
-
-	public void close() {
-		if (!socket.isClosed()) {
-			try {
-				out.writeInt(ZoniProtocol.OPCODE_CLOSE_CONNECTION);
-				out.flush();
-			} catch (IOException e) {
-				logger.debug("IOException on closing connection", e);
-			}
-			try {
-				socket.close();
-			} catch (IOException e) {
-				logger.debug("IOException on closing socket", e);
-			}
-		}
-	}
-
-	public boolean isClosed() {
-		return socket.isClosed();
-	}
+        int status = in.readInt();
+        String message = in.readUTF();
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on putting stdin: " + message);
+        }
+
+        return out;
+    }
+
+    /**
+     * Writes an output file to the given stream.
+     * 
+     * @throws IOException
+     *             in case of trouble
+     */
+    public void getOutputFile(OutputStream stream, String sandboxPath,
+            String jobID) throws IOException {
+        logger.debug("getting file");
+
+        out.writeInt(ZoniProtocol.OPCODE_GET_FILE);
+
+        out.writeUTF(jobID);
+        out.writeUTF(sandboxPath);
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readUTF();
+
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on getting output file: "
+                    + message);
+        }
+
+        long size = in.readLong();
+        logger.debug("getting file " + sandboxPath + " of size " + size);
+
+        byte[] buffer = new byte[1024];
+
+        while (size > 0) {
+
+            int tryRead = (int) Math.min(size, buffer.length);
+
+            int read = in.read(buffer, 0, tryRead);
+
+            if (read == -1) {
+                throw new IOException("EOF on reading input file");
+            }
+
+            stream.write(buffer, 0, read);
+
+            size = size - read;
+        }
+
+    }
+
+    public void setNodeAttributes(Map<String, String> updatedAttributes)
+            throws IOException {
+        out.writeInt(ZoniProtocol.OPCODE_SET_NODE_ATTRIBUTES);
+
+        out.writeObject(updatedAttributes);
+
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readUTF();
+
+        if (status != ZoniProtocol.STATUS_OK) {
+            close();
+            throw new IOException("exception on setting peer attributes: "
+                    + message);
+        }
+
+    }
+
+    public void kill(boolean recursive) throws IOException {
+        logger.debug("killing peer (recursive = " + recursive + ")");
+
+        out.writeInt(ZoniProtocol.OPCODE_KILL_NODE);
+        out.writeBoolean(recursive);
+        out.flush();
+
+        int status = in.readInt();
+        String message = in.readUTF();
+
+        // kill always closes the connecton
+        close();
+
+        if (status != ZoniProtocol.STATUS_OK) {
+            throw new IOException("exception on killing peer: " + message);
+        }
+    }
+
+    public void close() {
+        if (!socket.isClosed()) {
+            try {
+                out.writeInt(ZoniProtocol.OPCODE_CLOSE_CONNECTION);
+                out.flush();
+            } catch (IOException e) {
+                logger.debug("IOException on closing connection", e);
+            }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                logger.debug("IOException on closing socket", e);
+            }
+        }
+    }
+
+    public boolean isClosed() {
+        return socket.isClosed();
+    }
 }

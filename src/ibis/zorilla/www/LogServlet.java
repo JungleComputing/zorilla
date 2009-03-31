@@ -42,7 +42,7 @@ public final class LogServlet extends HttpServlet {
         writeLog(out);
         request.getInputStream().close();
     }
-    
+
     public void writeLog(OutputStream out) throws IOException {
         InputStream input = new FileInputStream(file);
         byte[] bytes = new byte[1024];

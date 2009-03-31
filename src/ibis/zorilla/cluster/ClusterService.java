@@ -4,10 +4,9 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.UUID;
 
-
 import org.apache.log4j.Logger;
 
-import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
@@ -33,7 +32,7 @@ public abstract class ClusterService implements Service {
     }
 
     public abstract void start();
-    
+
     public abstract Neighbour[] getSortedNeighbours();
 
     public abstract NodeInfo[] getNeighbourInfos();
@@ -41,10 +40,10 @@ public abstract class ClusterService implements Service {
     protected abstract Neighbour getNeighbour(UUID id);
 
     public abstract NodeInfo getRandomNeighbour();
-    
+
     public abstract double distanceToClosestNeighbour();
 
-    public void handleConnection(DirectSocket socket) {
+    public void handleConnection(VirtualSocket socket) {
         try {
             byte opcode = (byte) socket.getInputStream().read();
 
@@ -67,6 +66,5 @@ public abstract class ClusterService implements Service {
             }
         }
     }
-
 
 }

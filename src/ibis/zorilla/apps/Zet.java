@@ -25,6 +25,7 @@ public final class Zet {
         int attribute = -1;
         boolean pause = false;
         boolean resume = false;
+        String hub = null;
 
         try {
 
@@ -42,6 +43,9 @@ public final class Zet {
                 } else if (command[i].equals("-p")
                         || command[i].equals("--pause")) {
                     pause = true;
+                } else if (command[i].equals("-h")) {
+                    i++;
+                    hub = command[i];
                 } else if (command[i].equals("-r")
                         || command[i].equals("--resume")) {
                     resume = true;
@@ -64,7 +68,6 @@ public final class Zet {
 
             Map<String, String> attributes = new HashMap<String, String>();
 
-            
             if (attribute != -1) {
                 for (int i = attribute; i < command.length; i++) {
                     String[] parts = command[i].split("=");
@@ -78,17 +81,17 @@ public final class Zet {
                 }
             }
 
-            ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
+            ZoniConnection connection = new ZoniConnection(nodeSocketAddress,hub,
                     null);
 
             if (attribute != -1) {
-            if (job == null) {
-                connection.setNodeAttributes(attributes);
-            } else {
-                connection.setJobAttributes(job, attributes);
+                if (job == null) {
+                    connection.setNodeAttributes(attributes);
+                } else {
+                    connection.setJobAttributes(job, attributes);
+                }
             }
-            }
-            
+
             if (pause) {
                 System.err.println("PAUSE! :(");
             } else if (resume) {

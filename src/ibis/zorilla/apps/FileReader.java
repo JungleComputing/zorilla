@@ -11,8 +11,8 @@ import org.apache.log4j.Logger;
 /**
  * @author Niels Drost
  * 
- * reads data from a stream and writes it to and outputstreams. Assumes a file
- * is growing.
+ *         reads data from a stream and writes it to and outputstreams. Assumes
+ *         a file is growing.
  */
 public final class FileReader implements Runnable {
 
@@ -27,14 +27,15 @@ public final class FileReader implements Runnable {
     public FileReader(File file, OutputStream out) {
 
         this.file = file;
-        
+
         try {
             file.createNewFile();
         } catch (IOException e) {
-            System.err.println("error on creating file: " + file + "error = " + e);
+            System.err.println("error on creating file: " + file + "error = "
+                    + e);
             System.exit(1);
         }
-        
+
         this.out = out;
 
         logger.debug("created file reader");
@@ -58,12 +59,11 @@ public final class FileReader implements Runnable {
 
         try {
             while (true) {
-                synchronized(this) {
+                synchronized (this) {
                     if (ended) {
                         return;
                     }
                 }
-                        
 
                 if (in == null) {
                     if (file.exists()) {
@@ -74,7 +74,7 @@ public final class FileReader implements Runnable {
                 if (in != null && in.length() > offset) {
 
                     logger.debug("reading from file at offset " + offset);
-                    
+
                     in.seek(offset);
 
                     int bytesRead = in.read(data, 0, data.length);

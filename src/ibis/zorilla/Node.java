@@ -1,5 +1,7 @@
 package ibis.zorilla;
 
+import ibis.smartsockets.virtual.VirtualSocketFactory;
+import ibis.util.TypedProperties;
 import ibis.zorilla.cluster.ClusterService;
 import ibis.zorilla.cluster.VivaldiService;
 import ibis.zorilla.gossip.GossipService;
@@ -12,13 +14,10 @@ import ibis.zorilla.net.ZoniService;
 import ibis.zorilla.www.WebService;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Random;
 import java.util.UUID;
 
@@ -30,7 +29,7 @@ import org.apache.log4j.PatternLayout;
  * General peer-to-peer node. Implements a communication structure for "modules"
  * 
  */
-public final class Node implements Runnable {
+public final class Node implements Runnable, ibis.ipl.server.Service {
 
     // logger
     private static Logger logger = Logger.getLogger(Node.class);
@@ -40,14 +39,15 @@ public final class Node implements Runnable {
     private static final long version;
 
     static {
-        version = Long.parseLong(Package.getPackage("ibis.zorilla").getImplementationVersion());
+        version = Long.parseLong(Package.getPackage("ibis.zorilla")
+                .getImplementationVersion());
     }
 
     public static long getVersion() {
         return version;
     }
 
-    private final Config config;
+    private final ZorillaTypedProperties config;
 
     private final Network network;
 
@@ -95,14 +95,19 @@ public final class Node implements Runnable {
         return UUID.randomUUID();
     }
 
- 
-    Node(Properties properties) throws Exception {
+    public Node(TypedProperties properties) throws Exception {
+        this(properties, null);
+    }
+
+    public Node(TypedProperties properties, VirtualSocketFactory factory)
+            throws Exception {
+
         // Log.initLog4J("ibis.zorilla", Level.INFO);
 
-        config = new Config(properties);
+        config = new ZorillaTypedProperties(properties);
 
         // make up a UUID for this node
-        String idString = config.getProperty(Config.NODE_ID);
+        String idString = config.getProperty(ZorillaTypedProperties.NODE_ID);
         if (idString == null) {
             id = generateUUID();
         } else {
@@ -111,31 +116,23 @@ public final class Node implements Runnable {
 
         startTime = System.currentTimeMillis();
 
-        network = new Network(this);
+        network = new Network(this, config, factory);
 
         // give this node a (user friendly) name
-        if (config.getProperty(Config.NODE_NAME) != null) {
-            name = config.getProperty(Config.NODE_NAME);
+        if (config.getProperty(ZorillaTypedProperties.NODE_NAME) != null) {
+            name = config.getProperty(ZorillaTypedProperties.NODE_NAME);
         } else {
-            String cluster = config.getProperty(Config.CLUSTER_NAME);
+            String cluster = config
+                    .getProperty(ZorillaTypedProperties.CLUSTER_NAME);
             String hostName = InetAddress.getLocalHost().getHostName();
-            InetSocketAddress[] addresses = network.getAddress()
-                    .getPrivateAddresses();
-            if (addresses.length == 0) {
-                addresses = network.getAddress().getPublicAddresses();
-            }
-            if (addresses.length == 0) {
-                throw new IOException("could not get network address");
-            }
-
-            int port = addresses[0].getPort();
+            int port = network.getAddress().machine().getPorts(false)[0];
 
             if (cluster == null) {
                 name = hostName + ":" + port;
-                config.put(Config.NODE_NAME, name);
+                config.put(ZorillaTypedProperties.NODE_NAME, name);
             } else {
                 name = hostName + ":" + port + "@" + cluster;
-                config.put(Config.NODE_NAME, name);
+                config.put(ZorillaTypedProperties.NODE_NAME, name);
             }
         }
 
@@ -184,7 +181,8 @@ public final class Node implements Runnable {
         zoniService.start();
         webService.start();
 
-        long maxRunTime = config.getLongProperty(Config.MAX_RUNTIME, 0);
+        long maxRunTime = config.getLongProperty(
+                ZorillaTypedProperties.MAX_RUNTIME, 0);
         if (maxRunTime > 0) {
             deadline = System.currentTimeMillis() + (maxRunTime * 1000);
             logger.info("Shutting down zorilla node in " + maxRunTime
@@ -205,7 +203,7 @@ public final class Node implements Runnable {
         }
     }
 
-    public synchronized Config config() {
+    public synchronized ZorillaTypedProperties config() {
         return config;
     }
 
@@ -218,7 +216,8 @@ public final class Node implements Runnable {
     }
 
     public NodeInfo getInfo() {
-        return new NodeInfo(id, name, config.getProperty(Config.CLUSTER_NAME),
+        return new NodeInfo(id, name, config
+                .getProperty(ZorillaTypedProperties.CLUSTER_NAME),
                 vivaldiService.getCoordinates(), network.getAddress(), version);
     }
 
@@ -266,7 +265,8 @@ public final class Node implements Runnable {
         return zoniService;
     }
 
-    public synchronized void stop(long delay) {
+    @Override
+    public synchronized void end(long delay) {
         long newDeadline = System.currentTimeMillis() + delay;
 
         if (newDeadline < deadline) {
@@ -293,7 +293,7 @@ public final class Node implements Runnable {
     }
 
     public String toString() {
-        return name;
+        return "Zorilla node " + name;
     }
 
     // delay until a certain time before the dealine
@@ -330,6 +330,11 @@ public final class Node implements Runnable {
 
         logger.debug("node done");
 
+    }
+
+    @Override
+    public String getServiceName() {
+        return "zorilla";
     }
 
 }

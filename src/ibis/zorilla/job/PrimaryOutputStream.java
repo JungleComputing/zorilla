@@ -281,8 +281,8 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
 
         synchronized (this) {
             if (file.length() != size) {
-                logger.warn("streamto: warning: file of length " + file.length()
-                        + " should be of size " + size);
+                logger.warn("streamto: warning: file of length "
+                        + file.length() + " should be of size " + size);
             }
         }
 
@@ -306,11 +306,10 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
 
     public synchronized long length() throws IOException {
         if (file.length() != size) {
-            logger.warn("length(): warning: file " + file + " of length " + file.length()
-                    + " should be of size " + size);
+            logger.warn("length(): warning: file " + file + " of length "
+                    + file.length() + " should be of size " + size);
         }
-        
-        
+
         return size;
     }
 

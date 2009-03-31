@@ -1,7 +1,7 @@
 package ibis.zorilla.cluster;
 
 import ibis.util.ThreadPool;
-import ibis.zorilla.Config;
+import ibis.zorilla.ZorillaTypedProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 
@@ -38,7 +38,8 @@ public class NearestNodeClustering extends ClusterService implements Runnable {
     public NearestNodeClustering(Node node) throws IOException {
         super(node);
 
-        maxNeighbours = node.config().getIntProperty(Config.MAX_CLUSTER_SIZE);
+        maxNeighbours = node.config().getIntProperty(
+                ZorillaTypedProperties.MAX_CLUSTER_SIZE);
 
         neighbours = new HashMap<UUID, Neighbour>();
     }
@@ -231,10 +232,10 @@ public class NearestNodeClustering extends ClusterService implements Runnable {
 
     public void run() {
         while (true) {
-            for(Neighbour neighbour: getNeighbours()) {
+            for (Neighbour neighbour : getNeighbours()) {
                 neighbour.ping();
             }
-                
+
             updateNeighbourList();
 
             try {

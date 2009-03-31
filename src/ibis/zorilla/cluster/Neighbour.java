@@ -10,15 +10,14 @@ import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.UUID;
 
-
 import org.apache.log4j.Logger;
 
-import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
 
 public class Neighbour {
 
     /**
-     * if true, the avarage of the ping history is used. by default the mimimm
+     * if true, the average of the ping history is used. by default the mimimm
      * is returned
      */
     public static final boolean AVERAGE_PING_TIMES = false;
@@ -37,10 +36,10 @@ public class Neighbour {
 
     private Node node;
 
-    // neighbour info
+    // Neighbor info
     private NodeInfo info;
 
-    // neighbour ID
+    // Neighbor ID
     private final UUID id;
 
     private boolean ended = false;
@@ -66,11 +65,11 @@ public class Neighbour {
     }
 
     void ping() {
-        DirectSocket socket = null;
+        VirtualSocket socket = null;
         try {
             NodeInfo oldInfo = getInfo();
-            socket = node.network().connect(oldInfo,
-                    Network.CLUSTER_SERVICE, REQUEST_TIMEOUT);
+            socket = node.network().connect(oldInfo, Network.CLUSTER_SERVICE,
+                    REQUEST_TIMEOUT);
 
             OutputStream out = socket.getOutputStream();
             out.write(ClusterService.OPCODE_NEIGHBOUR_INFO_REQUEST);
@@ -112,7 +111,7 @@ public class Neighbour {
                 failures = 0;
             }
         } catch (Exception e) {
-            //logger.warn("failed to update neighbour " + getInfo());
+            // logger.warn("failed to update neighbour " + getInfo());
             logger.debug("failed to update neighbour " + getInfo(), e);
 
             synchronized (this) {
@@ -123,7 +122,7 @@ public class Neighbour {
                 try {
                     socket.close();
                 } catch (IOException e) {
-                    //IGNORE
+                    // IGNORE
                 }
             }
         }

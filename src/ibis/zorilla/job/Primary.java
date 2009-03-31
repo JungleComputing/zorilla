@@ -5,7 +5,7 @@ import ibis.ipl.IbisIdentifier;
 import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
-import ibis.zorilla.Config;
+import ibis.zorilla.ZorillaTypedProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.io.ObjectOutput;
@@ -146,7 +146,8 @@ public final class Primary extends Job implements Runnable, Receiver {
 
         this.node = node;
 
-        cluster = node.config().getProperty(Config.CLUSTER_NAME);
+        cluster = node.config()
+                .getProperty(ZorillaTypedProperties.CLUSTER_NAME);
 
         id = Node.generateUUID();
         this.jobDescription = description;
@@ -167,7 +168,8 @@ public final class Primary extends Job implements Runnable, Receiver {
             attributes = new JobAttributes(description.getAttributes());
 
             submissiontime = System.currentTimeMillis();
-            long wallTimeMillis = attributes.getLongProperty(JobAttributes.WALLTIME_MAX) * 60 * 1000;
+            long wallTimeMillis = attributes
+                    .getLongProperty(JobAttributes.WALLTIME_MAX) * 60 * 1000;
             deadline = submissiontime + wallTimeMillis;
 
             // create ibis
@@ -205,8 +207,8 @@ public final class Primary extends Job implements Runnable, Receiver {
                 for (Map.Entry<String, File> entry : description
                         .getOutputFiles().entrySet()) {
                     postStageFiles.add(new PrimaryOutputStream(entry.getKey(),
-                            File.createTempFile(id.toString(), ".output", node.config()
-                                    .getTmpDir()), this));
+                            File.createTempFile(id.toString(), ".output", node
+                                    .config().getTmpDir()), this));
                 }
             } else {
                 stdout = new PrimaryOutputStream("##stdout##", description
@@ -248,7 +250,8 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             constituents = new HashMap<UUID, Constituent>();
             // register self
-            constituents.put(id, new Constituent(id, endPoint.getID(), node.getInfo()));
+            constituents.put(id, new Constituent(id, endPoint.getID(), node
+                    .getInfo()));
 
             log("Primary created for " + id);
             logger.info("new job " + id.toString().substring(0, 7)
@@ -382,31 +385,31 @@ public final class Primary extends Job implements Runnable, Receiver {
             result.put("java", "no");
         }
 
-//        if (stdout != null) {
-//            result.put("stout", stdout.sandboxPath());
-//        }
-//        if (stderr != null) {
-//            result.put("sterr", stderr.sandboxPath());
-//        }
-//        if (stdin != null) {
-//            result.put("stdin", stdin.sandboxPath());
-//        }
-//
-//        if (preStageFiles.length > 0) {
-//            String inputs = "";
-//            for (InputFile file : preStageFiles) {
-//                inputs += file.toString() + "\n";
-//            }
-//            result.put("prestage", inputs);
-//        }
-//
-//        if (postStageFiles.length > 0) {
-//            String outputs = "";
-//            for (PrimaryOutputStream file : postStageFiles) {
-//                outputs += file.toString() + "\n";
-//            }
-//            result.put("poststage", outputs);
-//        }
+        // if (stdout != null) {
+        // result.put("stout", stdout.sandboxPath());
+        // }
+        // if (stderr != null) {
+        // result.put("sterr", stderr.sandboxPath());
+        // }
+        // if (stdin != null) {
+        // result.put("stdin", stdin.sandboxPath());
+        // }
+        //
+        // if (preStageFiles.length > 0) {
+        // String inputs = "";
+        // for (InputFile file : preStageFiles) {
+        // inputs += file.toString() + "\n";
+        // }
+        // result.put("prestage", inputs);
+        // }
+        //
+        // if (postStageFiles.length > 0) {
+        // String outputs = "";
+        // for (PrimaryOutputStream file : postStageFiles) {
+        // outputs += file.toString() + "\n";
+        // }
+        // result.put("poststage", outputs);
+        // }
 
         return result;
     }
@@ -560,7 +563,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         logger.info("removed worker " + workerID + " on " + constituent
                 + " with exit status " + status + "(" + theExitStatus
                 + ") now " + getNrOfWorkers() + " workers");
-        
+
         if (status != Status.DONE) {
             log("worker exited with status: " + status);
 
@@ -570,26 +573,29 @@ public final class Primary extends Job implements Runnable, Receiver {
         setExitStatus(exitStatus);
 
         if (phase == RUNNING) {
-            if ((status == Status.DONE && getStringAttribute(JobAttributes.ON_USER_EXIT)
-                    .equalsIgnoreCase("close.world"))
+            if ((status == Status.DONE && getStringAttribute(
+                    JobAttributes.ON_USER_EXIT).equalsIgnoreCase("close.world"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase("close.world"))) {
+                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase(
+                            "close.world"))) {
 
                 setPhase(CLOSED);
             }
 
-            if ((status == Status.DONE && getStringAttribute(JobAttributes.ON_USER_EXIT)
-                    .equalsIgnoreCase("cancel.job"))
+            if ((status == Status.DONE && getStringAttribute(
+                    JobAttributes.ON_USER_EXIT).equalsIgnoreCase("cancel.job"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase("cancel.job"))) {
+                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase(
+                            "cancel.job"))) {
 
                 setPhase(CANCELLED);
             }
 
-            if ((status == Status.DONE && getStringAttribute(JobAttributes.ON_USER_EXIT)
-                    .equalsIgnoreCase("job.error"))
+            if ((status == Status.DONE && getStringAttribute(
+                    JobAttributes.ON_USER_EXIT).equalsIgnoreCase("job.error"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase("job.error"))) {
+                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase(
+                            "job.error"))) {
 
                 setPhase(USER_ERROR);
             }
@@ -597,18 +603,20 @@ public final class Primary extends Job implements Runnable, Receiver {
         }
 
         if (phase == CLOSED) {
-            if ((status == Status.DONE && getStringAttribute(JobAttributes.ON_USER_EXIT)
-                    .equalsIgnoreCase("cancel.job"))
+            if ((status == Status.DONE && getStringAttribute(
+                    JobAttributes.ON_USER_EXIT).equalsIgnoreCase("cancel.job"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase("cancel.job"))) {
+                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase(
+                            "cancel.job"))) {
 
                 setPhase(CANCELLED);
             }
 
-            if ((status == Status.DONE && getStringAttribute(JobAttributes.ON_USER_EXIT)
-                    .equalsIgnoreCase("job.error"))
+            if ((status == Status.DONE && getStringAttribute(
+                    JobAttributes.ON_USER_EXIT).equalsIgnoreCase("job.error"))
                     || (status == Status.USER_ERROR && getStringAttribute(
-                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase("job.error"))) {
+                            JobAttributes.ON_USER_ERROR).equalsIgnoreCase(
+                            "job.error"))) {
 
                 setPhase(USER_ERROR);
             }
@@ -617,7 +625,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         if (phase == RUNNING && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
             setPhase(CLOSED);
         }
-        
+
         log("now " + getNrOfWorkers() + " workers");
     }
 
@@ -792,7 +800,9 @@ public final class Primary extends Job implements Runnable, Receiver {
     }
 
     private synchronized void createNewLocalWorkers() {
-        if (!isJava() && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
+        if (!isJava()
+                && !node.config().getBooleanProperty(
+                        ZorillaTypedProperties.NATIVE_JOBS)) {
             logger.debug("not creating worker, native jobs not allowed");
             return;
         }
@@ -876,7 +886,8 @@ public final class Primary extends Job implements Runnable, Receiver {
         NodeInfo nodeInfo = (NodeInfo) invocation.readObject();
         invocation.finishRead();
 
-        Constituent constituent = new Constituent(constituentID, receivePort, nodeInfo);
+        Constituent constituent = new Constituent(constituentID, receivePort,
+                nodeInfo);
 
         synchronized (this) {
             if (phase > RUNNING) {
@@ -1081,7 +1092,8 @@ public final class Primary extends Job implements Runnable, Receiver {
     private synchronized UUID[] createWorkers(int nrOfWorkers) {
         for (int i = 0; i < nrOfWorkers; i++) {
             if (!isJava()
-                    && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
+                    && !node.config().getBooleanProperty(
+                            ZorillaTypedProperties.NATIVE_JOBS)) {
                 log("cannot create native worker");
                 break;
             }
@@ -1123,7 +1135,8 @@ public final class Primary extends Job implements Runnable, Receiver {
             }
 
             if (!isJava()
-                    && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
+                    && !node.config().getBooleanProperty(
+                            ZorillaTypedProperties.NATIVE_JOBS)) {
                 maxNrOfWorkers = 0;
             }
 
@@ -1135,7 +1148,6 @@ public final class Primary extends Job implements Runnable, Receiver {
         return constituents.values().toArray(new Constituent[0]);
     }
 
-    @SuppressWarnings("unchecked")
     private void claimNodes() {
         if (getBooleanAttribute(JobAttributes.MALLEABLE)) {
             log("ERROR: claiming nodes for a malleable job", new Exception());
@@ -1291,7 +1303,8 @@ public final class Primary extends Job implements Runnable, Receiver {
             node.jobService().setResourcesUsed(getID(),
                     workerResources.mult(localWorkers.size()));
 
-            if (getPhase() == SCHEDULING && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
+            if (getPhase() == SCHEDULING
+                    && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
                 updateLocalMaxWorkers();
                 claimNodes();
             }
@@ -1406,17 +1419,15 @@ public final class Primary extends Job implements Runnable, Receiver {
         return jobDescription;
     }
 
-	@Override
-	public NodeInfo[] getConstituentInfos() {
-		ArrayList<NodeInfo> result = new ArrayList<NodeInfo>();
-		
-		for(Constituent constituent: getConstituents()) {
-			result.add(constituent.getInfo());
-		}
-		
-		return result.toArray(new NodeInfo[0]);
-	}
-    
+    @Override
+    public NodeInfo[] getConstituentInfos() {
+        ArrayList<NodeInfo> result = new ArrayList<NodeInfo>();
 
+        for (Constituent constituent : getConstituents()) {
+            result.add(constituent.getInfo());
+        }
+
+        return result.toArray(new NodeInfo[0]);
+    }
 
 }

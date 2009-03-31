@@ -4,22 +4,22 @@ import java.security.PublicKey;
 import java.util.UUID;
 
 public class Node {
-    
-    //** START OF CERTIFIED FIELDS **\\
-    
+
+    // ** START OF CERTIFIED FIELDS **\\
+
     UUID id;
-    
+
     User owner;
-    
-    //public key of this node (rsa key)
+
+    // public key of this node (rsa key)
     PublicKey publicKey;
-    
+
     long expirationDate;
-    
-    //** END OF CERTIFIED FIELDS **\\
-    
+
+    // ** END OF CERTIFIED FIELDS **\\
+
     byte[] selfSignature;
-    
+
     byte[] ownerSignature;
-    
+
 }

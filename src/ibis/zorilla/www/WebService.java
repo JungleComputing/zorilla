@@ -1,7 +1,7 @@
 package ibis.zorilla.www;
 
 import ibis.util.IPUtils;
-import ibis.zorilla.Config;
+import ibis.zorilla.ZorillaTypedProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
@@ -23,7 +23,7 @@ import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.thread.BoundedThreadPool;
 
-import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
 
 public final class WebService implements Service {
 
@@ -38,34 +38,37 @@ public final class WebService implements Service {
     private final GraphServlet graphServlet;
 
     private final ResourceServlet resourceServlet;
-    
-    static String linkTo(NodeInfo node) throws Exception {
-    	URI uri = new URI(null, null, "/remote/" + node.getAddress() + "EOA", null);
 
-    	
-    	return uri.toASCIIString();
+    static String linkTo(NodeInfo node) throws Exception {
+        URI uri = new URI(null, null, "/remote/" + node.getAddress() + "EOA",
+                null);
+
+        return uri.toASCIIString();
     }
 
     public WebService(Node node) throws Exception {
         System.setProperty("org.mortbay.log.class",
-            "ibis.zorilla.www.JettyLogger");
+                "ibis.zorilla.www.JettyLogger");
 
         // save log to a temp file in HTML format
-        File logFile = File.createTempFile("zorilla", ".log", node.config().getTmpDir());
+        File logFile = File.createTempFile("zorilla", ".log", node.config()
+                .getTmpDir());
         logFile.deleteOnExit();
         FileAppender appender = new FileAppender(new HTMLLayout(), logFile
-            .getAbsolutePath());
+                .getAbsolutePath());
         Logger.getRootLogger().addAppender(appender);
 
         // Create the server
-        server = new Server(node.config().getIntProperty(Config.WWW_PORT));
+        server = new Server(node.config().getIntProperty(
+                ZorillaTypedProperties.WWW_PORT));
         BoundedThreadPool pool = new BoundedThreadPool();
         pool.setDaemon(true);
         server.setThreadPool(pool);
 
         // Create a context
-        Context context = new Context(server, "/", Context.NO_SESSIONS | Context.NO_SECURITY);
-        
+        Context context = new Context(server, "/", Context.NO_SESSIONS
+                | Context.NO_SECURITY);
+
         pageServlet = new PageServlet(this, node);
         context.addServlet(new ServletHolder(pageServlet), "/*");
 
@@ -78,28 +81,29 @@ public final class WebService implements Service {
         resourceServlet = new ResourceServlet();
         context.addServlet(new ServletHolder(resourceServlet), "/resources/*");
         context.addServlet(new ServletHolder(new RemoteServlet(node)),
-            "/remote/*");
+                "/remote/*");
 
     }
 
     public void start() throws Exception {
         server.start();
         InetAddress address = IPUtils.getLocalHostAddress();
-        
-        logger.info("Webinterface available on " + "http://" + address.getHostAddress() +":"
-            + server.getConnectors()[0].getLocalPort());
+
+        logger.info("Webinterface available on " + "http://"
+                + address.getHostAddress() + ":"
+                + server.getConnectors()[0].getLocalPort());
     }
 
-    public void handleConnection(DirectSocket socket) {
-        logger.debug("remote connection from " + socket.getRemoteAddress());
-        
+    public void handleConnection(VirtualSocket socket) {
+        logger.debug("remote connection from "
+                + socket.getRemoteSocketAddress());
+
         try {
             OutputStream out = socket.getOutputStream();
 
             DataInputStream din = new DataInputStream(socket.getInputStream());
 
             String path = din.readUTF();
-
 
             if (path.equals("/log")) {
                 logServlet.writeLog(out);
@@ -118,7 +122,7 @@ public final class WebService implements Service {
             try {
                 socket.close();
             } catch (Exception e2) {
-                //IGNORE
+                // IGNORE
             }
         } catch (Exception e) {
             logger.error("error on handling remote web connection", e);

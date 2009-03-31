@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-
 import org.apache.log4j.Logger;
 
 class Cyclon implements GossipAlgorithm, Runnable {
@@ -21,9 +20,9 @@ class Cyclon implements GossipAlgorithm, Runnable {
     private final GossipCache cache;
 
     private final GossipCache fallbackCache;
-    
+
     private final int cacheSize;
-    
+
     private final int sendSize;
 
     private final int interval;
@@ -36,15 +35,15 @@ class Cyclon implements GossipAlgorithm, Runnable {
 
     private final Stats stats;
 
-    Cyclon(String name, boolean retry, boolean useFallbackCache, int cacheSize, int sendSize, int interval,
-            GossipService service, File statsDir, UUID self) {
+    Cyclon(String name, boolean retry, boolean useFallbackCache, int cacheSize,
+            int sendSize, int interval, GossipService service, File statsDir,
+            UUID self) {
         this.name = name;
         this.retry = retry;
         this.service = service;
         this.cacheSize = cacheSize;
         this.sendSize = sendSize;
         this.interval = interval;
-
 
         cache = new GossipCache(self);
 
@@ -128,7 +127,8 @@ class Cyclon implements GossipAlgorithm, Runnable {
                 if (bootstrap != null) {
                     GossipCacheEntry entry = new GossipCacheEntry(bootstrap);
                     if (!cache.contains(entry)) {
-                        logger.debug(name + ": adding entry from bootstrap cache: "
+                        logger.debug(name
+                                + ": adding entry from bootstrap cache: "
                                 + bootstrap);
                         cache.add(entry);
                     }
@@ -151,22 +151,25 @@ class Cyclon implements GossipAlgorithm, Runnable {
                 }
                 return;
             } catch (IOException e) {
-                logger.info(name + ": gossiping from  " + service.getNodeInfo() + " to "
-                        + peer + " failed, removing from cache");
-                logger.debug(name + ": gossiping from  " + service.getNodeInfo()
-                        + " to " + peer + " failed, removing from cache", e);
+                logger.info(name + ": gossiping from  " + service.getNodeInfo()
+                        + " to " + peer + " failed, removing from cache");
+                logger.debug(name + ": gossiping from  "
+                        + service.getNodeInfo() + " to " + peer
+                        + " failed, removing from cache", e);
                 cache.remove(peer);
             }
         }
 
-        //second try (or first if the original cache was empty)
+        // second try (or first if the original cache was empty)
         if (retry) {
             if (fallbackCache != null) {
                 peer = fallbackCache.selectRandomEntry();
-                logger.debug(name + ": retrying gossip with " + peer + " from the fallback cache");
+                logger.debug(name + ": retrying gossip with " + peer
+                        + " from the fallback cache");
             } else {
                 peer = cache.removeOldest();
-                logger.debug(name + ": retrying gossip with " + peer + " from the normal cache");
+                logger.debug(name + ": retrying gossip with " + peer
+                        + " from the normal cache");
             }
 
             if (peer != null) {
@@ -177,9 +180,10 @@ class Cyclon implements GossipAlgorithm, Runnable {
                             .info(name + ": retry, gossiping from  "
                                     + service.getNodeInfo() + " to " + peer
                                     + " failed");
-                    logger.debug(name + 
-                            ": retry, gossiping from  " + service.getNodeInfo()
-                                    + " to " + peer + " failed", e2);
+                    logger.debug(
+                            name + ": retry, gossiping from  "
+                                    + service.getNodeInfo() + " to " + peer
+                                    + " failed", e2);
                     cache.remove(peer);
                 }
             }
@@ -230,12 +234,13 @@ class Cyclon implements GossipAlgorithm, Runnable {
                 logger.warn("gossips took " + remaining / -1000.0
                         + " seconds too long");
             }
-//            if (i % 10 == 0) {
-//                logger.info(name + " cache:\n" + cache.toNewLinedString());
-//                if (fallbackCache != null) {
-//                    logger.info(name + " fallback cache:\n" + fallbackCache.toNewLinedString());
-//                }
-//            }
+            // if (i % 10 == 0) {
+            // logger.info(name + " cache:\n" + cache.toNewLinedString());
+            // if (fallbackCache != null) {
+            // logger.info(name + " fallback cache:\n" +
+            // fallbackCache.toNewLinedString());
+            // }
+            // }
         }
     }
 

@@ -12,6 +12,8 @@ public final class ZoniProtocol {
 
     public static final int DEFAULT_PORT = 5444;
     
+    public static final int VIRTUAL_PORT = 405;
+    
     // opcodes for client-to-node commands
 
     public static final int OPCODE_CLOSE_CONNECTION = 0;

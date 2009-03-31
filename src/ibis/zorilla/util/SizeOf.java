@@ -27,11 +27,11 @@ public final class SizeOf {
 
     public static final int UUID = LONG * 2;
 
-    //actually not fixed, but this is the assumed maximum
+    // actually not fixed, but this is the assumed maximum
     public static final int BAMBOO_ID = 32;
 
     public static final int SHA1 = 20;
-    
+
     // maximum size of a UDP packet, excluding headers
     public static final int UDP_MAX_PAYLOAD_LENGTH = 64 * 1024;
 }

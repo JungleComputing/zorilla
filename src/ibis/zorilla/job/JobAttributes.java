@@ -69,7 +69,11 @@ public class JobAttributes extends TypedProperties {
     private static final String[][] propertiesList = {
             { DIRECTORY, null, "unused" },
             { PROCESS_COUNT, null, "Number of executables started" },
-            { RESOURCE_COUNT, null, "Number of nodes used. Can either be 0 (auto), or equal to " + PROCESS_COUNT},
+            {
+                    RESOURCE_COUNT,
+                    null,
+                    "Number of nodes used. Can either be 0 (auto), or equal to "
+                            + PROCESS_COUNT },
             { TIME_MAX, null, "unused" },
             { WALLTIME_MAX, "60",
                     "Maximum run time of each executable in minutes" },
@@ -134,7 +138,8 @@ public class JobAttributes extends TypedProperties {
 
         if (getResourceCount() != 0 && getProcessCount() != getResourceCount()) {
             throw new Exception(JobAttributes.RESOURCE_COUNT
-                    + " must be either 0 or equal to " + JobAttributes.PROCESS_COUNT);
+                    + " must be either 0 or equal to "
+                    + JobAttributes.PROCESS_COUNT);
         }
 
         if (getIntProperty(MEMORY_MAX, 1) < 0) {

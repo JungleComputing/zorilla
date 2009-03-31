@@ -6,21 +6,21 @@ package ibis.zorilla.io;
 public class ZorillaFileException extends Exception {
 
     private static final long serialVersionUID = 1L;
-    
+
     /** A nested throwable. */
     Throwable cause = null;
 
     /**
-     * Constructs an <code>ZorillaFileException</code> with <code>null</code>
-     * as its error detail message.
+     * Constructs an <code>ZorillaFileException</code> with <code>null</code> as
+     * its error detail message.
      */
     public ZorillaFileException() {
         super();
     }
 
     /**
-     * Constructs an <code>ZorillaFileException</code> with the specified
-     * detail message.
+     * Constructs an <code>ZorillaFileException</code> with the specified detail
+     * message.
      * 
      * @param s
      *            the detail message
@@ -30,8 +30,8 @@ public class ZorillaFileException extends Exception {
     }
 
     /**
-     * Constructs an <code>ZorillaFileException</code> with the specified
-     * detail message and cause.
+     * Constructs an <code>ZorillaFileException</code> with the specified detail
+     * message and cause.
      * 
      * @param s
      *            the detail message
@@ -44,8 +44,7 @@ public class ZorillaFileException extends Exception {
     }
 
     /**
-     * Constructs an <code>ZorillaFileException</code> with the specified
-     * cause.
+     * Constructs an <code>ZorillaFileException</code> with the specified cause.
      * 
      * @param cause
      *            the cause

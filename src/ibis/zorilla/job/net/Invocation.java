@@ -15,8 +15,8 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-
-public class Invocation extends InputStream implements ObjectInput, ObjectOutput {
+public class Invocation extends InputStream implements ObjectInput,
+        ObjectOutput {
 
     private static int READING = 0;
 
@@ -29,7 +29,7 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
     private static final Logger logger = Logger.getLogger(Invocation.class);
 
     private ReadMessage request;
-    
+
     private final Ibis ibis;
 
     private SendPort sendPort;
@@ -47,7 +47,7 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
         this.ibis = ibis;
 
         reply = null;
-        
+
         try {
             id = (UUID) readObject();
             caller = (ReceivePortIdentifier) readObject();
@@ -105,17 +105,17 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
 
         if (state != WRITING) {
             throw new IOException("unknown state " + state
-                + " in invocation.finish()");
+                    + " in invocation.finish()");
         }
 
         reply.finish();
         reply = null;
-        //FIXME: why was there a sleep here?
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException e) {
-//            logger.debug("sleep interrupted");
-//        }
+        // FIXME: why was there a sleep here?
+        // try {
+        // Thread.sleep(1000);
+        // } catch (InterruptedException e) {
+        // logger.debug("sleep interrupted");
+        // }
         sendPort.close();
         sendPort = null;
         state = DONE;
@@ -123,7 +123,7 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
 
     synchronized void finish(Exception userException) {
         logger.debug("finishing invocation #" + id + " with exception: "
-            + userException);
+                + userException);
 
         if (state == DONE) {
             logger.debug("invocation already done");
@@ -168,9 +168,9 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
     private synchronized ReadMessage getRequest() throws IOException {
         if (state != READING) {
             throw new IOException(
-                "reading from request but reading already finished");
+                    "reading from request but reading already finished");
         }
-      //  logger.debug("reading", new Exception());
+        // logger.debug("reading", new Exception());
         return request;
     }
 
@@ -182,8 +182,8 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
         if (state != WRITING) {
             throw new IOException("writing to reply while not in writing state");
         }
-        
-     //   logger.debug("writing", new Exception()); 
+
+        // logger.debug("writing", new Exception());
 
         return reply;
     }
@@ -239,42 +239,42 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
     }
 
     public void readArray(boolean[] destination, int offset, int length)
-        throws IOException {
+            throws IOException {
         getRequest().readArray(destination, offset, length);
     }
 
     public void readArray(byte[] destination, int offset, int length)
-        throws IOException {
+            throws IOException {
         getRequest().readArray(destination, offset, length);
     }
 
     public void readArray(char[] destination, int offset, int length)
-        throws IOException {
+            throws IOException {
         getRequest().readArray(destination, offset, length);
     }
 
     public void readArray(short[] destination, int offset, int length)
-        throws IOException {
+            throws IOException {
         getRequest().readArray(destination, offset, length);
     }
 
     public void readArray(int[] destination, int offset, int length)
-        throws IOException {
+            throws IOException {
         getRequest().readArray(destination, offset, length);
     }
 
     public void readArray(long[] destination, int offset, int length)
-        throws IOException {
+            throws IOException {
         getRequest().readArray(destination, offset, length);
     }
 
     public void readArray(float[] destination, int offset, int length)
-        throws IOException {
+            throws IOException {
         getRequest().readArray(destination, offset, length);
     }
 
     public void readArray(double[] destination, int offset, int length)
-        throws IOException {
+            throws IOException {
         getRequest().readArray(destination, offset, length);
     }
 
@@ -351,42 +351,42 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
     }
 
     public void writeArray(boolean[] source, int offset, int length)
-        throws IOException {
+            throws IOException {
         getReply().writeArray(source, offset, length);
     }
 
     public void writeArray(byte[] source, int offset, int length)
-        throws IOException {
+            throws IOException {
         getReply().writeArray(source, offset, length);
     }
 
     public void writeArray(char[] source, int offset, int length)
-        throws IOException {
+            throws IOException {
         getReply().writeArray(source, offset, length);
     }
 
     public void writeArray(short[] source, int offset, int length)
-        throws IOException {
+            throws IOException {
         getReply().writeArray(source, offset, length);
     }
 
     public void writeArray(int[] source, int offset, int length)
-        throws IOException {
+            throws IOException {
         getReply().writeArray(source, offset, length);
     }
 
     public void writeArray(long[] source, int offset, int length)
-        throws IOException {
+            throws IOException {
         getReply().writeArray(source, offset, length);
     }
 
     public void writeArray(float[] source, int offset, int length)
-        throws IOException {
+            throws IOException {
         getReply().writeArray(source, offset, length);
     }
 
     public void writeArray(double[] source, int offset, int length)
-        throws IOException {
+            throws IOException {
         getReply().writeArray(source, offset, length);
     }
 
@@ -421,11 +421,11 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
     public void writeArray(double[] source) throws IOException {
         getReply().writeArray(source);
     }
-    
+
     public void flush() throws IOException {
         getReply().sync(0);
     }
-    
+
     public String toString() {
         return "invocation from " + caller + " to " + request.localPort();
     }
@@ -433,11 +433,11 @@ public class Invocation extends InputStream implements ObjectInput, ObjectOutput
     @Override
     public int read() throws IOException {
         byte[] byteArray = new byte[1];
-        
+
         read(byteArray);
-        
+
         return byteArray[0];
-        
+
     }
 
     @Override

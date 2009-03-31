@@ -2,7 +2,7 @@ package ibis.zorilla.job;
 
 import ibis.util.RunProcess;
 import ibis.util.ThreadPool;
-import ibis.zorilla.Config;
+import ibis.zorilla.ZorillaTypedProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.util.StreamWriter;
@@ -354,7 +354,8 @@ public final class Worker implements Runnable {
         try {
             // this should not be the case, but just to be safe we check again
             if (!job.isJava()
-                    && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
+                    && !node.config().getBooleanProperty(
+                            ZorillaTypedProperties.NATIVE_JOBS)) {
                 throw new Exception("cannot run native worker, not allowed");
             }
 

@@ -12,11 +12,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
 import org.apache.log4j.Logger;
 
-import ibis.smartsockets.direct.DirectSocket;
-import ibis.smartsockets.direct.DirectSocketAddress;
+import ibis.smartsockets.virtual.VirtualSocket;
+import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.zorilla.Node;
 import ibis.zorilla.net.Network;
 
@@ -44,19 +43,19 @@ public final class RemoteServlet extends HttpServlet {
 
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        DirectSocketAddress address;
+        VirtualSocketAddress address;
 
         String[] strings = request.getPathInfo().substring(1).split("EOA");
         if (strings.length != 2) {
-        	throw new IOException("illegal address: " + request.getPathInfo());
+            throw new IOException("illegal address: " + request.getPathInfo());
         }
-        
+
         String addressString = strings[0];
         String path = strings[1];
 
         // get the address we need to connect to
         try {
-            address = DirectSocketAddress.getByAddress(addressString);
+            address = new VirtualSocketAddress(addressString);
         } catch (UnknownHostException e) {
             response.sendError(404, "Illegal node addess");
             return;
@@ -64,13 +63,13 @@ public final class RemoteServlet extends HttpServlet {
 
         try {
             logger.debug("connecting to remote node");
-            DirectSocket connection = node.network().connect(address,
-                Network.WEB_SERVICE, CONNECT_TIMEOUT);
+            VirtualSocket connection = node.network().connect(address,
+                    Network.WEB_SERVICE, CONNECT_TIMEOUT);
 
             logger.debug("sending out request");
 
             DataOutputStream out = new DataOutputStream(connection
-                .getOutputStream());
+                    .getOutputStream());
             out.writeUTF(path);
             out.flush();
 
@@ -84,9 +83,9 @@ public final class RemoteServlet extends HttpServlet {
 
                 if (read == -1) {
                     if (empty) {
-                        //we did not receive anything
+                        // we did not receive anything
                         response.sendError(500, "Could not fetch page at "
-                            + address);
+                                + address);
                     }
                     rout.close();
                     logger.debug("done");

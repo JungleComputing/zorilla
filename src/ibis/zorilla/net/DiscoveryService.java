@@ -1,10 +1,13 @@
 package ibis.zorilla.net;
 
+import ibis.smartsockets.virtual.VirtualSocket;
+import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.util.ThreadPool;
-import ibis.zorilla.Config;
+import ibis.zorilla.ZorillaTypedProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
+import ibis.zorilla.zoni.ZoniProtocol;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -16,9 +19,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-
-import ibis.smartsockets.direct.DirectSocket;
-import ibis.smartsockets.direct.DirectSocketAddress;
 
 public class DiscoveryService implements Service, Runnable {
 
@@ -33,7 +33,7 @@ public class DiscoveryService implements Service, Runnable {
     private static final Logger logger = Logger
             .getLogger(DiscoveryService.class);
 
-    private final DirectSocketAddress[] addresses;
+    private final VirtualSocketAddress[] addresses;
 
     private final Node node;
 
@@ -44,28 +44,35 @@ public class DiscoveryService implements Service, Runnable {
 
         nodes = new HashMap<UUID, NodeInfo>();
 
-        Set<DirectSocketAddress> addresses = new HashSet<DirectSocketAddress>();
+        Set<VirtualSocketAddress> addresses = new HashSet<VirtualSocketAddress>();
 
-        for (String string : node.config().getStringList(Config.PEERS)) {
+        for (String string : node.config().getStringList(
+                ZorillaTypedProperties.PEERS)) {
             try {
-                addresses.add(DirectSocketAddress.getByAddress(string));
+                try {
+                    addresses.add(new VirtualSocketAddress(string));
+                } catch (Exception e) {
+                    addresses.add(new VirtualSocketAddress(string,
+                            ZoniProtocol.VIRTUAL_PORT));
+                }
             } catch (Exception e) {
                 logger.warn("invalid peer address: " + string, e);
             }
         }
 
         // also add master (if available)
-        String masterAddress = node.config().getProperty(Config.MASTER_ADDRESS);
+        String masterAddress = node.config().getProperty(
+                ZorillaTypedProperties.MASTER_ADDRESS);
         if (node.config().isWorker() && masterAddress != null) {
             try {
-                addresses.add(DirectSocketAddress.getByAddress(masterAddress));
+                addresses.add(new VirtualSocketAddress(masterAddress));
             } catch (Exception e) {
                 logger.warn("invalid master address: " + masterAddress, e);
             }
 
         }
 
-        this.addresses = addresses.toArray(new DirectSocketAddress[0]);
+        this.addresses = addresses.toArray(new VirtualSocketAddress[0]);
     }
 
     public void start() {
@@ -77,7 +84,7 @@ public class DiscoveryService implements Service, Runnable {
         return nodes.values().toArray(new NodeInfo[0]);
     }
 
-    private void doRequests(DirectSocketAddress peer) {
+    private void doRequests(VirtualSocketAddress peer) {
         for (int i = 0; i < MAX_TRIES; i++) {
             try {
                 NodeInfo info = doRequest(peer);
@@ -97,10 +104,10 @@ public class DiscoveryService implements Service, Runnable {
         }
     }
 
-    private NodeInfo doRequest(DirectSocketAddress address) throws IOException {
+    private NodeInfo doRequest(VirtualSocketAddress address) throws IOException {
         logger.debug("sending lookup request to " + address);
 
-        DirectSocket socket = node.network().connect(address,
+        VirtualSocket socket = node.network().connect(address,
                 Network.DISCOVERY_SERVICE, CONNECT_TIMEOUT);
 
         logger.debug("connected!");
@@ -121,8 +128,9 @@ public class DiscoveryService implements Service, Runnable {
         }
     }
 
-    public void handleConnection(DirectSocket socket) {
-        logger.debug("handling connection from " + socket.getRemoteAddress());
+    public void handleConnection(VirtualSocket socket) {
+        logger.debug("handling connection from "
+                + socket.getRemoteSocketAddress());
 
         try {
             // read "request" byte
@@ -147,7 +155,7 @@ public class DiscoveryService implements Service, Runnable {
 
     public void run() {
         while (true) {
-            for (DirectSocketAddress peer : addresses) {
+            for (VirtualSocketAddress peer : addresses) {
                 doRequests(peer);
             }
 

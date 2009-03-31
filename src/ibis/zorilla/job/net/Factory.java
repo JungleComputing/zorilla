@@ -9,13 +9,12 @@ import ibis.ipl.PortType;
 import java.util.Properties;
 
 public class Factory {
-	
-	public static final long CONNECTION_TIMEOUT = 60 * 1000;
+
+    public static final long CONNECTION_TIMEOUT = 60 * 1000;
 
     public static final PortType callType = new PortType(
             PortType.SERIALIZATION_OBJECT, PortType.COMMUNICATION_RELIABLE,
-            PortType.CONNECTION_MANY_TO_ONE,
-            PortType.RECEIVE_AUTO_UPCALLS);
+            PortType.CONNECTION_MANY_TO_ONE, PortType.RECEIVE_AUTO_UPCALLS);
 
     public static final PortType replyType = new PortType(
             PortType.SERIALIZATION_OBJECT, PortType.COMMUNICATION_RELIABLE,
@@ -29,7 +28,7 @@ public class Factory {
 
         properties.setProperty(IbisProperties.POOL_NAME, pool);
         properties.setProperty(IbisProperties.REGISTRY_IMPLEMENTATION,
-                "ibis.ipl.impl.registry.NullRegistry");
+                "ibis.ipl.registry.NullRegistry");
         properties.setProperty(IbisProperties.IMPLEMENTATION, "smartsockets");
 
         // no capabilities needed from ibis

@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-
 import org.apache.log4j.Logger;
 
 class ARRG implements GossipAlgorithm, Runnable {
@@ -19,11 +18,11 @@ class ARRG implements GossipAlgorithm, Runnable {
     private final GossipCache cache;
 
     private final GossipCache fallbackCache;
-    
+
     private final int cacheSize;
-    
+
     private final int sendSize;
-    
+
     private final int interval;
 
     private final String name;
@@ -34,8 +33,9 @@ class ARRG implements GossipAlgorithm, Runnable {
 
     private final Stats stats;
 
-    public ARRG(String name, boolean retry, boolean useFallbackCache, int cacheSize, int sendSize, int interval,
-            GossipService service, File statsDir, UUID self) {
+    public ARRG(String name, boolean retry, boolean useFallbackCache,
+            int cacheSize, int sendSize, int interval, GossipService service,
+            File statsDir, UUID self) {
         this.name = name;
         this.retry = retry;
         this.service = service;
@@ -163,8 +163,8 @@ class ARRG implements GossipAlgorithm, Runnable {
             cache.removeRandom();
         }
 
-        return new GossipMessage(self, request.getSender(),
-                replyEntries, true, name);
+        return new GossipMessage(self, request.getSender(), replyEntries, true,
+                name);
     }
 
     public void newNode(NodeInfo info) {
@@ -178,7 +178,7 @@ class ARRG implements GossipAlgorithm, Runnable {
     public NodeInfo[] getRandomNodes(int n) {
         return cache.selectRandom(n);
     }
-    
+
     public NodeInfo getRandomNode() {
         return cache.selectRandom();
     }
@@ -219,6 +219,5 @@ class ARRG implements GossipAlgorithm, Runnable {
     public Stats getStats() {
         return stats;
     }
-  
 
 }

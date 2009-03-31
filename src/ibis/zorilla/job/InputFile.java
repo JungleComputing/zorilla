@@ -134,7 +134,7 @@ public class InputFile implements Receiver {
     public File copyTo(File dir) throws Exception {
 
         logger.debug("copying " + file + " to " + dir);
-        
+
         if (!isDownloaded()) {
             throw new Exception("file not downloaded");
         }
@@ -192,7 +192,7 @@ public class InputFile implements Receiver {
 
         while (true) {
             int size = in.readInt();
-            
+
             if (size == -1) {
                 // EOF
                 out.flush();
@@ -201,32 +201,32 @@ public class InputFile implements Receiver {
             }
 
             in.readArray(buffer, 0, size);
-            
+
             out.write(buffer, 0, size);
         }
     }
 
     private void writeTo(Invocation invocation) throws IOException {
         logger.debug("writing " + sandboxPath + " from " + file);
-                        
 
         logger.debug("checking current value of hash of " + sandboxPath);
         Hash hash = new Hash(file);
 
         if (!hash.equals(this.hash)) {
-            throw new IOException("current value of hash not equal to initial hash");
+            throw new IOException(
+                    "current value of hash not equal to initial hash");
         }
 
-        logger.debug("done checking hash, writing file "
-                + sandboxPath + " with hash " + hash);
-
+        logger.debug("done checking hash, writing file " + sandboxPath
+                + " with hash " + hash);
 
         byte[] buffer = new byte[BUFFER_SIZE];
 
         FileInputStream in = new FileInputStream(file);
-        
+
         if (in.available() != size) {
-            logger.error("file size " + in.available() + " not equal to " + size);
+            logger.error("file size " + in.available() + " not equal to "
+                    + size);
         }
 
         while (true) {
@@ -238,7 +238,7 @@ public class InputFile implements Receiver {
                 in.close();
                 return;
             }
-            
+
             invocation.writeInt(read);
             invocation.writeArray(buffer, 0, read);
             invocation.flush();
@@ -306,16 +306,17 @@ public class InputFile implements Receiver {
                 triesLeft--;
             }
         }
-        throw new Exception("could not download file " + sandboxPath + " to " + file);
+        throw new Exception("could not download file " + sandboxPath + " to "
+                + file);
     }
 
     public void invoke(Invocation invocation) throws Exception, IOException {
 
-        //nothing to read
+        // nothing to read
         invocation.finishRead();
 
         if (!isDownloaded()) {
-            //we don't have the file ourselves
+            // we don't have the file ourselves
             invocation.writeBoolean(false);
             invocation.finish();
             return;

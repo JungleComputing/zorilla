@@ -14,8 +14,8 @@ interface GossipAlgorithm {
     NodeInfo[] getNodes();
 
     NodeInfo[] getRandomNodes(int n);
-    
-    NodeInfo getRandomNode();    
+
+    NodeInfo getRandomNode();
 
     String getName();
 

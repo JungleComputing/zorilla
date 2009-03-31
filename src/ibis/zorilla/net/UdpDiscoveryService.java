@@ -1,7 +1,7 @@
 package ibis.zorilla.net;
 
 import ibis.util.ThreadPool;
-import ibis.zorilla.Config;
+import ibis.zorilla.ZorillaTypedProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
@@ -27,14 +27,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.Map.Entry;
 
-
 import org.apache.log4j.Logger;
 
-import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
 
 /**
  * Maintains a list of all nodes reachable through UDP broadcast (the
- * neighbourhood of this node)
+ * Neighborhood of this node)
  */
 public final class UdpDiscoveryService implements Runnable, Service {
 
@@ -92,10 +91,10 @@ public final class UdpDiscoveryService implements Runnable, Service {
 
         knownNodes = new HashMap<UUID, LocalNode>();
 
-        int port = node.config().getIntProperty(Config.PORT);
+        int port = node.config().getIntProperty(ZorillaTypedProperties.PORT);
 
         if (port == 0) {
-            logger.info(Config.PORT
+            logger.info(ZorillaTypedProperties.PORT
                     + " set to 0, Disabling UDP Discovery service");
             channel = null;
             selector = null;
@@ -146,7 +145,7 @@ public final class UdpDiscoveryService implements Runnable, Service {
         }
     }
 
-    public void handleConnection(DirectSocket socket) {
+    public void handleConnection(VirtualSocket socket) {
         logger.error("TCP connection to UDP discovery service");
     }
 
@@ -194,7 +193,7 @@ public final class UdpDiscoveryService implements Runnable, Service {
                 logger.debug("sending node announce (request) of "
                         + buffer.remaining() + " bytes");
 
-                // this maight fail, but we don't care
+                // this might fail, but we don't care
                 channel.send(buffer, sendAddress);
 
                 long time = System.currentTimeMillis();

@@ -2,13 +2,13 @@ package ibis.zorilla;
 
 import java.util.Map;
 
-import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
 
 public interface Service {
-    
+
     public void start() throws Exception;
 
-    public void handleConnection(DirectSocket socket);
-    
+    public void handleConnection(VirtualSocket socket);
+
     public Map<String, String> getStats();
 }

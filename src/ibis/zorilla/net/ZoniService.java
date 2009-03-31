@@ -20,7 +20,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
 
 public class ZoniService implements Service {
 
@@ -152,9 +152,9 @@ public class ZoniService implements Service {
 
         if (recursive) {
             node.floodService().killNetwork();
-            node.stop(FloodService.NETWORK_KILL_TIMEOUT);
+            node.end(FloodService.NETWORK_KILL_TIMEOUT);
         } else {
-            node.stop(0);
+            node.end(0);
         }
     }
 
@@ -250,7 +250,7 @@ public class ZoniService implements Service {
         out.flush();
     }
 
-    public void handleConnection(DirectSocket socket) {
+    public void handleConnection(VirtualSocket socket) {
         logger.debug("got new zoni connection");
 
         ObjectInputStream in = null;

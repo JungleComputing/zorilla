@@ -12,11 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-
 import org.apache.log4j.Logger;
 
-import ibis.smartsockets.direct.DirectSocket;
-import ibis.zorilla.Config;
+import ibis.smartsockets.virtual.VirtualSocket;
+import ibis.zorilla.ZorillaTypedProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
@@ -47,14 +46,16 @@ public class GossipService implements Service {
 
     public GossipService(Node node) throws Exception {
         this.node = node;
-        Config config = node.config();
+        ZorillaTypedProperties config = node.config();
 
         random = new Random();
         messageLossFraction = config
-                .getIntProperty(Config.MESSAGE_LOSS_PERCENTAGE) / 100.0;
-        bootstrapTimeout = config.getIntProperty(Config.BOOTSTRAP_TIMEOUT) * 1000;
+                .getIntProperty(ZorillaTypedProperties.MESSAGE_LOSS_PERCENTAGE) / 100.0;
+        bootstrapTimeout = config
+                .getIntProperty(ZorillaTypedProperties.BOOTSTRAP_TIMEOUT) * 1000;
 
-        int disconnectSeconds = config.getIntProperty(Config.DISCONNECT_TIME);
+        int disconnectSeconds = config
+                .getIntProperty(ZorillaTypedProperties.DISCONNECT_TIME);
         if (disconnectSeconds > 0) {
             disconnectTime = System.currentTimeMillis()
                     + (disconnectSeconds * 1000);
@@ -62,7 +63,8 @@ public class GossipService implements Service {
             disconnectTime = Long.MAX_VALUE;
         }
 
-        int reconnectSeconds = config.getIntProperty(Config.RECONNECT_TIME);
+        int reconnectSeconds = config
+                .getIntProperty(ZorillaTypedProperties.RECONNECT_TIME);
         if (reconnectSeconds > 0) {
             reconnectTime = System.currentTimeMillis()
                     + (reconnectSeconds * 1000);
@@ -75,22 +77,28 @@ public class GossipService implements Service {
                     "cannot set reconnect time before disconnect time");
         }
 
-        wanDisconnect = config.getBooleanProperty(Config.WAN_DISCONNECT);
+        wanDisconnect = config
+                .getBooleanProperty(ZorillaTypedProperties.WAN_DISCONNECT);
 
-        int cacheSize = config.getIntProperty(Config.GOSSIP_CACHE_SIZE);
-        int sendSize = config.getIntProperty(Config.GOSSIP_SEND_SIZE);
-        int interval = config.getIntProperty(Config.GOSSIP_INTERVAL) * 1000;
+        int cacheSize = config
+                .getIntProperty(ZorillaTypedProperties.GOSSIP_CACHE_SIZE);
+        int sendSize = config
+                .getIntProperty(ZorillaTypedProperties.GOSSIP_SEND_SIZE);
+        int interval = config
+                .getIntProperty(ZorillaTypedProperties.GOSSIP_INTERVAL) * 1000;
 
         algorithms = new HashMap<String, GossipAlgorithm>();
 
-        File statsDir = new File(node.config().getLogDir(), node.getName() + "-gossip-stats");
+        File statsDir = new File(node.config().getLogDir(), node.getName()
+                + "-gossip-stats");
         statsDir.mkdirs();
 
         GossipAlgorithm arrg = new ARRG("ARRG", true, true, cacheSize,
                 sendSize, interval, this, statsDir, node.getID());
         algorithms.put(arrg.getName(), arrg);
 
-        if (node.config().getBooleanProperty(Config.ADDITIONAL_GOSSIP_ALGORITHMS)) {
+        if (node.config().getBooleanProperty(
+                ZorillaTypedProperties.ADDITIONAL_GOSSIP_ALGORITHMS)) {
             GossipAlgorithm noFallbackARRG = new ARRG("noFallbackARRG", false,
                     false, cacheSize, sendSize, interval, this, statsDir, node
                             .getID());
@@ -142,28 +150,29 @@ public class GossipService implements Service {
 
         try {
             logger.debug("doing tcp request to " + request.getReceiver());
-            DirectSocket socket = node.network().connect(request.getReceiver(),
-                    Network.GOSSIP_SERVICE, timeout);
+            VirtualSocket socket = node.network().connect(
+                    request.getReceiver(), Network.GOSSIP_SERVICE, timeout);
 
-            ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(socket
-                    .getOutputStream()));
+            ObjectOutputStream out = new ObjectOutputStream(
+                    new BufferedOutputStream(socket.getOutputStream()));
             out.writeObject(request);
             out.flush();
 
             logger.debug("send request, receiving reply");
 
-            ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(socket
-                    .getInputStream()));
+            ObjectInputStream in = new ObjectInputStream(
+                    new BufferedInputStream(socket.getInputStream()));
             GossipMessage reply = (GossipMessage) in.readObject();
             socket.close();
 
             logger.debug("reply received");
-            
-            if (!request.getReceiver().getID().equals(reply.getSender().getID())) {
-                //logger.info("got gossip reply from wrong node, " + request.getReceiver() + " instead of " + reply.getSender());
+
+            if (!request.getReceiver().getID()
+                    .equals(reply.getSender().getID())) {
+                // logger.info("got gossip reply from wrong node, " +
+                // request.getReceiver() + " instead of " + reply.getSender());
                 throw new IOException("got reply from wrong node");
             }
-            
 
             return reply;
         } catch (Throwable e) {
@@ -171,7 +180,7 @@ public class GossipService implements Service {
         }
     }
 
-    public void handleConnection(DirectSocket socket) {
+    public void handleConnection(VirtualSocket socket) {
         try {
 
             if (random.nextDouble() < messageLossFraction) {
@@ -180,8 +189,8 @@ public class GossipService implements Service {
                 return;
             }
 
-            ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(socket
-                    .getInputStream()));
+            ObjectInputStream in = new ObjectInputStream(
+                    new BufferedInputStream(socket.getInputStream()));
             GossipMessage request = (GossipMessage) in.readObject();
 
             long now = System.currentTimeMillis();
@@ -210,8 +219,8 @@ public class GossipService implements Service {
             if (random.nextDouble() < messageLossFraction) {
                 logger.warn("Reply message lost! (at random)");
             } else {
-                ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(socket
-                        .getOutputStream()));
+                ObjectOutputStream out = new ObjectOutputStream(
+                        new BufferedOutputStream(socket.getOutputStream()));
                 out.writeObject(reply);
                 out.flush();
             }

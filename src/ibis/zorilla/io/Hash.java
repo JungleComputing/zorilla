@@ -20,11 +20,10 @@ public final class Hash implements Serializable {
     private static final Logger logger = Logger.getLogger(Hash.class);
 
     private final byte[] hash;
-    
-    public Hash(File file)
-        throws IOException {
+
+    public Hash(File file) throws IOException {
         MessageDigest digest;
-        
+
         FileInputStream in = new FileInputStream(file);
 
         try {
@@ -34,11 +33,11 @@ public final class Hash implements Serializable {
         }
 
         byte[] buffer = new byte[1024];
-        
+
         while (true) {
             int read = in.read(buffer);
             if (read == -1) {
-                //EOF
+                // EOF
                 hash = digest.digest();
                 return;
             }
@@ -65,7 +64,7 @@ public final class Hash implements Serializable {
         }
         return true;
     }
-    
+
     public String toString() {
         return new BigInteger(hash).toString(16);
     }

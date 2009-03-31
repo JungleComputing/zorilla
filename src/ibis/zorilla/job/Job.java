@@ -46,7 +46,7 @@ public abstract class Job {
     public static final int CANCELLED = 8;
 
     public static final int USER_ERROR = 9;
-    
+
     public static final int ERROR = 10;
 
     /**
@@ -65,10 +65,6 @@ public abstract class Job {
             throw new Exception("unknown state type");
         }
     }
-
-
-
-  
 
     public String phaseString() {
         int phase = getPhase();
@@ -158,8 +154,8 @@ public abstract class Job {
      * Write the given file to the given output stream. Blocks until this job
      * has finished
      */
-    public abstract void readOutputFile(String sandboxPath, ObjectOutputStream out)
-            throws Exception;
+    public abstract void readOutputFile(String sandboxPath,
+            ObjectOutputStream out) throws Exception;
 
     /**
      * Read data from the given stream and hand it to the stdin of all workers.

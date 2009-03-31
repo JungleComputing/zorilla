@@ -1,7 +1,7 @@
 package ibis.zorilla.net;
 
 import ibis.util.ThreadPool;
-import ibis.zorilla.Config;
+import ibis.zorilla.ZorillaTypedProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 
@@ -11,16 +11,17 @@ import java.io.InputStream;
 import org.apache.log4j.Logger;
 
 import ibis.io.Conversion;
-import ibis.smartsockets.SmartSocketsProperties;
-import ibis.smartsockets.direct.DirectServerSocket;
-import ibis.smartsockets.direct.DirectSocket;
-import ibis.smartsockets.direct.DirectSocketAddress;
-import ibis.smartsockets.direct.DirectSocketFactory;
-import ibis.smartsockets.util.TypedProperties;
+import ibis.ipl.server.Client;
+import ibis.smartsockets.virtual.VirtualServerSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
+import ibis.smartsockets.virtual.VirtualSocketAddress;
+import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 public class Network implements Runnable {
 
     private static Logger logger = Logger.getLogger(Network.class);
+
+    public static final int VIRTUAL_PORT = 405;
 
     // service IDs
     public static final byte DISCOVERY_SERVICE = 1;
@@ -49,36 +50,25 @@ public class Network implements Runnable {
 
     // sockets et al.
 
-    private final DirectSocketFactory socketFactory;
+    private final VirtualSocketFactory socketFactory;
 
-    private final DirectServerSocket serverSocket;
+    private final VirtualServerSocket serverSocket;
 
     private final Node node;
 
     private final byte[] versionBytes;
 
-    public Network(Node node) throws IOException, Exception {
+    public Network(Node node, ZorillaTypedProperties properties,
+            VirtualSocketFactory factory) throws IOException, Exception {
         this.node = node;
 
-        TypedProperties factoryProperties = SmartSocketsProperties
-                .getDefaultProperties();
-
-        String cluster = node.config().getProperty(Config.CLUSTER_NAME);
-
-        if (cluster != null) {
-            factoryProperties.put("smartsockets.networks.name", cluster);
-        }
-        
-        if (node.config().isMaster()) {
-        	//master also does/accepts ssh connections
-            factoryProperties.put("smartsockets.modules.direct.ssh.in", "true");
-            factoryProperties.put("smartsockets.modules.direct.ssh.out", "true");
+        if (factory == null) {
+            socketFactory = Client.getFactory(properties, properties.getPort());
+        } else {
+            socketFactory = factory;
         }
 
-        socketFactory = DirectSocketFactory.getSocketFactory(factoryProperties);
-
-        serverSocket = socketFactory.createServerSocket(node.config()
-                .getIntProperty(Config.PORT), 0, null);
+        serverSocket = socketFactory.createServerSocket(VIRTUAL_PORT, 0, null);
 
         // Create byte array out of version string. Use the fact that
         // It is made out of only numbers.
@@ -89,14 +79,14 @@ public class Network implements Runnable {
     }
 
     public void start() {
-        boolean firewalled = node.config().getBooleanProperty(Config.FIREWALL,
-                false);
+        boolean firewalled = node.config().getBooleanProperty(
+                ZorillaTypedProperties.FIREWALL, false);
         if (!firewalled) {
             // start handling connections
             ThreadPool.createNew(this, "network connection handler");
         }
         logger.info("Started accepting connections on "
-                + serverSocket.getAddressSet());
+                + serverSocket.getLocalSocketAddress().machine());
     }
 
     public void end() {
@@ -107,10 +97,10 @@ public class Network implements Runnable {
         }
     }
 
-    public DirectSocket connect(NodeInfo peer, byte serviceID, int timeout)
+    public VirtualSocket connect(NodeInfo peer, byte serviceID, int timeout)
             throws IOException {
-        DirectSocket result = socketFactory.createSocket(peer.getAddress(),
-                timeout, 0, null);
+        VirtualSocket result = socketFactory.createClientSocket(peer
+                .getAddress(), timeout, false, null);
 
         result.getOutputStream().write(TYPE_NODE);
         result.getOutputStream().write(versionBytes);
@@ -119,11 +109,11 @@ public class Network implements Runnable {
         return result;
     }
 
-    public DirectSocket connect(DirectSocketAddress address, byte serviceID,
+    public VirtualSocket connect(VirtualSocketAddress address, byte serviceID,
             int timeout) throws IOException {
-        DirectSocket result = socketFactory.createSocket(address, timeout, 0,
-                null);
-        
+        VirtualSocket result = socketFactory.createClientSocket(address,
+                timeout, false, null);
+
         result.getOutputStream().write(TYPE_NODE);
         result.getOutputStream().write(versionBytes);
         result.getOutputStream().write(serviceID);
@@ -132,7 +122,7 @@ public class Network implements Runnable {
     }
 
     public void run() {
-        DirectSocket socket = null;
+        VirtualSocket socket = null;
 
         try {
             socket = serverSocket.accept();
@@ -218,8 +208,8 @@ public class Network implements Runnable {
         }
     }
 
-    public DirectSocketAddress getAddress() {
-        return serverSocket.getAddressSet();
+    public VirtualSocketAddress getAddress() {
+        return serverSocket.getLocalSocketAddress();
     }
 
 }

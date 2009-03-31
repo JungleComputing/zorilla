@@ -12,10 +12,9 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-
 import org.apache.log4j.Logger;
 
-import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
 
 public class VivaldiService implements Service, Runnable {
 
@@ -46,7 +45,7 @@ public class VivaldiService implements Service, Runnable {
             throws IOException {
         double result = Double.MAX_VALUE;
 
-        DirectSocket socket = node.network().connect(peer,
+        VirtualSocket socket = node.network().connect(peer,
                 Network.VIVALDI_SERVICE, CONNECTION_TIMEOUT);
         socket.setTcpNoDelay(true);
 
@@ -95,7 +94,7 @@ public class VivaldiService implements Service, Runnable {
         return result;
     }
 
-    public void handleConnection(DirectSocket socket) {
+    public void handleConnection(VirtualSocket socket) {
         Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
         try {
             socket.setTcpNoDelay(true);
@@ -118,7 +117,6 @@ public class VivaldiService implements Service, Runnable {
         }
         Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
     }
-    
 
     public void start() {
         ThreadPool.createNew(this, "vivaldi");
@@ -168,8 +166,8 @@ public class VivaldiService implements Service, Runnable {
     }
 
     public Map<String, String> getStats() {
-        HashMap<String,String> result = new HashMap<String,String>();
-        
+        HashMap<String, String> result = new HashMap<String, String>();
+
         result.put("Current.coordinate", getCoordinates().toString());
 
         return result;
