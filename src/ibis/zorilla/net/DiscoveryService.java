@@ -3,7 +3,7 @@ package ibis.zorilla.net;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.util.ThreadPool;
-import ibis.zorilla.ZorillaTypedProperties;
+import ibis.zorilla.ZorillaProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
@@ -47,7 +47,7 @@ public class DiscoveryService implements Service, Runnable {
         Set<VirtualSocketAddress> addresses = new HashSet<VirtualSocketAddress>();
 
         for (String string : node.config().getStringList(
-                ZorillaTypedProperties.PEERS)) {
+                ZorillaProperties.PEERS)) {
             try {
                 try {
                     addresses.add(new VirtualSocketAddress(string));
@@ -62,7 +62,7 @@ public class DiscoveryService implements Service, Runnable {
 
         // also add master (if available)
         String masterAddress = node.config().getProperty(
-                ZorillaTypedProperties.MASTER_ADDRESS);
+                ZorillaProperties.MASTER_ADDRESS);
         if (node.config().isWorker() && masterAddress != null) {
             try {
                 addresses.add(new VirtualSocketAddress(masterAddress));

@@ -1,5 +1,6 @@
 package ibis.zorilla.apps;
 
+import ibis.smartsockets.virtual.VirtualSocketFactory;
 import ibis.zorilla.zoni.ZoniConnection;
 import org.apache.log4j.Logger;
 
@@ -58,8 +59,9 @@ public final class Zap {
                 }
             }
 
-            ZoniConnection connection = new ZoniConnection(nodeSocketAddress, hub,
-                    null);
+            VirtualSocketFactory factory = ZoniConnection.getFactory(hub);
+            ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
+                    factory, null);
 
             if (killNode) {
                 System.out.println("killing node (kill network = "
@@ -94,6 +96,7 @@ public final class Zap {
 
             // close connection
             connection.close();
+            factory.end();
         } catch (Exception e) {
             System.err.println("exception on handling request: " + e);
             e.printStackTrace(System.err);

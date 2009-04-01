@@ -1,5 +1,6 @@
 package ibis.zorilla.apps;
 
+import ibis.smartsockets.virtual.VirtualSocketFactory;
 import ibis.zorilla.zoni.JobInfo;
 import ibis.zorilla.zoni.ZoniConnection;
 import ibis.zorilla.zoni.ZoniProtocol;
@@ -99,8 +100,10 @@ public final class Zee {
                 printJobInfo = true;
             }
 
-            ZoniConnection connection = new ZoniConnection(nodeSocketAddress, hub,
-                    null);
+            VirtualSocketFactory factory = ZoniConnection.getFactory(hub);
+            ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
+                    factory, null);
+
 
             if (printNodeInfo) {
 
@@ -154,6 +157,7 @@ public final class Zee {
             }
 
             connection.close();
+            factory.end();
         } catch (Exception e) {
             System.err.println("exception on running zee: " + e);
             e.printStackTrace(System.err);

@@ -21,6 +21,9 @@
         <fileset dir="external/ipl">
             <include name="*.jar" />
         </fileset>
+        <fileset dir="external/javagat">
+            <include name="*.jar" />
+        </fileset>
         <fileset dir="zoni/lib">
             <include name="*.jar" />
         </fileset>

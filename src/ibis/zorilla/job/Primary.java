@@ -5,7 +5,7 @@ import ibis.ipl.IbisIdentifier;
 import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
-import ibis.zorilla.ZorillaTypedProperties;
+import ibis.zorilla.ZorillaProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.io.ObjectOutput;
@@ -147,7 +147,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         this.node = node;
 
         cluster = node.config()
-                .getProperty(ZorillaTypedProperties.CLUSTER_NAME);
+                .getProperty(ZorillaProperties.CLUSTER_NAME);
 
         id = Node.generateUUID();
         this.jobDescription = description;
@@ -802,7 +802,7 @@ public final class Primary extends Job implements Runnable, Receiver {
     private synchronized void createNewLocalWorkers() {
         if (!isJava()
                 && !node.config().getBooleanProperty(
-                        ZorillaTypedProperties.NATIVE_JOBS)) {
+                        ZorillaProperties.NATIVE_JOBS)) {
             logger.debug("not creating worker, native jobs not allowed");
             return;
         }
@@ -1093,7 +1093,7 @@ public final class Primary extends Job implements Runnable, Receiver {
         for (int i = 0; i < nrOfWorkers; i++) {
             if (!isJava()
                     && !node.config().getBooleanProperty(
-                            ZorillaTypedProperties.NATIVE_JOBS)) {
+                            ZorillaProperties.NATIVE_JOBS)) {
                 log("cannot create native worker");
                 break;
             }
@@ -1136,7 +1136,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             if (!isJava()
                     && !node.config().getBooleanProperty(
-                            ZorillaTypedProperties.NATIVE_JOBS)) {
+                            ZorillaProperties.NATIVE_JOBS)) {
                 maxNrOfWorkers = 0;
             }
 

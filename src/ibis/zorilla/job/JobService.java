@@ -2,7 +2,7 @@ package ibis.zorilla.job;
 
 import ibis.util.ThreadPool;
 import ibis.zorilla.Node;
-import ibis.zorilla.ZorillaTypedProperties;
+import ibis.zorilla.ZorillaProperties;
 import ibis.zorilla.Service;
 import ibis.zorilla.zoni.ZorillaJobDescription;
 
@@ -70,7 +70,7 @@ public final class JobService implements Service, Runnable {
         }
 
         availableCores = node.config().getIntProperty(
-                ZorillaTypedProperties.AVAILABLE_CORES, availableCores);
+                ZorillaProperties.AVAILABLE_CORES, availableCores);
         logger.info("Available cores on this node: " + availableCores);
 
         int freeMemory = freeMemory();

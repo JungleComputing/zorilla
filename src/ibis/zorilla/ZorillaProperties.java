@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
  *         </UL>
  * 
  */
-public class ZorillaTypedProperties extends TypedProperties {
+public class ZorillaProperties extends TypedProperties {
 
     private static final long serialVersionUID = 1L;
 
@@ -95,8 +95,10 @@ public class ZorillaTypedProperties extends TypedProperties {
     public static final String MASTER = PREFIX + "master";
     public static final String MASTER_ADDRESS = PREFIX + "master.address";
 
+    public static final String SLAVES = PREFIX + "slaves";
+
     private static final Logger logger = Logger
-            .getLogger(ZorillaTypedProperties.class);
+            .getLogger(ZorillaProperties.class);
 
     private static final String[][] propertiesList = {
 
@@ -187,6 +189,8 @@ public class ZorillaTypedProperties extends TypedProperties {
                     MASTER,
                     "false",
                     "Boolean: if true, this node will act as a master (not start any workers, start smartsockets hub for communication)" },
+            { SLAVES, null,
+                    "Comma seperated list of hostnames of slave machines. Ranges are also supported (e.g. node0[10-20])" },
 
     // { MASTER_ADDRESS, null, "Address of the master node" },
     };
@@ -219,7 +223,7 @@ public class ZorillaTypedProperties extends TypedProperties {
     private final File tmpDir;
 
     private File createConfigDir() throws Exception {
-        File configDir = getFileProperty(ZorillaTypedProperties.CONFIG_DIR);
+        File configDir = getFileProperty(ZorillaProperties.CONFIG_DIR);
 
         if (!configDir.equals("?")) {
             if (!configDir.isAbsolute()) {
@@ -251,7 +255,7 @@ public class ZorillaTypedProperties extends TypedProperties {
     }
 
     private File createLogDir() throws Exception {
-        File logDir = getFileProperty(ZorillaTypedProperties.LOG_DIR);
+        File logDir = getFileProperty(ZorillaProperties.LOG_DIR);
         if (!logDir.isAbsolute()) {
             // make absolute by resolving against user home directory
             String userHome = System.getProperty("user.home");
@@ -281,7 +285,7 @@ public class ZorillaTypedProperties extends TypedProperties {
     }
 
     private File createTmpDir() throws Exception {
-        File tmpDir = getFileProperty(ZorillaTypedProperties.TMP_DIR);
+        File tmpDir = getFileProperty(ZorillaProperties.TMP_DIR);
         if (!tmpDir.isAbsolute()) {
             // make absolute by resolving against java system tmp
             String systemTmp = System.getProperty("java.io.tmpdir");
@@ -296,7 +300,7 @@ public class ZorillaTypedProperties extends TypedProperties {
         return tmpDir;
     }
 
-    ZorillaTypedProperties(Properties userProperties) throws Exception {
+    ZorillaProperties(Properties userProperties) throws Exception {
         Properties defaultProperties = getHardcodedProperties();
         Properties classpathProperties = new Properties(defaultProperties);
         Properties fileProperties = new Properties(classpathProperties);

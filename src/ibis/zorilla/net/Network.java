@@ -1,7 +1,7 @@
 package ibis.zorilla.net;
 
 import ibis.util.ThreadPool;
-import ibis.zorilla.ZorillaTypedProperties;
+import ibis.zorilla.ZorillaProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 
@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 
 import ibis.io.Conversion;
 import ibis.ipl.server.Client;
+import ibis.smartsockets.hub.servicelink.ServiceLink;
 import ibis.smartsockets.virtual.VirtualServerSocket;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
@@ -58,7 +59,7 @@ public class Network implements Runnable {
 
     private final byte[] versionBytes;
 
-    public Network(Node node, ZorillaTypedProperties properties,
+    public Network(Node node, ZorillaProperties properties,
             VirtualSocketFactory factory) throws IOException, Exception {
         this.node = node;
 
@@ -70,6 +71,26 @@ public class Network implements Runnable {
 
         serverSocket = socketFactory.createServerSocket(VIRTUAL_PORT, 0, null);
 
+        try {
+            ServiceLink sl = socketFactory.getServiceLink();
+            if (sl != null) {
+                // try to register...
+                if (!sl.registerProperty("smartsockets.viz",
+                        "Z^Zorilla server:,"
+                                + serverSocket.getLocalSocketAddress()
+                                        .toString())) {
+                    // ...and update if it already exists
+                    sl.updateProperty("smartsockets.viz", "Z^Zorilla node:,"
+                            + serverSocket.getLocalSocketAddress().toString());
+                }
+            } else {
+                logger
+                        .warn("could not set smartsockets viz property: could not get smartsockets service link");
+            }
+        } catch (Throwable e) {
+            logger.warn("could not register smartsockets viz property", e);
+        }
+
         // Create byte array out of version string. Use the fact that
         // It is made out of only numbers.
         long version = Node.getVersion();
@@ -80,7 +101,7 @@ public class Network implements Runnable {
 
     public void start() {
         boolean firewalled = node.config().getBooleanProperty(
-                ZorillaTypedProperties.FIREWALL, false);
+                ZorillaProperties.FIREWALL, false);
         if (!firewalled) {
             // start handling connections
             ThreadPool.createNew(this, "network connection handler");
@@ -95,6 +116,7 @@ public class Network implements Runnable {
         } catch (IOException e) {
             // IGNORE
         }
+        socketFactory.end();
     }
 
     public VirtualSocket connect(NodeInfo peer, byte serviceID, int timeout)

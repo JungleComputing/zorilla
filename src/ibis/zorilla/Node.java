@@ -11,6 +11,7 @@ import ibis.zorilla.net.FloodService;
 import ibis.zorilla.net.Network;
 import ibis.zorilla.net.UdpDiscoveryService;
 import ibis.zorilla.net.ZoniService;
+import ibis.zorilla.slave.SlaveService;
 import ibis.zorilla.www.WebService;
 
 import java.io.File;
@@ -47,7 +48,7 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
         return version;
     }
 
-    private final ZorillaTypedProperties config;
+    private final ZorillaProperties config;
 
     private final Network network;
 
@@ -70,6 +71,8 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
     private final WebService webService;
 
     private final ZoniService zoniService;
+    
+    private final SlaveService slaveService;
 
     private final long startTime;
 
@@ -104,10 +107,10 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
 
         // Log.initLog4J("ibis.zorilla", Level.INFO);
 
-        config = new ZorillaTypedProperties(properties);
+        config = new ZorillaProperties(properties);
 
         // make up a UUID for this node
-        String idString = config.getProperty(ZorillaTypedProperties.NODE_ID);
+        String idString = config.getProperty(ZorillaProperties.NODE_ID);
         if (idString == null) {
             id = generateUUID();
         } else {
@@ -119,20 +122,20 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
         network = new Network(this, config, factory);
 
         // give this node a (user friendly) name
-        if (config.getProperty(ZorillaTypedProperties.NODE_NAME) != null) {
-            name = config.getProperty(ZorillaTypedProperties.NODE_NAME);
+        if (config.getProperty(ZorillaProperties.NODE_NAME) != null) {
+            name = config.getProperty(ZorillaProperties.NODE_NAME);
         } else {
             String cluster = config
-                    .getProperty(ZorillaTypedProperties.CLUSTER_NAME);
+                    .getProperty(ZorillaProperties.CLUSTER_NAME);
             String hostName = InetAddress.getLocalHost().getHostName();
             int port = network.getAddress().machine().getPorts(false)[0];
 
             if (cluster == null) {
                 name = hostName + ":" + port;
-                config.put(ZorillaTypedProperties.NODE_NAME, name);
+                config.put(ZorillaProperties.NODE_NAME, name);
             } else {
                 name = hostName + ":" + port + "@" + cluster;
-                config.put(ZorillaTypedProperties.NODE_NAME, name);
+                config.put(ZorillaProperties.NODE_NAME, name);
             }
         }
 
@@ -167,6 +170,8 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
         jobService = new JobService(this);
 
         zoniService = new ZoniService(this);
+        
+        slaveService = new SlaveService(this);
 
         discoveryService.start();
         udpDiscoveryService.start();
@@ -175,6 +180,7 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
         clusterService.start();
         floodService.start();
         jobService.start();
+        slaveService.start();
 
         // start accepting connections
         network.start();
@@ -182,7 +188,7 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
         webService.start();
 
         long maxRunTime = config.getLongProperty(
-                ZorillaTypedProperties.MAX_RUNTIME, 0);
+                ZorillaProperties.MAX_RUNTIME, 0);
         if (maxRunTime > 0) {
             deadline = System.currentTimeMillis() + (maxRunTime * 1000);
             logger.info("Shutting down zorilla node in " + maxRunTime
@@ -203,7 +209,7 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
         }
     }
 
-    public synchronized ZorillaTypedProperties config() {
+    public synchronized ZorillaProperties config() {
         return config;
     }
 
@@ -217,7 +223,7 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
 
     public NodeInfo getInfo() {
         return new NodeInfo(id, name, config
-                .getProperty(ZorillaTypedProperties.CLUSTER_NAME),
+                .getProperty(ZorillaProperties.CLUSTER_NAME),
                 vivaldiService.getCoordinates(), network.getAddress(), version);
     }
 
@@ -264,6 +270,10 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
     public ZoniService zoniService() {
         return zoniService;
     }
+    
+    public SlaveService getSlaveService() {
+        return slaveService;
+    }
 
     @Override
     public synchronized void end(long delay) {
@@ -296,7 +306,7 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
         return "Zorilla node " + name;
     }
 
-    // delay until a certain time before the dealine
+    // delay until a certain time before the deadline
     private synchronized void waitUntilDeadline(long margin) {
         while (true) {
             long now = System.currentTimeMillis();
@@ -327,6 +337,9 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
         logger.debug("waiting until deadline");
 
         waitUntilDeadline(0);
+        
+        slaveService.end();
+        network.end();
 
         logger.debug("node done");
 

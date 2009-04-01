@@ -1,5 +1,6 @@
 package ibis.zorilla.apps;
 
+import ibis.smartsockets.virtual.VirtualSocketFactory;
 import ibis.zorilla.util.StreamWriter;
 import ibis.zorilla.zoni.ZorillaJobDescription;
 import ibis.zorilla.zoni.ZoniInputFile;
@@ -279,8 +280,10 @@ public final class Zubmit {
                 System.out.println(jobDescription);
             }
 
-            ZoniConnection connection = new ZoniConnection(nodeSocketAddress,hub,
-                    null);
+            VirtualSocketFactory factory = ZoniConnection.getFactory(hub);
+
+            ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
+                    factory, null);
 
             String jobID;
             jobID = connection.submitJob(jobDescription, null);
@@ -316,18 +319,18 @@ public final class Zubmit {
                 }
 
                 ZoniConnection stdinConnection = new ZoniConnection(
-                        nodeSocketAddress, hub, null);
+                        nodeSocketAddress, factory, null);
                 OutputStream stdinStream = stdinConnection.getInput(jobID);
                 new StreamWriter(System.in, stdinStream);
 
                 ZoniConnection stdoutConnection = new ZoniConnection(
-                        nodeSocketAddress, hub, null);
+                        nodeSocketAddress, factory, null);
                 InputStream stdoutStream = stdoutConnection.getOutput(jobID,
                         false);
                 new StreamWriter(stdoutStream, System.out);
 
                 ZoniConnection stderrConnection = new ZoniConnection(
-                        nodeSocketAddress, hub, null);
+                        nodeSocketAddress, factory, null);
                 InputStream stderrStream = stderrConnection.getOutput(jobID,
                         true);
                 new StreamWriter(stderrStream, System.err);
@@ -335,7 +338,7 @@ public final class Zubmit {
                 // register shutdown hook to cancel job..
                 try {
                     Runtime.getRuntime().addShutdownHook(
-                            new Shutdown(nodeSocketAddress, hub, jobID));
+                            new Shutdown(nodeSocketAddress, factory, jobID));
                 } catch (Exception e) {
                     // IGNORE
                 }
@@ -366,7 +369,7 @@ public final class Zubmit {
             }
 
             connection.close();
-
+            factory.end();
         } catch (Exception e) {
             System.err.println("exception on running job: " + e);
             e.printStackTrace(System.err);
@@ -376,20 +379,21 @@ public final class Zubmit {
 
     private static class Shutdown extends Thread {
         private final String nodeSocketAddress;
-        private final String hub;
+        private final VirtualSocketFactory factory;
 
         private final String jobID;
 
-        Shutdown(String nodeSocketAddress, String hub, String jobID) {
+        Shutdown(String nodeSocketAddress, VirtualSocketFactory factory,
+                String jobID) {
             this.nodeSocketAddress = nodeSocketAddress;
-            this.hub = hub;
+            this.factory = factory;
             this.jobID = jobID;
         }
 
         public void run() {
             try {
                 ZoniConnection connection = new ZoniConnection(
-                        nodeSocketAddress, hub, null);
+                        nodeSocketAddress, factory, null);
                 logger.debug("shutdown hook triggered, cancelling job");
 
                 connection.cancelJob(jobID);

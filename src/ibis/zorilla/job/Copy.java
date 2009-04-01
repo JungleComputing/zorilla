@@ -5,7 +5,7 @@ import ibis.ipl.IbisIdentifier;
 import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
-import ibis.zorilla.ZorillaTypedProperties;
+import ibis.zorilla.ZorillaProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.io.ObjectInput;
@@ -120,7 +120,7 @@ public final class Copy extends Job implements Receiver, Runnable {
         id = Node.generateUUID();
 
         cluster = node.config()
-                .getProperty(ZorillaTypedProperties.CLUSTER_NAME);
+                .getProperty(ZorillaProperties.CLUSTER_NAME);
 
         jobID = (UUID) ad.getJobID();
         primary = (ReceivePortIdentifier) ad.getPrimaryReceivePort();
@@ -429,7 +429,7 @@ public final class Copy extends Job implements Receiver, Runnable {
         for (int i = 0; i < nrOfWorkers; i++) {
             if (!isJava()
                     && !node.config().getBooleanProperty(
-                            ZorillaTypedProperties.NATIVE_JOBS)) {
+                            ZorillaProperties.NATIVE_JOBS)) {
                 log("cannot create native worker");
                 break;
             }
@@ -563,7 +563,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
             if (!jobDescription.isJava()
                     && !node.config().getBooleanProperty(
-                            ZorillaTypedProperties.NATIVE_JOBS)) {
+                            ZorillaProperties.NATIVE_JOBS)) {
                 throw new Exception("running of non-java job not allowed");
             }
 
@@ -592,7 +592,7 @@ public final class Copy extends Job implements Receiver, Runnable {
 
             if (!isJava()
                     && !node.config().getBooleanProperty(
-                            ZorillaTypedProperties.NATIVE_JOBS)) {
+                            ZorillaProperties.NATIVE_JOBS)) {
                 logger.debug("cannot start worker, no native jobs allowed");
                 nrOfWorkers = 0;
             }
@@ -657,7 +657,7 @@ public final class Copy extends Job implements Receiver, Runnable {
     private boolean createNewLocalWorkers() throws IOException, Exception {
         if (!isJava()
                 && !node.config().getBooleanProperty(
-                        ZorillaTypedProperties.NATIVE_JOBS)) {
+                        ZorillaProperties.NATIVE_JOBS)) {
             log("not creating worker, native jobs not allowed");
             return false;
         }

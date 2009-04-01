@@ -1,6 +1,7 @@
 package ibis.zorilla.zoni;
 
 import ibis.smartsockets.SmartSocketsProperties;
+import ibis.smartsockets.virtual.InitializationException;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
@@ -23,7 +24,7 @@ public final class ZoniConnection {
 
     public static final int TIMEOUT = 10 * 1000;
 
-    Logger logger = Logger.getLogger(ZoniConnection.class);
+    private static final Logger logger = Logger.getLogger(ZoniConnection.class);
 
     private final VirtualSocket socket;
 
@@ -32,8 +33,6 @@ public final class ZoniConnection {
     private final ObjectOutputStream out;
 
     private final String peerID;
-    
-    private final VirtualSocketFactory socketFactory;
 
     private static DirectSocketAddress createAddressFromString(String address,
             int defaultPort) throws Exception {
@@ -62,7 +61,40 @@ public final class ZoniConnection {
                 + address, throwable);
     }
 
-    public ZoniConnection(String address, String localHub, String id)
+    public static VirtualSocketFactory getFactory(String localHub) throws InitializationException {
+        TypedProperties factoryProperties = SmartSocketsProperties
+                .getDefaultProperties();
+
+        factoryProperties.put("smartsockets.modules.virtual.ssh.in", "true");
+        factoryProperties.put("smartsockets.modules.virtual.ssh.out", "true");
+
+        if (localHub != null) {
+            factoryProperties.put(SmartSocketsProperties.HUB_ADDRESSES,
+                    localHub);
+        }
+
+        VirtualSocketFactory socketFactory = VirtualSocketFactory.createSocketFactory(
+                factoryProperties, true);
+
+        try {
+            ServiceLink sl = socketFactory.getServiceLink();
+            if (sl != null) {
+                sl.registerProperty("smartsockets.viz", "z^ZONI Connection:,"
+                        + socketFactory.getVirtualAddressAsString());
+            } else {
+                logger
+                        .warn("could not set smartsockets viz property: could not get smartsockets service link");
+            }
+        } catch (Throwable e) {
+            logger.warn("could not register smartsockets viz property", e);
+        }
+        
+        return socketFactory;
+
+    }
+    
+
+    public ZoniConnection(String address, VirtualSocketFactory socketFactory, String id)
             throws Exception {
 
         DirectSocketAddress machine = createAddressFromString(address,
@@ -74,33 +106,6 @@ public final class ZoniConnection {
 
         VirtualSocketAddress socketAddress = new VirtualSocketAddress(machine,
                 ZoniProtocol.VIRTUAL_PORT, machine, null);
-
-        TypedProperties factoryProperties = SmartSocketsProperties
-                .getDefaultProperties();
-        
-        factoryProperties.put("smartsockets.modules.virtual.ssh.in", "true");
-        factoryProperties.put("smartsockets.modules.virtual.ssh.out", "true");
-        
-        if (localHub != null) {
-            factoryProperties.put(SmartSocketsProperties.HUB_ADDRESSES,
-                    localHub);
-        }
-
-        socketFactory = VirtualSocketFactory
-                .createSocketFactory(factoryProperties, true);
-        
-        try {
-            ServiceLink sl = socketFactory.getServiceLink();
-            if (sl != null) {
-                sl.registerProperty("smartsockets.viz", "Z^ZONI Connection:,"
-                        + address.toString());
-            } else {
-                logger
-                        .warn("could not set smartsockets viz property: could not get smartsockets service link");
-            }
-        } catch (Throwable e) {
-            logger.warn("could not register smartsockets viz property", e);
-        }
 
         socket = socketFactory.createClientSocket(socketAddress, TIMEOUT, true,
                 null);
@@ -137,7 +142,7 @@ public final class ZoniConnection {
 
         logger.debug("reply from peer: status = " + status + ", message = "
                 + message + ", id = " + peerID);
-        
+
     }
 
     public String peerID() {
@@ -460,7 +465,6 @@ public final class ZoniConnection {
                 logger.debug("IOException on closing socket", e);
             }
         }
-        socketFactory.end();
     }
 
     public boolean isClosed() {

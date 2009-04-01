@@ -1,7 +1,7 @@
 package ibis.zorilla.www;
 
 import ibis.util.IPUtils;
-import ibis.zorilla.ZorillaTypedProperties;
+import ibis.zorilla.ZorillaProperties;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
@@ -60,7 +60,7 @@ public final class WebService implements Service {
 
         // Create the server
         server = new Server(node.config().getIntProperty(
-                ZorillaTypedProperties.WWW_PORT));
+                ZorillaProperties.WWW_PORT));
         BoundedThreadPool pool = new BoundedThreadPool();
         pool.setDaemon(true);
         server.setThreadPool(pool);

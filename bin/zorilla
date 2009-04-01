@@ -3,5 +3,5 @@
 #run this script from the directory zorilla is installed in
 
 #classpath includes cwd for log4j.properties
-java -cp .:zoni/lib/*:lib/*:lib/ipl/* ibis.zorilla.Main $@
+java -cp log4j.properties:.:zoni/lib/*:lib/*:lib/ipl/*:lib/javagat/* -Dgat.adaptor.path=lib/javagat/adaptors ibis.zorilla.Main $@
 

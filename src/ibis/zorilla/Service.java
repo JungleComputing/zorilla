@@ -11,4 +11,5 @@ public interface Service {
     public void handleConnection(VirtualSocket socket);
 
     public Map<String, String> getStats();
+
 }

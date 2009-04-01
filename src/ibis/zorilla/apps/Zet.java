@@ -1,5 +1,6 @@
 package ibis.zorilla.apps;
 
+import ibis.smartsockets.virtual.VirtualSocketFactory;
 import ibis.zorilla.zoni.ZoniConnection;
 import java.util.HashMap;
 import java.util.Map;
@@ -81,8 +82,9 @@ public final class Zet {
                 }
             }
 
-            ZoniConnection connection = new ZoniConnection(nodeSocketAddress,hub,
-                    null);
+            VirtualSocketFactory factory = ZoniConnection.getFactory(hub);
+            ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
+                    factory, null);
 
             if (attribute != -1) {
                 if (job == null) {
@@ -99,6 +101,7 @@ public final class Zet {
             }
 
             connection.close();
+            factory.end();
         } catch (Exception e) {
             System.err.println("exception on changing settings: " + e);
             e.printStackTrace(System.err);
