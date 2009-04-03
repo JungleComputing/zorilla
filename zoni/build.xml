@@ -11,8 +11,9 @@
 
     <!-- create the class path. Consists of all external jars -->
     <path id="class_path">
-        <fileset dir="external">
-            <include name="*.jar" />
+        <fileset dir="../external/ipl">
+            <include name="smartsockets*.jar" />
+            <include name="slf4j-api*.jar" />
         </fileset>
     </path>
 
@@ -39,8 +40,8 @@
 
         <tstamp />
 
-        <mkdir dir="tmp" />
         <mkdir dir="lib" />
+        <mkdir dir="tmp" />
 
         <!-- Compile the java code from src into tmp -->
         <javac srcdir="src" 
@@ -57,10 +58,6 @@
             includes="**/*.class">
         </jar>
 
-        <!-- add external stuff to lib -->
-        <copy todir="lib">
-            <fileset dir="external" />
-        </copy>
 
         <delete dir="tmp" />
     </target>

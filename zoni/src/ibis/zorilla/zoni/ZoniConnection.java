@@ -18,13 +18,15 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class ZoniConnection {
 
     public static final int TIMEOUT = 10 * 1000;
 
-    private static final Logger logger = Logger.getLogger(ZoniConnection.class);
+    private static final Logger logger = LoggerFactory
+            .getLogger(ZoniConnection.class);
 
     private final VirtualSocket socket;
 
@@ -61,20 +63,24 @@ public final class ZoniConnection {
                 + address, throwable);
     }
 
-    public static VirtualSocketFactory getFactory(String localHub) throws InitializationException {
-        TypedProperties factoryProperties = SmartSocketsProperties
+    public static VirtualSocketFactory getFactory(String hubs)
+            throws InitializationException {
+        TypedProperties smartProperties = SmartSocketsProperties
                 .getDefaultProperties();
 
-        factoryProperties.put("smartsockets.modules.virtual.ssh.in", "true");
-        factoryProperties.put("smartsockets.modules.virtual.ssh.out", "true");
-
-        if (localHub != null) {
-            factoryProperties.put(SmartSocketsProperties.HUB_ADDRESSES,
-                    localHub);
+        if (hubs != null) {
+            smartProperties.put(SmartSocketsProperties.HUB_ADDRESSES, hubs);
         }
 
-        VirtualSocketFactory socketFactory = VirtualSocketFactory.createSocketFactory(
-                factoryProperties, true);
+        VirtualSocketFactory socketFactory = VirtualSocketFactory
+                .getSocketFactory("ibis");
+
+        if (socketFactory == null) {
+            socketFactory = VirtualSocketFactory.getOrCreateSocketFactory(
+                    "ibis", smartProperties, true);
+        } else if (hubs != null) {
+            socketFactory.addHubs(hubs.split(","));
+        }
 
         try {
             ServiceLink sl = socketFactory.getServiceLink();
@@ -88,14 +94,13 @@ public final class ZoniConnection {
         } catch (Throwable e) {
             logger.warn("could not register smartsockets viz property", e);
         }
-        
+
         return socketFactory;
 
     }
-    
 
-    public ZoniConnection(String address, VirtualSocketFactory socketFactory, String id)
-            throws Exception {
+    public ZoniConnection(String address, VirtualSocketFactory socketFactory,
+            String id) throws Exception {
 
         DirectSocketAddress machine = createAddressFromString(address,
                 ZoniProtocol.DEFAULT_PORT);
@@ -158,7 +163,7 @@ public final class ZoniConnection {
 
         if (callbackReceiver != null) {
             out.writeBoolean(true);
-            out.writeObject(callbackReceiver.addresses());
+            out.writeUTF(callbackReceiver.getAddress());
         } else {
             out.writeBoolean(false);
         }

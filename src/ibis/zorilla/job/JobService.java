@@ -43,10 +43,16 @@ public final class JobService implements Service, Runnable {
     private static int freeMemory() {
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            long result = (Long) server
-                    .getAttribute(new ObjectName(
-                            "java.lang:type=OperatingSystem"),
-                            "FreePhysicalMemorySize");
+            long total = (Long) server.getAttribute(new ObjectName(
+                    "java.lang:type=OperatingSystem"),
+                    "TotalPhysicalMemorySize");
+
+            long used = (Long) server.getAttribute(new ObjectName(
+                    "java.lang:type=OperatingSystem"),
+                    "CommittedVirtualMemorySize");
+
+            long result = total - used;
+
             return (int) ((result / 1024.0 / 1024.0) * 0.8);
         } catch (Throwable t) {
             logger.error("could not determine"

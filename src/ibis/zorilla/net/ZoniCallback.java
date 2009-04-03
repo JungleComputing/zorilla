@@ -1,6 +1,9 @@
 package ibis.zorilla.net;
 
+import ibis.smartsockets.virtual.VirtualSocket;
+import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.util.ThreadPool;
+import ibis.zorilla.Node;
 import ibis.zorilla.job.Callback;
 import ibis.zorilla.job.Job;
 import ibis.zorilla.zoni.ZoniProtocol;
@@ -10,23 +13,26 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 
 import org.apache.log4j.Logger;
 
 public class ZoniCallback implements Runnable, Callback {
+    
+    private static final int CONNECT_TIMEOUT = 10000; 
 
-    private final Logger logger = Logger.getLogger(ZoniCallback.class);
+    private static final Logger logger = Logger.getLogger(ZoniCallback.class);
 
-    InetSocketAddress[] addresses;
+    private final Node node;
 
-    int lastPhase;
+    private final VirtualSocketAddress address;
 
-    Job job;
+    private int lastPhase;
 
-    public ZoniCallback(InetSocketAddress[] addresses) {
-        this.addresses = addresses;
+    private Job job;
+
+    public ZoniCallback(String address, Node node) throws Exception {
+        this.address = new VirtualSocketAddress(address);
+        this.node = node;
 
         job = null;
         lastPhase = Job.INITIAL;
@@ -54,24 +60,11 @@ public class ZoniCallback implements Runnable, Callback {
             return;
         }
 
-        Socket socket = null;
-
-        for (int i = 0; i < addresses.length && socket == null; i++) {
-            try {
-                socket = new Socket(addresses[i].getAddress(), addresses[i]
-                        .getPort());
-            } catch (IOException e) {
-                logger.debug("could not connect to client at " + addresses[i],
-                        e);
-            }
-        }
-
-        if (socket == null) {
-            logger.warn("could not connect to client for callback");
-            return;
-        }
-
+        VirtualSocket socket = null;
         try {
+
+            socket = node.network().getSocketFactory().createClientSocket(
+                    address, CONNECT_TIMEOUT, false, null);
 
             ObjectOutputStream out = new ObjectOutputStream(
                     new BufferedOutputStream(socket.getOutputStream()));

@@ -67,6 +67,7 @@ public class Network implements Runnable {
             socketFactory = Client.getFactory(properties, properties.getPort());
         } else {
             socketFactory = factory;
+            logger.info("Using provided factory");
         }
 
         serverSocket = socketFactory.createServerSocket(VIRTUAL_PORT, 0, null);
@@ -97,6 +98,10 @@ public class Network implements Runnable {
         versionBytes = new byte[Long.SIZE];
 
         Conversion.defaultConversion.long2byte(version, versionBytes, 0);
+    }
+    
+    public VirtualSocketFactory getSocketFactory() {
+        return socketFactory;
     }
 
     public void start() {

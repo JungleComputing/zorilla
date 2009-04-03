@@ -51,7 +51,7 @@ public class ZoniService implements Service {
         ZoniCallback callback = null;
 
         if (in.readBoolean()) {
-            callback = new ZoniCallback((InetSocketAddress[]) in.readObject());
+            callback = new ZoniCallback(in.readUTF(), node);
         }
 
         Job job = node.jobService().submitJob(jobDescription, callback);

@@ -83,6 +83,10 @@
         <copy todir="lib" includeEmptyDirs="false">
             <fileset dir="external" />
         </copy>
+        
+        <copy todir="lib" includeEmptyDirs="false">
+            <fileset dir="zoni/lib" />
+        </copy>
 
         <delete dir="tmp" />
     </target>

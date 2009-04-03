@@ -87,8 +87,9 @@ public class SlaveService implements Service {
             throws Exception {
         JavaSoftwareDescription sd = new JavaSoftwareDescription();
 
-        sd.setExecutable(System.getProperty("java.home") + java.io.File.separator
-                + "bin" + java.io.File.separator + "java");
+        sd.setExecutable(System.getProperty("java.home")
+                + java.io.File.separator + "bin" + java.io.File.separator
+                + "java");
 
         // main class and options
         sd.setJavaMain("ibis.zorilla.Main");
@@ -99,11 +100,10 @@ public class SlaveService implements Service {
         arguments.add("--random-ports");
         arguments.add("--peers");
         arguments.add(nodeAddress);
-        
+
         sd.addAttribute("sandbox.delete", "false");
 
         sd.setJavaArguments(arguments.toArray(new String[0]));
-        
 
         // add libraries to pre-stage.
         String[] pathElements = System.getProperty("java.class.path").split(
@@ -117,19 +117,18 @@ public class SlaveService implements Service {
             }
         }
 
-        
         File file = GAT.createFile("log4j.properties");
 
         if (file.isFile()) {
             logger.debug("adding prestage file: " + "log4j.properties");
             sd.addPreStagedFile(file);
         }
-        
+
         sd.setJavaClassPath(".:*");
-        
+
         sd.enableStreamingStderr(true);
         sd.enableStreamingStdout(true);
-        
+
         JobDescription result = new JobDescription(sd);
 
         result.setProcessCount(1);
@@ -139,7 +138,7 @@ public class SlaveService implements Service {
     }
 
     private final String nodeAddress;
-    
+
     private final String[] hostNames;
 
     private Job[] gatJobs = null;
@@ -147,7 +146,7 @@ public class SlaveService implements Service {
     public SlaveService(Node node) throws Exception {
         hostNames = parseSlaveHostnames(node.config().getStringList(
                 ZorillaProperties.SLAVES));
-        
+
         nodeAddress = node.network().getAddress().toString();
     }
 
@@ -163,7 +162,7 @@ public class SlaveService implements Service {
     }
 
     @Override
-    public void start() throws Exception {
+    public synchronized void start() throws Exception {
         if (hostNames == null || hostNames.length == 0) {
             return;
         }
@@ -171,23 +170,29 @@ public class SlaveService implements Service {
         ArrayList<Job> gatJobs = new ArrayList<Job>();
 
         GATContext context = createGATContext();
-        
+
         JobDescription jobDescription = createJobDescription(nodeAddress);
 
         for (String host : hostNames) {
-            logger.info("starting slave on: " + host);
+            try {
 
-            ResourceBroker jobBroker = GAT.createResourceBroker(context,
-                    new URI("ssh://" + host));
+                logger.info("starting slave on: " + host);
 
-            Job job = jobBroker.submitJob(jobDescription);
-           
-            new StreamForwarder(job.getStdout(), System.out);
-            new StreamForwarder(job.getStderr(), System.err);
+                ResourceBroker jobBroker = GAT.createResourceBroker(context,
+                        new URI("ssh://" + host));
 
-            gatJobs.add(job);
+                Job job = jobBroker.submitJob(jobDescription);
+
+                new StreamForwarder(job.getStdout(), System.out);
+                new StreamForwarder(job.getStderr(), System.err);
+
+                gatJobs.add(job);
+            } catch (Exception e) {
+                logger.error("Error on starting slave on " + host, e);
+                this.gatJobs = gatJobs.toArray(new Job[0]);
+                return;
+            }
         }
-
         this.gatJobs = gatJobs.toArray(new Job[0]);
     }
 
