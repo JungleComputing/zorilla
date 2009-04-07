@@ -39,7 +39,7 @@ public final class JobService implements Service, Runnable {
 
     private final Map<UUID, Resources> usedResources;
 
-    // return 80% of free physical memory as max memory available
+    // return 90% of physical memory size as max memory available
     private static int freeMemory() {
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
@@ -47,13 +47,7 @@ public final class JobService implements Service, Runnable {
                     "java.lang:type=OperatingSystem"),
                     "TotalPhysicalMemorySize");
 
-            long used = (Long) server.getAttribute(new ObjectName(
-                    "java.lang:type=OperatingSystem"),
-                    "CommittedVirtualMemorySize");
-
-            long result = total - used;
-
-            return (int) ((result / 1024.0 / 1024.0) * 0.8);
+            return (int) ((total / 1024.0 / 1024.0) * 0.9);
         } catch (Throwable t) {
             logger.error("could not determine"
                     + " total memory of this machine, using 1Gb", t);
