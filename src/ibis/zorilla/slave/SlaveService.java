@@ -83,7 +83,7 @@ public class SlaveService implements Service {
 
     }
 
-    private static JobDescription createJobDescription(String nodeAddress)
+    private static JobDescription createJobDescription(String nodeAddress, GATContext context)
             throws Exception {
         JavaSoftwareDescription sd = new JavaSoftwareDescription();
 
@@ -109,7 +109,7 @@ public class SlaveService implements Service {
         String[] pathElements = System.getProperty("java.class.path").split(
                 java.io.File.pathSeparator);
         for (String pathElement : pathElements) {
-            File file = GAT.createFile(pathElement);
+            File file = GAT.createFile(context, pathElement);
 
             if (file.isFile()) {
                 logger.debug("adding prestage file: " + pathElement);
@@ -117,7 +117,7 @@ public class SlaveService implements Service {
             }
         }
 
-        File file = GAT.createFile("log4j.properties");
+        File file = GAT.createFile(context, "log4j.properties");
 
         if (file.isFile()) {
             logger.debug("adding prestage file: " + "log4j.properties");
@@ -170,13 +170,15 @@ public class SlaveService implements Service {
         ArrayList<Job> gatJobs = new ArrayList<Job>();
 
         GATContext context = createGATContext();
+        GAT.setDefaultGATContext(context);
 
-        JobDescription jobDescription = createJobDescription(nodeAddress);
+        JobDescription jobDescription = createJobDescription(nodeAddress, context);
 
         for (String host : hostNames) {
             try {
 
                 logger.info("starting slave on: " + host);
+                
 
                 ResourceBroker jobBroker = GAT.createResourceBroker(context,
                         new URI("ssh://" + host));
