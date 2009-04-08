@@ -283,6 +283,7 @@ public final class Node implements Runnable, ibis.ipl.server.Service {
             deadline = newDeadline;
             notifyAll();
         }
+        slaveService.end();
     }
 
     public Map<String, String> getStats() {
