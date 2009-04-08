@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 
 public final class ZoniConnection {
 
-    public static final int TIMEOUT = 10 * 1000;
+    public static final int TIMEOUT = 60 * 1000;
 
     private static final Logger logger = LoggerFactory
             .getLogger(ZoniConnection.class);
