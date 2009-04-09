@@ -221,8 +221,6 @@ public class Starter {
         builder.command().add(javaExecutable);
         builder.command().add("-server");
 
-        builder.command().add("-server");
-
         builder.command().add("-cp");
         builder.command().add(buildClasspath(libDir));
 
@@ -233,6 +231,8 @@ public class Starter {
 
         // add user home (just in case)
         builder.command().add("-Duser.home=" + System.getProperty("user.home"));
+        
+        builder.command().add("-XX:+HeapDumpOnOutOfMemoryError");
 
         builder.command().add("ibis.zorilla.Main");
 

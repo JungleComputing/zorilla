@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 
 public final class ZoniConnection {
 
-    public static final int TIMEOUT = 60 * 1000;
+    public static final int TIMEOUT = 30 * 1000;
 
     private static final Logger logger = LoggerFactory
             .getLogger(ZoniConnection.class);
@@ -101,6 +101,11 @@ public final class ZoniConnection {
 
     public ZoniConnection(String address, VirtualSocketFactory socketFactory,
             String id) throws Exception {
+        this(address, socketFactory, id, TIMEOUT, false);
+    }
+    
+    public ZoniConnection(String address, VirtualSocketFactory socketFactory,
+            String id, int timeout, boolean fillTimeout) throws Exception {
 
         DirectSocketAddress machine = createAddressFromString(address,
                 ZoniProtocol.DEFAULT_PORT);
@@ -112,7 +117,7 @@ public final class ZoniConnection {
         VirtualSocketAddress socketAddress = new VirtualSocketAddress(machine,
                 ZoniProtocol.VIRTUAL_PORT, machine, null);
 
-        socket = socketFactory.createClientSocket(socketAddress, TIMEOUT, true,
+        socket = socketFactory.createClientSocket(socketAddress, timeout, fillTimeout,
                 null);
 
         // signal we are a user connection

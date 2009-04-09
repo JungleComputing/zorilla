@@ -83,8 +83,8 @@ public class SlaveService implements Service {
 
     }
 
-    private static JobDescription createJobDescription(String nodeAddress, GATContext context)
-            throws Exception {
+    private static JobDescription createJobDescription(String nodeAddress,
+            GATContext context) throws Exception {
         JavaSoftwareDescription sd = new JavaSoftwareDescription();
 
         sd.setExecutable(System.getProperty("java.home")
@@ -96,6 +96,7 @@ public class SlaveService implements Service {
 
         List<String> arguments = new ArrayList<String>();
 
+        arguments.add("--slave");
         arguments.add("--worker");
         arguments.add("--random-ports");
         arguments.add("--peers");
@@ -128,6 +129,7 @@ public class SlaveService implements Service {
 
         sd.enableStreamingStderr(true);
         sd.enableStreamingStdout(true);
+        sd.enableStreamingStdin(true);
 
         JobDescription result = new JobDescription(sd);
 
@@ -172,13 +174,13 @@ public class SlaveService implements Service {
         GATContext context = createGATContext();
         GAT.setDefaultGATContext(context);
 
-        JobDescription jobDescription = createJobDescription(nodeAddress, context);
+        JobDescription jobDescription = createJobDescription(nodeAddress,
+                context);
 
         for (String host : hostNames) {
             try {
 
                 logger.info("starting slave on: " + host);
-                
 
                 ResourceBroker jobBroker = GAT.createResourceBroker(context,
                         new URI("ssh://" + host));
@@ -204,6 +206,11 @@ public class SlaveService implements Service {
         }
 
         for (Job job : gatJobs) {
+            try {
+                job.getStdin().close();
+            } catch (Exception e) {
+                // IGNORE
+            }
             try {
                 job.stop();
             } catch (GATInvocationException e) {
