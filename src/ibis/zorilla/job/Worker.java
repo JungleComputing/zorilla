@@ -339,7 +339,8 @@ public final class Worker implements Runnable {
         StreamWriter outWriter;
         StreamWriter errWriter;
         boolean killed = false; // true if we killed the process ourselves
-        boolean failed = false; // true if this worker "failed" on porpose
+        int killedCount = 0;
+        boolean failed = false; // true if this worker "failed" on purpose
 
         logger.info("starting worker " + this + " for " + job);
 
@@ -457,12 +458,27 @@ public final class Worker implements Runnable {
                         long currentTime = System.currentTimeMillis();
                         if (currentTime >= deadline) {
                             // kill process
-                            process.destroy();
+                            if (killedCount < 10) {
+                                process.destroy();
+                            } else if (killedCount == 10) {
+                                logger.error("Process for worker " + this
+                                        + " doesn't seem to want to die. "
+                                        + "Please kill process manually");
+                            }
+
                             killed = true;
                         } else if (currentTime >= failureDate) {
                             // kill process
-                            process.destroy();
+                            if (killedCount < 10) {
+                                process.destroy();
+                            } else if (killedCount == 10) {
+                                logger.error("Process for worker " + this
+                                        + " doesn't seem to want to die. "
+                                        + "Please kill process manually");
+                            }
+                            
                             failed = true;
+
                         } else {
                             try {
                                 long timeout = Math.min(deadline - currentTime,

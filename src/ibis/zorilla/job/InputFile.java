@@ -263,7 +263,7 @@ public class InputFile implements Receiver {
         int triesLeft = DOWNLOAD_ATTEMPTS;
 
         while (triesLeft > 0) {
-            Call call;
+            Call call = null;
 
             try {
                 if (triesLeft < PRIMARY_DOWNLOAD_TRESHOLD) {
@@ -304,6 +304,10 @@ public class InputFile implements Receiver {
             } catch (Exception e) {
                 job.log("exeption on downloading file", e);
                 triesLeft--;
+            } finally {
+                if (call != null) {
+                    call.finish();
+                }
             }
         }
         throw new Exception("could not download file " + sandboxPath + " to "
