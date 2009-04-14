@@ -460,25 +460,24 @@ public final class Worker implements Runnable {
                             // kill process
                             if (killedCount < 10) {
                                 process.destroy();
+                                killed = true;
+                                killedCount++;
                             } else if (killedCount == 10) {
                                 logger.error("Process for worker " + this
                                         + " doesn't seem to want to die. "
                                         + "Please kill process manually");
                             }
-
-                            killed = true;
                         } else if (currentTime >= failureDate) {
                             // kill process
                             if (killedCount < 10) {
                                 process.destroy();
+                                failed = true;
+                                killedCount++;
                             } else if (killedCount == 10) {
                                 logger.error("Process for worker " + this
                                         + " doesn't seem to want to die. "
                                         + "Please kill process manually");
                             }
-                            
-                            failed = true;
-
                         } else {
                             try {
                                 long timeout = Math.min(deadline - currentTime,
