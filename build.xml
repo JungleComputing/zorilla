@@ -30,38 +30,27 @@
         <pathelement path="tmp" />
     </path>
 
-
-    <target name="subprojects" description="build sub projects">
+    <target name="zoni" description="build zoni sub project">
         <ant dir="zoni" />
+    </target>
+
+    <target name="starter" description="build zoni sub project">
         <ant dir="starter" />
     </target>
 
-    <target name="build"
-            description="build jar file"
-            depends="clean,subprojects"
-    >
+    <target name="build" description="build jar file" depends="clean,zoni,starter,compile" />
+
+    <target name="compile" description="build jar file" depends="clean,zoni">
         <mkdir dir="tmp" />
         <mkdir dir="lib" />
 
         <!-- Compile the java code from src into tmp -->
-        <javac srcdir="src"
-               destdir="tmp"
-               debug="on"
-               source="1.6"
-               target="1.6"
-               classpathref="class_path"
-        >
+        <javac srcdir="src" destdir="tmp" debug="on" source="1.6" target="1.6" classpathref="class_path">
             <compilerarg value="-Xlint:unchecked" />
         </javac>
 
         <!-- Run Ibisc -->
-        <java classname="ibis.compile.Ibisc"
-              taskname="Ibisc"
-              failonerror="true"
-              dir="tmp"
-              maxmemory="512m"
-              fork="true"
-        >
+        <java classname="ibis.compile.Ibisc" taskname="Ibisc" failonerror="true" dir="tmp" maxmemory="512m" fork="true">
             <arg line="." />
             <classpath refid="class_path" />
         </java>
@@ -83,7 +72,7 @@
         <copy todir="lib" includeEmptyDirs="false">
             <fileset dir="external" />
         </copy>
-        
+
         <copy todir="lib" includeEmptyDirs="false">
             <fileset dir="zoni/lib" />
         </copy>
@@ -106,18 +95,12 @@
     </target>
 
 
-    <target name="lib"
-            depends="build"
-            description="create a distribution of the zorilla jars"
-    >
+    <target name="lib" depends="build" description="create a distribution of the zorilla jars">
         <zip destfile="zorilla-lib.zip">
             <zipfileset dir="lib" />
             <zipfileset dir="zoni/lib" />
             <zipfileset dir="." includes="log4j.properties" />
-            <zipfileset dir="."
-                        includes="zorilla.starter.properties"
-                        fullpath="zorilla.properties"
-            />
+            <zipfileset dir="." includes="zorilla.starter.properties" fullpath="zorilla.properties" />
         </zip>
 
     </target>
@@ -143,10 +126,7 @@
     </target>
 
 
-    <target name="dist"
-            depends="build, javadoc"
-            description="create a binary distribution of zorilla"
-    >
+    <target name="dist" depends="build, javadoc" description="create a binary distribution of zorilla">
 
         <zip destfile="zorilla-src.zip">
             <zipfileset dir="zoni/src" prefix="zorilla-src/" />
@@ -157,16 +137,8 @@
         <mkdir dir="dist" />
 
         <zip destfile="dist/zorilla${version}.zip">
-            <zipfileset dir="."
-                        prefix="zorilla${version}"
-                        includes="zorilla-src.zip, README, lib/**, zoni/lib/*, javadoc/**, zoni/javadoc/**, log4j.properties, LICENSE"
-            />
-            <zipfileset dir="."
-                        prefix="zorilla${version}"
-                        filemode="755"
-                        includes="bin/**"
-                        excludes="bin/zorilla-starter, bin/zorilla-daemon"
-            />
+            <zipfileset dir="." prefix="zorilla${version}" includes="zorilla-src.zip, README, lib/**, zoni/lib/*, javadoc/**, zoni/javadoc/**, log4j.properties, LICENSE" />
+            <zipfileset dir="." prefix="zorilla${version}" filemode="755" includes="bin/**" excludes="bin/zorilla-starter, bin/zorilla-daemon" />
         </zip>
 
     </target>
