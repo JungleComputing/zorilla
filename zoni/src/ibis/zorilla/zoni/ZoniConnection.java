@@ -89,10 +89,10 @@ public final class ZoniConnection {
                         + socketFactory.getVirtualAddressAsString());
             } else {
                 logger
-                        .warn("could not set smartsockets viz property: could not get smartsockets service link");
+                        .debug("could not set smartsockets viz property: could not get smartsockets service link");
             }
         } catch (Throwable e) {
-            logger.warn("could not register smartsockets viz property", e);
+            logger.debug("could not register smartsockets viz property", e);
         }
 
         return socketFactory;
@@ -103,7 +103,7 @@ public final class ZoniConnection {
             String id) throws Exception {
         this(address, socketFactory, id, TIMEOUT, false);
     }
-    
+
     public ZoniConnection(String address, VirtualSocketFactory socketFactory,
             String id, int timeout, boolean fillTimeout) throws Exception {
 
@@ -117,8 +117,8 @@ public final class ZoniConnection {
         VirtualSocketAddress socketAddress = new VirtualSocketAddress(machine,
                 ZoniProtocol.VIRTUAL_PORT, machine, null);
 
-        socket = socketFactory.createClientSocket(socketAddress, timeout, fillTimeout,
-                null);
+        socket = socketFactory.createClientSocket(socketAddress, timeout,
+                fillTimeout, null);
 
         // signal we are a user connection
         socket.getOutputStream().write(ZoniProtocol.TYPE_USER);
