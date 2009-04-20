@@ -466,6 +466,7 @@ public final class Worker implements Runnable {
                                 logger.error("Process for worker " + this
                                         + " doesn't seem to want to die. "
                                         + "Please kill process manually");
+                                killedCount++;
                             }
                         } else if (currentTime >= failureDate) {
                             // kill process
