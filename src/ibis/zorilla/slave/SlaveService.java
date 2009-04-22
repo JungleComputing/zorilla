@@ -127,8 +127,8 @@ public class SlaveService implements Service {
 
         sd.setJavaClassPath(".:*");
 
-        sd.enableStreamingStderr(true);
-        sd.enableStreamingStdout(true);
+//        sd.enableStreamingStderr(true);
+//        sd.enableStreamingStdout(true);
         sd.enableStreamingStdin(true);
 
         JobDescription result = new JobDescription(sd);
@@ -186,9 +186,6 @@ public class SlaveService implements Service {
                         new URI("ssh://" + host));
 
                 Job job = jobBroker.submitJob(jobDescription);
-
-                new StreamForwarder(job.getStdout(), System.out);
-                new StreamForwarder(job.getStderr(), System.err);
 
                 gatJobs.add(job);
             } catch (Exception e) {
