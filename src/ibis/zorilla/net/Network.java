@@ -11,7 +11,7 @@ import java.io.InputStream;
 import org.apache.log4j.Logger;
 
 import ibis.io.Conversion;
-import ibis.ipl.server.Client;
+import ibis.ipl.support.Client;
 import ibis.smartsockets.hub.servicelink.ServiceLink;
 import ibis.smartsockets.virtual.VirtualServerSocket;
 import ibis.smartsockets.virtual.VirtualSocket;
@@ -64,7 +64,8 @@ public class Network implements Runnable {
         this.node = node;
 
         if (factory == null) {
-            socketFactory = Client.getFactory(properties, properties.getPort());
+            Client client = Client.getOrCreateClient("zorilla", properties, properties.getPort());
+            socketFactory = client.getFactory();
         } else {
             socketFactory = factory;
             logger.info("Using provided factory");
