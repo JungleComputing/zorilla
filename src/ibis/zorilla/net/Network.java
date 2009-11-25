@@ -11,7 +11,6 @@ import java.io.InputStream;
 import org.apache.log4j.Logger;
 
 import ibis.io.Conversion;
-import ibis.ipl.support.Client;
 import ibis.smartsockets.hub.servicelink.ServiceLink;
 import ibis.smartsockets.virtual.VirtualServerSocket;
 import ibis.smartsockets.virtual.VirtualSocket;
@@ -20,224 +19,218 @@ import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 public class Network implements Runnable {
 
-    private static Logger logger = Logger.getLogger(Network.class);
+	private static Logger logger = Logger.getLogger(Network.class);
 
-    public static final int VIRTUAL_PORT = 405;
+	public static final int VIRTUAL_PORT = 405;
 
-    // service IDs
-    public static final byte DISCOVERY_SERVICE = 1;
+	// service IDs
+	public static final byte DISCOVERY_SERVICE = 1;
 
-    public static final byte UDP_DISCOVERY_SERVICE = 2;
+	public static final byte UDP_DISCOVERY_SERVICE = 2;
 
-    public static final byte GOSSIP_SERVICE = 3;
+	public static final byte GOSSIP_SERVICE = 3;
 
-    public static final byte VIVALDI_SERVICE = 4;
+	public static final byte VIVALDI_SERVICE = 4;
 
-    public static final byte CLUSTER_SERVICE = 5;
+	public static final byte CLUSTER_SERVICE = 5;
 
-    public static final byte FLOOD_SERVICE = 6;
+	public static final byte FLOOD_SERVICE = 6;
 
-    public static final byte JOB_SERVICE = 7;
+	public static final byte JOB_SERVICE = 7;
 
-    public static final byte WEB_SERVICE = 8;
+	public static final byte WEB_SERVICE = 8;
 
-    public static final byte ZONI_SERVICE = 9;
+	public static final byte ZONI_SERVICE = 9;
 
-    // node types
+	// node types
 
-    public static final byte TYPE_NODE = 1;
+	public static final byte TYPE_NODE = 1;
 
-    public static final byte TYPE_USER = 2;
+	public static final byte TYPE_USER = 2;
 
-    // sockets et al.
+	// sockets et al.
 
-    private final VirtualSocketFactory socketFactory;
+	private final VirtualSocketFactory socketFactory;
 
-    private final VirtualServerSocket serverSocket;
+	private final VirtualServerSocket serverSocket;
 
-    private final Node node;
+	private final Node node;
 
-    private final byte[] versionBytes;
+	private final byte[] versionBytes;
 
-    public Network(Node node, ZorillaProperties properties,
-            VirtualSocketFactory factory) throws IOException, Exception {
-        this.node = node;
+	public Network(Node node, ZorillaProperties properties,
+			VirtualSocketFactory factory) throws IOException, Exception {
+		this.node = node;
 
-        if (factory == null) {
-            Client client = Client.getOrCreateClient("zorilla", properties, properties.getPort());
-            socketFactory = client.getFactory();
-        } else {
-            socketFactory = factory;
-            logger.info("Using provided factory");
-        }
+		socketFactory = factory;
 
-        serverSocket = socketFactory.createServerSocket(VIRTUAL_PORT, 0, null);
+		serverSocket = socketFactory.createServerSocket(VIRTUAL_PORT, 0, null);
 
-        try {
-            ServiceLink sl = socketFactory.getServiceLink();
-            if (sl != null) {
-                // try to register...
-                if (!sl.registerProperty("smartsockets.viz",
-                        "Z^Zorilla server:,"
-                                + serverSocket.getLocalSocketAddress()
-                                        .toString())) {
-                    // ...and update if it already exists
-                    sl.updateProperty("smartsockets.viz", "Z^Zorilla node:,"
-                            + serverSocket.getLocalSocketAddress().toString());
-                }
-            } else {
-                logger
-                        .warn("could not set smartsockets viz property: could not get smartsockets service link");
-            }
-        } catch (Throwable e) {
-            logger.warn("could not register smartsockets viz property", e);
-        }
+		try {
+			ServiceLink sl = socketFactory.getServiceLink();
+			if (sl != null) {
+				// try to register...
+				if (!sl.registerProperty("smartsockets.viz",
+						"Z^Zorilla server:,"
+								+ serverSocket.getLocalSocketAddress()
+										.toString())) {
+					// ...and update if it already exists
+					sl.updateProperty("smartsockets.viz", "Z^Zorilla node:,"
+							+ serverSocket.getLocalSocketAddress().toString());
+				}
+			} else {
+				logger
+						.warn("could not set smartsockets viz property: could not get smartsockets service link");
+			}
+		} catch (Throwable e) {
+			logger.warn("could not register smartsockets viz property", e);
+		}
 
-        // Create byte array out of version string. Use the fact that
-        // It is made out of only numbers.
-        long version = Node.getVersion();
-        versionBytes = new byte[Long.SIZE];
+		// Create byte array out of version string. Use the fact that
+		// It is made out of only numbers.
+		long version = Node.getVersion();
+		versionBytes = new byte[Long.SIZE];
 
-        Conversion.defaultConversion.long2byte(version, versionBytes, 0);
-    }
-    
-    public VirtualSocketFactory getSocketFactory() {
-        return socketFactory;
-    }
+		Conversion.defaultConversion.long2byte(version, versionBytes, 0);
+	}
 
-    public void start() {
-        boolean firewalled = node.config().getBooleanProperty(
-                ZorillaProperties.FIREWALL, false);
-        if (!firewalled) {
-            // start handling connections
-            ThreadPool.createNew(this, "network connection handler");
-        }
-        logger.info("Started accepting connections on "
-                + serverSocket.getLocalSocketAddress().machine());
-    }
+	public VirtualSocketFactory getSocketFactory() {
+		return socketFactory;
+	}
 
-    public void end() {
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            // IGNORE
-        }
-        socketFactory.end();
-    }
+	public void start() {
+		boolean firewalled = node.config().getBooleanProperty(
+				ZorillaProperties.FIREWALL, false);
+		if (!firewalled) {
+			// start handling connections
+			ThreadPool.createNew(this, "network connection handler");
+		}
+		logger.info("Started accepting connections on "
+				+ serverSocket.getLocalSocketAddress().machine());
+	}
 
-    public VirtualSocket connect(NodeInfo peer, byte serviceID, int timeout)
-            throws IOException {
-        VirtualSocket result = socketFactory.createClientSocket(peer
-                .getAddress(), timeout, false, null);
+	public void end() {
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+			// IGNORE
+		}
+		socketFactory.end();
+	}
 
-        result.getOutputStream().write(TYPE_NODE);
-        result.getOutputStream().write(versionBytes);
-        result.getOutputStream().write(serviceID);
+	public VirtualSocket connect(NodeInfo peer, byte serviceID, int timeout)
+			throws IOException {
+		VirtualSocket result = socketFactory.createClientSocket(peer
+				.getAddress(), timeout, false, null);
 
-        return result;
-    }
+		result.getOutputStream().write(TYPE_NODE);
+		result.getOutputStream().write(versionBytes);
+		result.getOutputStream().write(serviceID);
 
-    public VirtualSocket connect(VirtualSocketAddress address, byte serviceID,
-            int timeout) throws IOException {
-        VirtualSocket result = socketFactory.createClientSocket(address,
-                timeout, false, null);
+		return result;
+	}
 
-        result.getOutputStream().write(TYPE_NODE);
-        result.getOutputStream().write(versionBytes);
-        result.getOutputStream().write(serviceID);
+	public VirtualSocket connect(VirtualSocketAddress address, byte serviceID,
+			int timeout) throws IOException {
+		VirtualSocket result = socketFactory.createClientSocket(address,
+				timeout, false, null);
 
-        return result;
-    }
+		result.getOutputStream().write(TYPE_NODE);
+		result.getOutputStream().write(versionBytes);
+		result.getOutputStream().write(serviceID);
 
-    public void run() {
-        VirtualSocket socket = null;
+		return result;
+	}
 
-        try {
-            socket = serverSocket.accept();
-        } catch (Exception e) {
-            if (!serverSocket.isClosed()) {
-                logger.error("caught exception while handling connection", e);
-            }
-        }
+	public void run() {
+		VirtualSocket socket = null;
 
-        // create a new thread for the next connection
-        ThreadPool.createNew(this, "network connection handler");
+		try {
+			socket = serverSocket.accept();
+		} catch (Exception e) {
+			if (!serverSocket.isClosed()) {
+				logger.error("caught exception while handling connection", e);
+			}
+		}
 
-        if (socket == null) {
-            return;
-        }
+		// create a new thread for the next connection
+		ThreadPool.createNew(this, "network connection handler");
 
-        try {
-            byte service;
+		if (socket == null) {
+			return;
+		}
 
-            InputStream in = socket.getInputStream();
+		try {
+			byte service;
 
-            byte type = (byte) in.read();
+			InputStream in = socket.getInputStream();
 
-            if (type == TYPE_NODE) {
+			byte type = (byte) in.read();
 
-                for (int i = 0; i < versionBytes.length; i++) {
-                    if (versionBytes[i] != (byte) in.read()) {
-                        throw new IOException(
-                                "remote version of node not equal to version");
-                    }
-                }
+			if (type == TYPE_NODE) {
 
-                service = (byte) in.read();
+				for (int i = 0; i < versionBytes.length; i++) {
+					if (versionBytes[i] != (byte) in.read()) {
+						throw new IOException(
+								"remote version of node not equal to version");
+					}
+				}
 
-            } else if (type == TYPE_USER) {
-                service = ZONI_SERVICE;
-            } else {
-                throw new IOException("unknown connection type: " + type);
-            }
+				service = (byte) in.read();
 
-            logger.debug("new connection received for service number: "
-                    + service + " from node type " + type);
+			} else if (type == TYPE_USER) {
+				service = ZONI_SERVICE;
+			} else {
+				throw new IOException("unknown connection type: " + type);
+			}
 
-            switch (service) {
-            case DISCOVERY_SERVICE:
-                node.discoveryService().handleConnection(socket);
-                break;
-            case UDP_DISCOVERY_SERVICE:
-                node.udpDiscoveryService().handleConnection(socket);
-                break;
-            case GOSSIP_SERVICE:
-                node.gossipService().handleConnection(socket);
-                break;
-            case VIVALDI_SERVICE:
-                node.vivaldiService().handleConnection(socket);
-                break;
-            case CLUSTER_SERVICE:
-                node.clusterService().handleConnection(socket);
-                break;
-            case FLOOD_SERVICE:
-                node.floodService().handleConnection(socket);
-                break;
-            case JOB_SERVICE:
-                node.jobService().handleConnection(socket);
-                break;
-            case WEB_SERVICE:
-                node.webService().handleConnection(socket);
-                break;
-            case ZONI_SERVICE:
-                node.zoniService().handleConnection(socket);
-                break;
-            case -1:
-                // the connection was closed
-                break;
-            default:
-                logger.error("unknown service number in"
-                        + " received message: " + service);
-            }
-        } catch (Throwable e) {
-            if (!serverSocket.isClosed()) {
-                logger.error("caught exception while handling connection", e);
-            }
-        }
-    }
+			logger.debug("new connection received for service number: "
+					+ service + " from node type " + type);
 
-    public VirtualSocketAddress getAddress() {
-        return serverSocket.getLocalSocketAddress();
-    }
+			switch (service) {
+			case DISCOVERY_SERVICE:
+				node.discoveryService().handleConnection(socket);
+				break;
+			case UDP_DISCOVERY_SERVICE:
+				node.udpDiscoveryService().handleConnection(socket);
+				break;
+			case GOSSIP_SERVICE:
+				node.gossipService().handleConnection(socket);
+				break;
+			case VIVALDI_SERVICE:
+				node.vivaldiService().handleConnection(socket);
+				break;
+			case CLUSTER_SERVICE:
+				node.clusterService().handleConnection(socket);
+				break;
+			case FLOOD_SERVICE:
+				node.floodService().handleConnection(socket);
+				break;
+			case JOB_SERVICE:
+				node.jobService().handleConnection(socket);
+				break;
+			case WEB_SERVICE:
+				node.webService().handleConnection(socket);
+				break;
+			case ZONI_SERVICE:
+				node.zoniService().handleConnection(socket);
+				break;
+			case -1:
+				// the connection was closed
+				break;
+			default:
+				logger.error("unknown service number in"
+						+ " received message: " + service);
+			}
+		} catch (Throwable e) {
+			if (!serverSocket.isClosed()) {
+				logger.error("caught exception while handling connection", e);
+			}
+		}
+	}
+
+	public VirtualSocketAddress getAddress() {
+		return serverSocket.getLocalSocketAddress();
+	}
 
 }

@@ -63,7 +63,6 @@
         <jar destfile="lib/${ant.project.name}${version}.jar" basedir="tmp">
             <manifest>
                 <attribute name="Implementation-Version" value="${timestamp}" />
-                <attribute name="Ibis-Service" value="ibis.zorilla.Node" />
             </manifest>
         </jar>
 

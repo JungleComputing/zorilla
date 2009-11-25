@@ -180,7 +180,7 @@ public class ZorillaProperties extends TypedProperties {
                     "Default metric used to send out flood messages" },
 
             { MAX_CLUSTER_SIZE, "25", "Maximum size of a cluster" },
-
+            
             {
                     WORKER,
                     "false",

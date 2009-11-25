@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
 import org.apache.log4j.Logger;
-import org.mortbay.util.ajax.WaitingContinuation;
 
 public final class Main {
 
