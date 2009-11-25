@@ -62,15 +62,9 @@ public final class JobService implements Service, Runnable {
         createWorkerSecurityFile(new File(node.config().getConfigDir(),
                 "worker.security.policy"));
 
-        int availableCores;
-        if (node.config().isMaster()) {
-            availableCores = 0;
-        } else {
-            availableCores = Runtime.getRuntime().availableProcessors();
-        }
-
-        availableCores = node.config().getIntProperty(
-                ZorillaProperties.AVAILABLE_CORES, availableCores);
+        int availableCores = node.config().getIntProperty(
+                ZorillaProperties.RESOURCE_CORES,
+                Runtime.getRuntime().availableProcessors());
         logger.info("Available cores on this node: " + availableCores);
 
         int freeMemory = freeMemory();

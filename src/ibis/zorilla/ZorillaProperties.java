@@ -60,8 +60,6 @@ public class ZorillaProperties extends TypedProperties {
 
     public static final String MAX_RUNTIME = PREFIX + "max.runtime";
 
-    public static final String AVAILABLE_CORES = PREFIX + "available.cores";
-
     public static final String FIREWALL = PREFIX + "firewall";
 
     public static final String DISCONNECT_TIME = PREFIX + "disconnect.time";
@@ -91,11 +89,20 @@ public class ZorillaProperties extends TypedProperties {
 
     public static final String MAX_CLUSTER_SIZE = PREFIX + "max.cluster.size";
 
-    public static final String WORKER = PREFIX + "worker";
-    public static final String MASTER = PREFIX + "master";
-    public static final String MASTER_ADDRESS = PREFIX + "master.address";
-
     public static final String SLAVES = PREFIX + "slaves";
+
+    public static final String START_HUB = PREFIX + "start.hub";
+    public static final String HUB_ADDRESSES = PREFIX + "hub.addresses";
+
+    public static final String RESOURCE_ADAPTOR = PREFIX + "resource.adaptor";
+
+    public static final String RESOURCE_URI = PREFIX + "resource.uri";
+
+    public static final String RESOURCE_CORES = PREFIX + "resource.cores";
+
+    public static final String RESOURCE_NODES = PREFIX + "resource.nodes";
+
+    public static final String RESOURCE_MEMORY = PREFIX + "resource.memory";
 
     private static final Logger logger = Logger
             .getLogger(ZorillaProperties.class);
@@ -136,11 +143,6 @@ public class ZorillaProperties extends TypedProperties {
 
             { MAX_RUNTIME, null, "Maximum runtime (in seconds) of this node" },
 
-            {
-                    AVAILABLE_CORES,
-                    null,
-                    "Maximum number of workers on this node (defaults to number of processors available)" },
-
             { FIREWALL, "false",
                     "if set to \"true\" this node will not accept incoming connections" },
 
@@ -180,17 +182,49 @@ public class ZorillaProperties extends TypedProperties {
                     "Default metric used to send out flood messages" },
 
             { MAX_CLUSTER_SIZE, "25", "Maximum size of a cluster" },
-            
+
             {
-                    WORKER,
-                    "false",
-                    "Boolean: if true, this node will act as a worker (not accept any job submissions)" },
+                    RESOURCE_ADAPTOR,
+                    null,
+                    "JavaGAT adaptor used to access Zorilla node resources. Defaults to local adaptor" },
+
+            { RESOURCE_URI, null,
+                    "URI to resources of this Zorilla nodes. Defaults to using localhost." },
+
             {
-                    MASTER,
-                    "false",
-                    "Boolean: if true, this node will act as a master (not start any workers, start smartsockets hub for communication)" },
-            { SLAVES, null,
+                    RESOURCE_CORES,
+                    null,
+                    "Integer: Total number of cores available on resources (for localhost, defaults to number of processor cores in machine)" },
+
+            { RESOURCE_NODES, null,
+                    "Number of machines available. Defaults to 1 (localhost)" },
+
+            {
+                    RESOURCE_MEMORY,
+                    null,
+                    "Amount of memory available on each resource. Automatically determined on localhost" },
+
+            // {
+            // WORKER,
+            // "false",
+            // "Boolean: if true, this node will act as a worker (not accept any job submissions)"
+            // },
+            // {
+            // MASTER,
+            // "false",
+            // "Boolean: if true, this node will act as a master (not start any workers, start smartsockets hub for communication)"
+            // },
+            {
+                    SLAVES,
+                    null,
                     "Comma seperated list of hostnames of slave machines. Ranges are also supported (e.g. node0[10-20])" },
+
+            {
+                    START_HUB,
+                    "true",
+                    "Boolean: if true (default), this Zorilla node will include a SmartSockets Hub." },
+
+            { HUB_ADDRESSES, null, "List of additional SmartSockets hubs" },
 
     // { MASTER_ADDRESS, null, "Address of the master node" },
     };
@@ -412,17 +446,16 @@ public class ZorillaProperties extends TypedProperties {
     }
 
     // shortcut methods to get config properties
-
-    public boolean isWorker() {
-        return getBooleanProperty(WORKER);
-    }
-
-    public boolean isMaster() {
-        return getBooleanProperty(MASTER);
-    }
+    //
+    // public boolean isWorker() {
+    // return getBooleanProperty(WORKER);
+    // }
+    //
+    // public boolean isMaster() {
+    // return getBooleanProperty(MASTER);
+    // }
 
     public int getPort() {
         return getIntProperty(PORT);
     }
-
 }

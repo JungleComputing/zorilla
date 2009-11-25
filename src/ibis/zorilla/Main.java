@@ -74,15 +74,22 @@ public final class Main {
         out.println("--random-ports");
         out.println("\t shortcut to set all the port options to 0");
 
-        out.println("--master");
-        out
-                .println("\t make this node a master node (does not have any workers)");
+        // out.println("--master");
+        // out
+        // .println("\t make this node a master node (does not have any workers)");
+        //
+        // out.println("--worker");
+        // out
+        // .println("\t make this node a worker node (does not accept job submissions)");
 
-        out.println("--worker");
-        out
-                .println("\t make this node a worker node (does not accept job submissions)");
-
+        out.println("--start-hub");
+        out.println("\t start a SmartSocket hub (default)");
+        out.println("--no-hub");
+        out.println("\t dont' start a SmartSocket hub");
+        out.println("--hub-addresses ");
+        out.println("\t HUB[,HUB]\tAdditional hubs to connect to.");
         out.println();
+
         out.println("PROPERTY=VALUE");
         out.println("\tSet a property, as if it was set in a configuration");
         out.println("\t\t\tfile or as a System property.");
@@ -153,17 +160,25 @@ public final class Main {
                         "false");
             } else if (args[i].equalsIgnoreCase("--max-workers")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.AVAILABLE_CORES,
+                commandLineProperties.put(ZorillaProperties.RESOURCE_CORES,
                         args[i]);
             } else if (args[i].equalsIgnoreCase("--random-ports")) {
                 commandLineProperties.put(ZorillaProperties.PORT, "0");
                 // commandLineProperties.put(Config.ZONI_PORT, "0");
                 commandLineProperties.put(ZorillaProperties.WWW_PORT, "0");
                 // commandLineProperties.put(Config.DISCOVERY_PORT, "0");
-            } else if (args[i].equalsIgnoreCase("--worker")) {
-                commandLineProperties.put(ZorillaProperties.WORKER, "true");
-            } else if (args[i].equalsIgnoreCase("--master")) {
-                commandLineProperties.put(ZorillaProperties.MASTER, "true");
+                // } else if (args[i].equalsIgnoreCase("--worker")) {
+                // commandLineProperties.put(ZorillaProperties.WORKER, "true");
+                // } else if (args[i].equalsIgnoreCase("--master")) {
+                // commandLineProperties.put(ZorillaProperties.MASTER, "true");
+            } else if (args[i].equalsIgnoreCase("--start-hub")) {
+                commandLineProperties.put(ZorillaProperties.START_HUB, "true");
+            } else if (args[i].equalsIgnoreCase("--no-hub")) {
+                commandLineProperties.put(ZorillaProperties.START_HUB, "false");
+            } else if (args[i].equalsIgnoreCase("--hub-addresses")) {
+                i++;
+                commandLineProperties.put(ZorillaProperties.HUB_ADDRESSES,
+                        args[i]);
             } else if (args[i].equalsIgnoreCase("--config-properties")) {
                 Map<String, String> properties = ZorillaProperties
                         .getDescriptions();
@@ -215,7 +230,8 @@ public final class Main {
         if (slave) {
             ThreadPool.createNew(node, "Zorilla slave node");
             waitUntilFinished();
-            System.err.println("Zorilla SLAVE: Standard in closed, stopping Zorilla node");
+            System.err
+                    .println("Zorilla SLAVE: Standard in closed, stopping Zorilla node");
             node.end(0);
         } else {
             node.run();

@@ -60,18 +60,6 @@ public class DiscoveryService implements Service, Runnable {
             }
         }
 
-        // also add master (if available)
-        String masterAddress = node.config().getProperty(
-                ZorillaProperties.MASTER_ADDRESS);
-        if (node.config().isWorker() && masterAddress != null) {
-            try {
-                addresses.add(new VirtualSocketAddress(masterAddress));
-            } catch (Exception e) {
-                logger.warn("invalid master address: " + masterAddress, e);
-            }
-
-        }
-
         this.addresses = addresses.toArray(new VirtualSocketAddress[0]);
     }
 
