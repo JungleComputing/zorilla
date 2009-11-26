@@ -2,7 +2,7 @@ package ibis.zorilla.net;
 
 import ibis.zorilla.Node;
 import ibis.zorilla.Service;
-import ibis.zorilla.job.Job;
+import ibis.zorilla.job.ZorillaJob;
 import ibis.zorilla.zoni.ZoniFileInfo;
 import ibis.zorilla.zoni.ZoniProtocol;
 import ibis.zorilla.zoni.ZorillaJobDescription;
@@ -53,7 +53,7 @@ public class ZoniService implements Service {
             callback = new ZoniCallback(in.readUTF(), node);
         }
 
-        Job job = node.jobService().submitJob(jobDescription, callback);
+        ZorillaJob job = node.jobService().submitJob(jobDescription, callback);
         if (callback != null) {
             callback.setJob(job);
         }
@@ -73,7 +73,7 @@ public class ZoniService implements Service {
         logger.debug("receive info request for " + jobIDString);
 
         UUID jobID = UUID.fromString(jobIDString);
-        Job job = node.jobService().getJob(jobID);
+        ZorillaJob job = node.jobService().getJob(jobID);
 
         out.writeInt(ZoniProtocol.STATUS_OK);
         out.writeUTF("OK");
@@ -100,7 +100,7 @@ public class ZoniService implements Service {
         logger.debug("receive attribute update request for " + jobIDString);
 
         UUID jobID = UUID.fromString(jobIDString);
-        Job job = node.jobService().getJob(jobID);
+        ZorillaJob job = node.jobService().getJob(jobID);
 
         job.updateAttributes(updatedAtrributes);
 
@@ -118,7 +118,7 @@ public class ZoniService implements Service {
         logger.debug("receive cancel job request for " + jobIDString);
 
         UUID jobID = UUID.fromString(jobIDString);
-        Job job = node.jobService().getJob(jobID);
+        ZorillaJob job = node.jobService().getJob(jobID);
 
         job.cancel();
 
@@ -130,7 +130,7 @@ public class ZoniService implements Service {
 
     private void getJobList(ObjectInputStream in, ObjectOutputStream out)
             throws IOException, Exception {
-        Job[] jobs = node.jobService().getJobs();
+        ZorillaJob[] jobs = node.jobService().getJobs();
 
         out.writeInt(ZoniProtocol.STATUS_OK);
         out.writeUTF("OK");
@@ -176,7 +176,7 @@ public class ZoniService implements Service {
             throws Exception {
         String jobIDString = in.readUTF();
         UUID jobID = UUID.fromString(jobIDString);
-        Job job = node.jobService().getJob(jobID);
+        ZorillaJob job = node.jobService().getJob(jobID);
         String sandboxPath = in.readUTF();
 
         ZoniFileInfo info = job.getFileInfo(sandboxPath);
@@ -193,7 +193,7 @@ public class ZoniService implements Service {
             throws Exception {
         String jobIDString = in.readUTF();
         UUID jobID = UUID.fromString(jobIDString);
-        Job job = node.jobService().getJob(jobID);
+        ZorillaJob job = node.jobService().getJob(jobID);
 
         out.writeInt(ZoniProtocol.STATUS_OK);
         out.writeUTF("OK");
@@ -207,7 +207,7 @@ public class ZoniService implements Service {
             throws Exception {
         String jobIDString = in.readUTF();
         UUID jobID = UUID.fromString(jobIDString);
-        Job job = node.jobService().getJob(jobID);
+        ZorillaJob job = node.jobService().getJob(jobID);
 
         out.writeInt(ZoniProtocol.STATUS_OK);
         out.writeUTF("OK");
@@ -221,7 +221,7 @@ public class ZoniService implements Service {
             throws Exception {
         String jobIDString = in.readUTF();
         UUID jobID = UUID.fromString(jobIDString);
-        Job job = node.jobService().getJob(jobID);
+        ZorillaJob job = node.jobService().getJob(jobID);
 
         out.writeInt(ZoniProtocol.STATUS_OK);
         out.writeUTF("OK");
@@ -237,7 +237,7 @@ public class ZoniService implements Service {
         String sandboxPath = in.readUTF();
 
         UUID jobID = UUID.fromString(jobIDString);
-        Job job = node.jobService().getJob(jobID);
+        ZorillaJob job = node.jobService().getJob(jobID);
 
         out.writeInt(ZoniProtocol.STATUS_OK);
 

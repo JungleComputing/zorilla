@@ -37,7 +37,7 @@ import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
-public final class Primary extends Job implements Runnable, Receiver {
+public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
     public static final long MIN_ADVERT_TIMEOUT = 5 * 1000;
 
@@ -120,6 +120,8 @@ public final class Primary extends Job implements Runnable, Receiver {
     private final Node node;
 
     private final Map<UUID, Worker> localWorkers;
+    
+    boolean moreLocalWorkersPossible = true;
 
     private final Callback callback;
 
@@ -639,6 +641,8 @@ public final class Primary extends Job implements Runnable, Receiver {
 
             if (worker.finished()) {
                 iterator.remove();
+                //stop adding local workers if one has finished
+                moreLocalWorkersPossible = false;
                 Constituent constituent = constituents.get(id);
 
                 if (constituent == null) {
@@ -791,10 +795,10 @@ public final class Primary extends Job implements Runnable, Receiver {
         dirty = true;
         notifyAll();
 
-        if (phase >= Job.RUNNING && starttime == 0) {
+        if (phase >= ZorillaJob.RUNNING && starttime == 0) {
             starttime = System.currentTimeMillis();
         }
-        if (phase >= Job.COMPLETED && stoptime == 0) {
+        if (phase >= ZorillaJob.COMPLETED && stoptime == 0) {
             stoptime = System.currentTimeMillis();
         }
     }
@@ -806,8 +810,13 @@ public final class Primary extends Job implements Runnable, Receiver {
             logger.debug("not creating worker, native jobs not allowed");
             return;
         }
-
+        
         while (true) {
+            //stop adding local workers if one has finished
+            if (!moreLocalWorkersPossible) {
+                return;
+            }
+
             if (!getBooleanAttribute("malleable")) {
                 // workers started by scheduler
                 return;
@@ -1286,6 +1295,7 @@ public final class Primary extends Job implements Runnable, Receiver {
 
     public void run() {
         boolean done = false;
+        
 
         setPhase(PRE_STAGE);
         // no work needed for pre-stage

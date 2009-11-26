@@ -37,7 +37,7 @@ public class InputFile implements Receiver {
 
     private final EndPoint endPoint;
 
-    private final Job job;
+    private final ZorillaJob job;
 
     private final long size;
 

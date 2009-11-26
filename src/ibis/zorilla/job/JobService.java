@@ -31,7 +31,7 @@ public final class JobService implements Service, Runnable {
 
     private final Node node;
 
-    private final Map<UUID, Job> jobs;
+    private final Map<UUID, ZorillaJob> jobs;
 
     private boolean killed = false;
 
@@ -57,7 +57,7 @@ public final class JobService implements Service, Runnable {
 
     public JobService(Node node) throws Exception {
         this.node = node;
-        jobs = new HashMap<UUID, Job>();
+        jobs = new HashMap<UUID, ZorillaJob>();
 
         createWorkerSecurityFile(new File(node.config().getConfigDir(),
                 "worker.security.policy"));
@@ -135,8 +135,8 @@ public final class JobService implements Service, Runnable {
      * @throws Exception
      *             if there is no ZorillaJobDescription for the given ID
      */
-    public synchronized Job getJob(UUID jobID) throws Exception {
-        Job result = jobs.get(jobID);
+    public synchronized ZorillaJob getJob(UUID jobID) throws Exception {
+        ZorillaJob result = jobs.get(jobID);
 
         if (result == null) {
             throw new Exception("requested job: " + jobID + " does not exist");
@@ -145,11 +145,11 @@ public final class JobService implements Service, Runnable {
         return result;
     }
 
-    public synchronized Job[] getJobs() {
-        return jobs.values().toArray(new Job[0]);
+    public synchronized ZorillaJob[] getJobs() {
+        return jobs.values().toArray(new ZorillaJob[0]);
     }
 
-    public Job submitJob(ZorillaJobDescription description, Callback callback)
+    public ZorillaJob submitJob(ZorillaJobDescription description, Callback callback)
             throws Exception {
 
         synchronized (this) {
@@ -162,7 +162,7 @@ public final class JobService implements Service, Runnable {
             logger.debug("New job submitted: " + description.toString());
         }
 
-        Job job = new Primary(description, callback, node);
+        ZorillaJob job = new Primary(description, callback, node);
 
         synchronized (this) {
             jobs.put(job.getID(), job);
@@ -173,7 +173,7 @@ public final class JobService implements Service, Runnable {
 
     public void handleJobAdvert(Advert advert) {
         try {
-            Job job;
+            ZorillaJob job;
             UUID jobID = (UUID) advert.getJobID();
             synchronized (this) {
                 job = jobs.get(jobID);
@@ -182,7 +182,7 @@ public final class JobService implements Service, Runnable {
                     logger.debug("recevied job advert for "
                             + jobID.toString().substring(0, 7));
 
-                    job = Job.createConstituent(advert, node);
+                    job = ZorillaJob.createConstituent(advert, node);
                     jobs.put(jobID, job);
                 }
             }
@@ -264,9 +264,9 @@ public final class JobService implements Service, Runnable {
             }
 
             // purge dead jobs
-            Iterator<Job> iterator = jobs.values().iterator();
+            Iterator<ZorillaJob> iterator = jobs.values().iterator();
             while (iterator.hasNext()) {
-                Job job = iterator.next();
+                ZorillaJob job = iterator.next();
 
                 if (job.zombie()) {
                     iterator.remove();
@@ -276,9 +276,9 @@ public final class JobService implements Service, Runnable {
     }
 
     public void killAllJobs() {
-        Job[] jobs = getJobs();
+        ZorillaJob[] jobs = getJobs();
 
-        for (Job job : jobs) {
+        for (ZorillaJob job : jobs) {
             try {
                 job.cancel();
             } catch (Exception e) {

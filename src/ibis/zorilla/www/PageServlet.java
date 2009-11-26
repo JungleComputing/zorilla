@@ -4,7 +4,7 @@ import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.cluster.Coordinates;
 import ibis.zorilla.cluster.Neighbour;
-import ibis.zorilla.job.Job;
+import ibis.zorilla.job.ZorillaJob;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -247,7 +247,7 @@ public final class PageServlet extends HttpServlet {
     private void writeJobsOverviewPage(PrintWriter out) {
         out.println("<h2>Jobs</h2>");
 
-        Job[] jobs = node.jobService().getJobs();
+        ZorillaJob[] jobs = node.jobService().getJobs();
 
         if (jobs.length == 0) {
             out.println("<p>No jobs at this node</p>");
@@ -261,7 +261,7 @@ public final class PageServlet extends HttpServlet {
                 + "<th>Workers</th>" + "<th>Local Workers</th>"
                 + "<th>Java</th>" + "<th>Executable</th>");
 
-        for (Job job : jobs) {
+        for (ZorillaJob job : jobs) {
             Map<String, String> stats = job.getStats();
             out.println("<tr>");
             out.println("<td><a href=jobs/" + stats.get("ID") + ">"
@@ -282,7 +282,7 @@ public final class PageServlet extends HttpServlet {
             throws Exception {
         out.println("<h2>Job " + jobID + "</h2>");
 
-        Job job;
+        ZorillaJob job;
         try {
             UUID uuid = UUID.fromString(jobID);
             job = node.jobService().getJob(uuid);

@@ -28,7 +28,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-public final class Copy extends Job implements Receiver, Runnable {
+public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
     public static final long JOB_STATE_REFRESH_TIMEOUT = 60 * 1000;
 

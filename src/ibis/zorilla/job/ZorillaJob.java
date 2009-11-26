@@ -23,7 +23,7 @@ import java.util.UUID;
  * job and all the needed files, or from a serialized from of another
  * ZorillaJobDescription object
  */
-public abstract class Job {
+public abstract class ZorillaJob {
 
     // Status of jobs
 
@@ -55,7 +55,7 @@ public abstract class Job {
      * @throws Exception
      * @throws IOException
      */
-    public static Job createConstituent(Advert advert, Node node)
+    public static ZorillaJob createConstituent(Advert advert, Node node)
             throws Exception, IOException {
         String type = advert.getJobImplementationType();
 

@@ -5,7 +5,7 @@ import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Node;
 import ibis.zorilla.job.Callback;
-import ibis.zorilla.job.Job;
+import ibis.zorilla.job.ZorillaJob;
 import ibis.zorilla.zoni.ZoniProtocol;
 
 import java.io.BufferedInputStream;
@@ -28,17 +28,17 @@ public class ZoniCallback implements Runnable, Callback {
 
     private int lastPhase;
 
-    private Job job;
+    private ZorillaJob job;
 
     public ZoniCallback(String address, Node node) throws Exception {
         this.address = new VirtualSocketAddress(address);
         this.node = node;
 
         job = null;
-        lastPhase = Job.INITIAL;
+        lastPhase = ZorillaJob.INITIAL;
     }
 
-    public synchronized void setJob(Job job) {
+    public synchronized void setJob(ZorillaJob job) {
         this.job = job;
     }
 

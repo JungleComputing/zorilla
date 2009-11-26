@@ -10,10 +10,22 @@ import ibis.zorilla.util.StreamWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+import org.gridlab.gat.GAT;
+import org.gridlab.gat.GATContext;
+import org.gridlab.gat.GATInvocationException;
+import org.gridlab.gat.URI;
+import org.gridlab.gat.resources.JavaSoftwareDescription;
+import org.gridlab.gat.resources.Job;
+import org.gridlab.gat.resources.JobDescription;
+import org.gridlab.gat.resources.ResourceBroker;
+import org.gridlab.gat.resources.Job.JobState;
+import org.gridlab.gat.security.CertificateSecurityContext;
+import org.gridlab.gat.security.SecurityContext;
 
 /**
  * @author Niels Drost
@@ -51,7 +63,7 @@ public final class Worker implements Runnable {
 
     private final Node node;
 
-    private final Job job;
+    private final ZorillaJob zorillaJob;
 
     private Status status;
 
@@ -61,8 +73,8 @@ public final class Worker implements Runnable {
      * creates a new child for a given ZorillaJobDescription.
      * 
      */
-    public Worker(Job job, UUID id, Node node, long deadline) {
-        this.job = job;
+    public Worker(ZorillaJob job, UUID id, Node node, long deadline) {
+        this.zorillaJob = job;
         this.id = id;
         this.node = node;
 
@@ -93,7 +105,7 @@ public final class Worker implements Runnable {
     private ProcessBuilder nativeCommand(File workingDir) throws Exception {
         ProcessBuilder result = new ProcessBuilder();
 
-        String location = job.getDescription().getExecutable();
+        String location = zorillaJob.getDescription().getExecutable();
 
         File executableFile = new File(location);
 
@@ -128,76 +140,187 @@ public final class Worker implements Runnable {
         result.command().add(location);
 
         // add arguments
-        String[] arguments = job.getDescription().getArguments();
+        String[] arguments = zorillaJob.getDescription().getArguments();
         for (int i = 0; i < arguments.length; i++) {
             result.command().add(arguments[i]);
         }
 
-        result.environment().putAll(job.getDescription().getEnvironment());
+        result.environment().putAll(
+                zorillaJob.getDescription().getEnvironment());
 
         result.directory(workingDir);
 
         return result;
     }
 
-    private ProcessBuilder javaCommand(File workingDir) throws Exception {
-        ProcessBuilder result = new ProcessBuilder();
+    /*
+     * private ProcessBuilder javaCommand(File workingDir) throws Exception {
+     * ProcessBuilder result = new ProcessBuilder();
+     * 
+     * String javaHome = System.getProperty("java.home"); // String
+     * pathSeparator = System.getProperty("path.separator");
+     * 
+     * File securityFile = new File(node.config().getConfigDir(),
+     * "worker.security.policy");
+     * 
+     * // java executable result.command().add( javaHome + File.separator +
+     * "bin" + File.separator + "java");
+     * 
+     * // security stuff // result.add("-Djava.security.debug=access");
+     * result.command().add("-Djava.security.manager"); result.command().add(
+     * "-Djava.security.policy==file:" + securityFile.getAbsolutePath());
+     * 
+     * result .command() .add( "-Xmx" + job
+     * .getStringAttribute(JobAttributes.MEMORY_MAX) + "m");
+     * 
+     * // node port result.command().add("-Dzorilla.node.port=" + nodePort);
+     * 
+     * result.command().add("-Dzorilla.cluster=" + job.cluster());
+     * 
+     * // Ibis support if (job.getBooleanAttribute("ibis")) {
+     * 
+     * result.command() .add( "-Dibis.pool.size=" +
+     * job.getAttributes().getProcessCount());
+     * 
+     * // result.command().add("-Dibis.pool.cluster=" + job.cluster()); }
+     * 
+     * String appClassPath = job.getDescription().getJavaClassPath(); if
+     * (appClassPath == null) { // add root of job to classpath appClassPath =
+     * "." + File.pathSeparator; // appClassPath = "";
+     * 
+     * InputFile[] inputs = job.getPreStageFiles();
+     * 
+     * for (int i = 0; i < inputs.length; i++) { // path of jar is workingDir +
+     * path of jar file in virtual fs if
+     * (inputs[i].sandboxPath().endsWith(".jar")) {
+     * 
+     * appClassPath = appClassPath + workingDir.getAbsolutePath() +
+     * File.separator + inputs[i].sandboxPath() + File.pathSeparator; } } } else
+     * { // replace all ; with : or the other way around :) appClassPath =
+     * appClassPath.replace(":", File.pathSeparator); appClassPath =
+     * appClassPath.replace(";", File.pathSeparator); }
+     * 
+     * // class path result.command().add("-classpath");
+     * result.command().add(appClassPath);
+     * 
+     * // user specified environment options for (Map.Entry<String, String>
+     * entry : job.getDescription() .getJavaSystemProperties().entrySet()) { if
+     * (entry.getKey().startsWith("java")) { throw new Exception(
+     * "cannot add system properties starting with \"java\""); }
+     * 
+     * result.command() .add("-D" + entry.getKey() + "=" + entry.getValue()); }
+     * 
+     * // add main class
+     * result.command().add(job.getDescription().getJavaMain());
+     * 
+     * // arguments String[] arguments =
+     * job.getDescription().getJavaArguments(); for (int i = 0; i <
+     * arguments.length; i++) { result.command().add(arguments[i]); }
+     * 
+     * result.directory(workingDir);
+     * 
+     * return result;
+     * 
+     * }
+     */
 
-        String javaHome = System.getProperty("java.home");
-        // String pathSeparator = System.getProperty("path.separator");
+    private static String[] parseSlaveHostnames(String[] strings) {
+        if (strings == null || strings.length == 0) {
+            return new String[0];
+        }
+
+        ArrayList<String> result = new ArrayList<String>();
+
+        for (String string : strings) {
+            if (string.contains("[")) {
+                String prefix = string.substring(0, string.indexOf('['));
+                String range = string.substring(string.indexOf('[') + 1, string
+                        .indexOf(']'));
+                String postfix = string.substring(string.indexOf(']') + 1,
+                        string.length());
+
+                String[] ranges = range.split("-");
+                int start = Integer.parseInt(ranges[0]);
+                int end = Integer.parseInt(ranges[1]);
+                int width = ranges[0].length();
+
+                for (int i = start; i <= end; i++) {
+                    result.add(String.format("%s%0" + width + "d%s", prefix, i,
+                            postfix));
+                }
+
+            } else {
+                result.add(string);
+            }
+        }
+
+        return result.toArray(new String[0]);
+    }
+
+    private static GATContext createGATContext() throws Exception {
+        GATContext context = new GATContext();
+        SecurityContext securityContext = new CertificateSecurityContext(null,
+                null, System.getProperty("user.name"), null);
+        context.addSecurityContext(securityContext);
+
+        context.addPreference("file.create", "true");
+
+        //context.addPreference("resourcebroker.adaptor.name", "sshtrilead");
+
+        //context.addPreference("file.adaptor.name", "local,sshtrilead");
+
+        return context;
+
+    }
+
+    private JobDescription createJavaJobDescription(GATContext context,
+            File workingDir) throws Exception {
+        JavaSoftwareDescription sd = new JavaSoftwareDescription();
+
+        // FIXME: assumes java is on same location as localhost
+        sd.setExecutable(System.getProperty("java.home")
+                + java.io.File.separator + "bin" + java.io.File.separator
+                + "java");
+
+        // security stuff
+        // result.add("-Djava.security.debug=access");
+        sd.addJavaSystemProperty("java.security.manager", "default");
 
         File securityFile = new File(node.config().getConfigDir(),
                 "worker.security.policy");
 
-        // java executable
-        result.command().add(
-                javaHome + File.separator + "bin" + File.separator + "java");
+        // double "=" in result overrides all other security files
+        sd.addJavaSystemProperty("java.security.policy", "=file:"
+                + securityFile.getAbsolutePath());
 
-        // security stuff
-        // result.add("-Djava.security.debug=access");
-        result.command().add("-Djava.security.manager");
-        result.command().add(
-                "-Djava.security.policy==file:"
-                        + securityFile.getAbsolutePath());
-
-        result
-                .command()
-                .add(
-                        "-Xmx"
-                                + job
-                                        .getStringAttribute(JobAttributes.MEMORY_MAX)
-                                + "m");
+        sd.setJavaOptions("-Xmx" + 
+                zorillaJob.getStringAttribute(JobAttributes.MEMORY_MAX)
+                        + "m");
 
         // node port
-        result.command().add("-Dzorilla.node.port=" + nodePort);
+        sd.addJavaSystemProperty("zorilla.node.port", "" + nodePort);
 
-        result.command().add("-Dzorilla.cluster=" + job.cluster());
+        sd.addJavaSystemProperty("zorilla.cluster", zorillaJob.cluster());
 
-        // Ibis support
-        if (job.getBooleanAttribute("ibis")) {
+        sd.addJavaSystemProperty("ibis.pool.size=", ""
+                + zorillaJob.getAttributes().getProcessCount());
 
-            result.command()
-                    .add(
-                            "-Dibis.pool.size="
-                                    + job.getAttributes().getProcessCount());
+        // class path
 
-            // result.command().add("-Dibis.pool.cluster=" + job.cluster());
-        }
+        String appClassPath = zorillaJob.getDescription().getJavaClassPath();
 
-        String appClassPath = job.getDescription().getJavaClassPath();
         if (appClassPath == null) {
             // add root of job to classpath
             appClassPath = "." + File.pathSeparator;
             // appClassPath = "";
 
-            InputFile[] inputs = job.getPreStageFiles();
+            InputFile[] inputs = zorillaJob.getPreStageFiles();
 
             for (int i = 0; i < inputs.length; i++) {
                 // path of jar is workingDir + path of jar file in virtual fs
                 if (inputs[i].sandboxPath().endsWith(".jar")) {
 
-                    appClassPath = appClassPath + workingDir.getAbsolutePath()
-                            + File.separator + inputs[i].sandboxPath()
+                    appClassPath = appClassPath + inputs[i].sandboxPath()
                             + File.pathSeparator;
                 }
             }
@@ -207,35 +330,43 @@ public final class Worker implements Runnable {
             appClassPath = appClassPath.replace(";", File.pathSeparator);
         }
 
-        // class path
-        result.command().add("-classpath");
-        result.command().add(appClassPath);
+        sd.setJavaClassPath(appClassPath);
 
         // user specified environment options
-        for (Map.Entry<String, String> entry : job.getDescription()
+        for (Map.Entry<String, String> entry : zorillaJob.getDescription()
                 .getJavaSystemProperties().entrySet()) {
             if (entry.getKey().startsWith("java")) {
                 throw new Exception(
                         "cannot add system properties starting with \"java\"");
             }
 
-            result.command()
-                    .add("-D" + entry.getKey() + "=" + entry.getValue());
+            sd.addJavaSystemProperty(entry.getKey(), entry.getValue());
         }
 
-        // add main class
-        result.command().add(job.getDescription().getJavaMain());
+        // main class and options
+        sd.setJavaMain(zorillaJob.getDescription().getJavaMain());
 
-        // arguments
-        String[] arguments = job.getDescription().getJavaArguments();
-        for (int i = 0; i < arguments.length; i++) {
-            result.command().add(arguments[i]);
+        sd.setJavaArguments(zorillaJob.getDescription().getArguments());
+
+        // FIXME:DEBUG
+        sd.addAttribute("sandbox.delete", "false");
+
+        for (File file : workingDir.getAbsoluteFile().listFiles()) {
+            sd.addPreStagedFile(GAT.createFile(context, "file:"
+                    + file.getAbsolutePath()));
         }
 
-        result.directory(workingDir);
+        sd.enableStreamingStderr(true);
+        sd.enableStreamingStdout(true);
+        sd.enableStreamingStdin(true);
+
+        JobDescription result = new JobDescription(sd);
+
+        // FIXME: support multiple resources / nodes / etc
+        result.setProcessCount(1);
+        result.setResourceCount(1);
 
         return result;
-
     }
 
     /**
@@ -300,7 +431,7 @@ public final class Worker implements Runnable {
             throw new IOException("could not create scratch dir");
         }
 
-        InputFile[] preStageFiles = job.getPreStageFiles();
+        InputFile[] preStageFiles = zorillaJob.getPreStageFiles();
         for (int i = 0; i < preStageFiles.length; i++) {
             logger.debug("copying " + preStageFiles[i] + " to scratch dir");
             preStageFiles[i].copyTo(scratchDir);
@@ -311,7 +442,7 @@ public final class Worker implements Runnable {
 
     private void postStage(File scratchDir) throws IOException, Exception {
         logger.debug("post staging from scratch dir to job");
-        String[] postStageFiles = job.getPostStageFiles();
+        String[] postStageFiles = zorillaJob.getPostStageFiles();
 
         for (int i = 0; i < postStageFiles.length; i++) {
             File file = new File(scratchDir, postStageFiles[i]);
@@ -322,7 +453,7 @@ public final class Worker implements Runnable {
             if (file.exists() && file.isFile()) {
                 // copy file to job object
                 FileInputStream in = new FileInputStream(file);
-                job.writeOutputFile(postStageFiles[i], in);
+                zorillaJob.writeOutputFile(postStageFiles[i], in);
                 in.close();
             } else {
                 logger.debug("post staging: " + file + " does not exist");
@@ -332,20 +463,18 @@ public final class Worker implements Runnable {
     }
 
     public void run() {
-        ProcessBuilder processBuilder;
-        Process process = null;
         java.io.File workingDir;
         ZorillaPrintStream log;
         StreamWriter outWriter;
         StreamWriter errWriter;
         boolean killed = false; // true if we killed the process ourselves
-        int killedCount = 0;
         boolean failed = false; // true if this worker "failed" on purpose
+        Job gatJob = null;
 
-        logger.info("starting worker " + this + " for " + job);
+        logger.info("starting worker " + this + " for " + zorillaJob);
 
         try {
-            log = job.createLogFile(id().toString() + ".log");
+            log = zorillaJob.createLogFile(id().toString() + ".log");
         } catch (Exception e) {
             logger.error("could not create log file", e);
             setStatus(Status.ERROR);
@@ -354,7 +483,7 @@ public final class Worker implements Runnable {
 
         try {
             // this should not be the case, but just to be safe we check again
-            if (!job.isJava()
+            if (!zorillaJob.isJava()
                     && !node.config().getBooleanProperty(
                             ZorillaProperties.NATIVE_JOBS)) {
                 throw new Exception("cannot run native worker, not allowed");
@@ -368,48 +497,33 @@ public final class Worker implements Runnable {
             setStatus(Status.PRE_STAGE);
             workingDir = createScratchDir(id);
 
-            if (job.getDescription().isJava()) {
-                processBuilder = javaCommand(workingDir);
+            GATContext gatContext = createGATContext();
+
+            JobDescription jobDescription;
+            if (zorillaJob.getDescription().isJava()) {
+                jobDescription = createJavaJobDescription(gatContext,
+                        workingDir);
             } else {
-                processBuilder = nativeCommand(workingDir);
-            }
-
-            String cmd = "";
-            for (String argument : processBuilder.command()) {
-                cmd = cmd + argument + " ";
-            }
-            logger.debug("running command: " + cmd);
-            log.printlog("running command: " + cmd);
-
-            log.printlog("working directory for worker = "
-                    + processBuilder.directory());
-            logger.debug("working directory for worker = "
-                    + processBuilder.directory());
-
-            try {
-                process = processBuilder.start();
-                setStatus(Status.RUNNING);
-                logger.debug("made process");
-            } catch (IOException e) {
-                logger.error("error on forking off worker", e);
-                try {
-                    if (job.isJava()) {
-                        // should not happen, must be node error
-                        setStatus(Status.ERROR);
-                    } else {
-                        setStatus(Status.USER_ERROR);
-                    }
-                    log.printlog(e.toString());
-                    job.flush();
-                } catch (Exception e2) {
-                    // IGNORE
-                }
+                logger.error("native jobs not supported for now");
+                setStatus(Status.ERROR);
                 return;
             }
 
-            outWriter = new StreamWriter(process.getInputStream(), job
+            logger.debug("running job: " + jobDescription);
+            log.printlog("running job: " + jobDescription);
+
+            ResourceBroker jobBroker = GAT.createResourceBroker(gatContext,
+                    new URI("local://localhost"));
+
+            // GAT job
+            gatJob = jobBroker.submitJob(jobDescription);
+
+            setStatus(Status.RUNNING);
+            logger.debug("made process");
+
+            outWriter = new StreamWriter(gatJob.getStdout(), zorillaJob
                     .getStdout());
-            errWriter = new StreamWriter(process.getErrorStream(), job
+            errWriter = new StreamWriter(gatJob.getStderr(), zorillaJob
                     .getStderr());
 
             // TODO reimplement stdin
@@ -417,25 +531,22 @@ public final class Worker implements Runnable {
             // .getOutputStream());
 
             logger.debug("created stream writers, waiting for"
-                    + " process to finish");
+                    + " process/job to finish");
 
             // wait for the process to finish or the deadline to pass
             // check every 1 second
             while (status().equals(Status.RUNNING)) {
-                try {
-                    int result = process.exitValue();
-                    log.printlog("process ended with return value " + result);
 
-                    // Wait for output stream read threads to finish
+                JobState gatState = gatJob.getState();
+
+                if (gatState == JobState.STOPPED
+                        || gatState.equals(JobState.SUBMISSION_ERROR)) {
+                    int exitStatus = gatJob.getExitStatus();
                     outWriter.waitFor();
                     errWriter.waitFor();
                     logger.debug("worker " + this + " done, exit code "
-                            + result);
-
-                    // fileReader.close();
-
-                    setExitStatus(result);
-
+                            + exitStatus);
+                    setExitStatus(exitStatus);
                     log.printlog("flushing files");
                     setStatus(Status.POST_STAGE);
                     postStage(workingDir);
@@ -443,42 +554,24 @@ public final class Worker implements Runnable {
 
                     if (killed) {
                         setStatus(Status.KILLED);
-                    } else if (failed) {
+                    } else if (failed || gatState == JobState.SUBMISSION_ERROR) {
                         setStatus(Status.FAILED);
-                    } else if (result == 0) {
+                    } else if (exitStatus == 0) {
                         setStatus(Status.DONE);
                     } else {
                         setStatus(Status.USER_ERROR);
                     }
                     logger.info("worker " + this + "(" + status()
-                            + ") exited with code " + result);
-                } catch (IllegalThreadStateException e) {
+                            + ") exited with code " + exitStatus);
+                } else {
                     // process not yet done...
                     synchronized (this) {
                         long currentTime = System.currentTimeMillis();
                         if (currentTime >= deadline) {
                             // kill process
-                            if (killedCount < 10) {
-                                process.destroy();
-                                killed = true;
-                                killedCount++;
-                            } else if (killedCount == 10) {
-                                logger.error("Process for worker " + this
-                                        + " doesn't seem to want to die. "
-                                        + "Please kill process manually");
-                                killedCount++;
-                            }
+                            gatJob.stop();
                         } else if (currentTime >= failureDate) {
-                            // kill process
-                            if (killedCount < 10) {
-                                process.destroy();
-                                failed = true;
-                                killedCount++;
-                            } else if (killedCount == 10) {
-                                logger.error("Process for worker " + this
-                                        + " doesn't seem to want to die. "
-                                        + "Please kill process manually");
-                            }
+                            gatJob.stop();
                         } else {
                             try {
                                 long timeout = Math.min(deadline - currentTime,
@@ -496,16 +589,20 @@ public final class Worker implements Runnable {
             try {
                 setStatus(Status.ERROR);
                 log.printlog(e.toString());
-                job.flush();
+                zorillaJob.flush();
             } catch (Exception e2) {
                 // IGNORE
             }
         } finally {
             // make sure the process is destroyed, and the worker officially
             // ends
-            if (process != null) {
+            if (gatJob != null) {
                 // logger.warn("had to force-destroy worker");
-                process.destroy();
+                try {
+                    gatJob.stop();
+                } catch (GATInvocationException e) {
+                    // IGNORE
+                }
             }
             if (!finished()) {
                 logger.warn("had to force status of worker to error");
@@ -513,6 +610,102 @@ public final class Worker implements Runnable {
             }
         }
     }
+
+    /*
+     * public void run() { ProcessBuilder processBuilder; Process process =
+     * null; java.io.File workingDir; ZorillaPrintStream log; StreamWriter
+     * outWriter; StreamWriter errWriter; boolean killed = false; // true if we
+     * killed the process ourselves int killedCount = 0; boolean failed = false;
+     * // true if this worker "failed" on purpose
+     * 
+     * logger.info("starting worker " + this + " for " + job);
+     * 
+     * try { log = job.createLogFile(id().toString() + ".log"); } catch
+     * (Exception e) { logger.error("could not create log file", e);
+     * setStatus(Status.ERROR); return; }
+     * 
+     * try { // this should not be the case, but just to be safe we check again
+     * if (!job.isJava() && !node.config().getBooleanProperty(
+     * ZorillaProperties.NATIVE_JOBS)) { throw new
+     * Exception("cannot run native worker, not allowed"); }
+     * 
+     * log.printlog("starting worker " + id + " on node " + node);
+     * 
+     * // creates a dir the user can put all files in. puts copies of // all
+     * input and jar files in it. log.printlog("creating scratch dir");
+     * setStatus(Status.PRE_STAGE); workingDir = createScratchDir(id);
+     * 
+     * if (job.getDescription().isJava()) { processBuilder =
+     * javaCommand(workingDir); } else { processBuilder =
+     * nativeCommand(workingDir); }
+     * 
+     * String cmd = ""; for (String argument : processBuilder.command()) { cmd =
+     * cmd + argument + " "; } logger.debug("running command: " + cmd);
+     * log.printlog("running command: " + cmd);
+     * 
+     * log.printlog("working directory for worker = " +
+     * processBuilder.directory());
+     * logger.debug("working directory for worker = " +
+     * processBuilder.directory());
+     * 
+     * try { process = processBuilder.start(); setStatus(Status.RUNNING);
+     * logger.debug("made process"); } catch (IOException e) {
+     * logger.error("error on forking off worker", e); try { if (job.isJava()) {
+     * // should not happen, must be node error setStatus(Status.ERROR); } else
+     * { setStatus(Status.USER_ERROR); } log.printlog(e.toString());
+     * job.flush(); } catch (Exception e2) { // IGNORE } return; }
+     * 
+     * outWriter = new StreamWriter(process.getInputStream(), job .getStdout());
+     * errWriter = new StreamWriter(process.getErrorStream(), job .getStderr());
+     * 
+     * // TODO reimplement stdin // FileReader fileReader = new
+     * FileReader(job.getStdin(), process // .getOutputStream());
+     * 
+     * logger.debug("created stream writers, waiting for" +
+     * " process to finish");
+     * 
+     * // wait for the process to finish or the deadline to pass // check every
+     * 1 second while (status().equals(Status.RUNNING)) { try { int result =
+     * process.exitValue(); log.printlog("process ended with return value " +
+     * result);
+     * 
+     * // Wait for output stream read threads to finish outWriter.waitFor();
+     * errWriter.waitFor(); logger.debug("worker " + this + " done, exit code "
+     * + result);
+     * 
+     * // fileReader.close();
+     * 
+     * setExitStatus(result);
+     * 
+     * log.printlog("flushing files"); setStatus(Status.POST_STAGE);
+     * postStage(workingDir); log.close();
+     * 
+     * if (killed) { setStatus(Status.KILLED); } else if (failed) {
+     * setStatus(Status.FAILED); } else if (result == 0) {
+     * setStatus(Status.DONE); } else { setStatus(Status.USER_ERROR); }
+     * logger.info("worker " + this + "(" + status() + ") exited with code " +
+     * result); } catch (IllegalThreadStateException e) { // process not yet
+     * done... synchronized (this) { long currentTime =
+     * System.currentTimeMillis(); if (currentTime >= deadline) { // kill
+     * process if (killedCount < 10) { process.destroy(); killed = true;
+     * killedCount++; } else if (killedCount == 10) {
+     * logger.error("Process for worker " + this +
+     * " doesn't seem to want to die. " + "Please kill process manually");
+     * killedCount++; } } else if (currentTime >= failureDate) { // kill process
+     * if (killedCount < 10) { process.destroy(); failed = true; killedCount++;
+     * } else if (killedCount == 10) { logger.error("Process for worker " + this
+     * + " doesn't seem to want to die. " + "Please kill process manually"); } }
+     * else { try { long timeout = Math.min(deadline - currentTime,
+     * POLL_INTERVAL); wait(timeout); } catch (InterruptedException e2) { //
+     * IGNORE } } } } } } catch (Exception e) {
+     * logger.warn("error on running worker", e); try { setStatus(Status.ERROR);
+     * log.printlog(e.toString()); job.flush(); } catch (Exception e2) { //
+     * IGNORE } } finally { // make sure the process is destroyed, and the
+     * worker officially // ends if (process != null) { //
+     * logger.warn("had to force-destroy worker"); process.destroy(); } if
+     * (!finished()) { logger.warn("had to force status of worker to error");
+     * setStatus(Status.ERROR); } } }
+     */
 
     public String toString() {
         return id.toString().substring(0, 8);
