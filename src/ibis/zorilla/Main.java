@@ -11,6 +11,10 @@ import org.apache.log4j.Logger;
 public final class Main {
 
     public static final long NODE_SHUTDOWN_TIMEOUT = 2 * 1000;
+    
+    public static final String ADDRESS_LINE_PREFIX = "ZORILLA NODE RUNNING ON: ";
+
+    public static final String ADDRESS_LINE_POSTFIX = "EOA";
 
     private static Logger logger = Logger.getLogger(Main.class);
 
@@ -81,6 +85,10 @@ public final class Main {
         // out.println("--worker");
         // out
         // .println("\t make this node a worker node (does not accept job submissions)");
+        
+        out.println("--remote");
+        out.println("\t Print the address of this node, end node if stdin is closed.");
+        out.println("\t Designed to be used together with the ibis.zorilla.util.Remote class");
 
         out.println("--start-hub");
         out.println("\t start a SmartSocket hub (default)");
@@ -120,7 +128,7 @@ public final class Main {
     // MAIN FUNCTION
     public static void main(String[] args) {
         TypedProperties commandLineProperties = new TypedProperties();
-        boolean slave = false;
+        boolean remote = false;
 
         for (int i = 0; i < args.length; i++) {
             if (args[i].equalsIgnoreCase("--config-dir")
@@ -192,8 +200,8 @@ public final class Main {
                     .equalsIgnoreCase("-?"))) {
                 printUsage(System.out);
                 System.exit(0);
-            } else if (args[i].equalsIgnoreCase("--slave")) {
-                slave = true;
+            } else if (args[i].equalsIgnoreCase("--remote")) {
+                remote = true;
             } else if (args[i].startsWith("-")) {
                 System.err.println("unknown command line option: " + args[i]);
                 System.err.println();
@@ -227,8 +235,11 @@ public final class Main {
             // IGNORE
         }
 
-        if (slave) {
-            ThreadPool.createNew(node, "Zorilla slave node");
+        if (remote) {
+            System.out.println(ADDRESS_LINE_PREFIX + node.getIPLServer().getAddress()
+                    + ADDRESS_LINE_POSTFIX);
+            System.out.flush();
+            ThreadPool.createNew(node, "Zorilla node");
             waitUntilFinished();
             System.err
                     .println("Zorilla SLAVE: Standard in closed, stopping Zorilla node");

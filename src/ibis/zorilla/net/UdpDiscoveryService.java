@@ -233,7 +233,7 @@ public final class UdpDiscoveryService implements Runnable, Service {
                                 out.close();
                                 buffer.flip();
 
-                                // this maight fail, but we don't care
+                                // this might fail, but we don't care
                                 channel.send(buffer, sender);
 
                             } else if (opcode == NODE_ANNOUNCE) {
@@ -244,9 +244,17 @@ public final class UdpDiscoveryService implements Runnable, Service {
                                 logger.warn("received unknown opcode: "
                                         + opcode, new Exception());
                             }
+                            boolean present;
                             synchronized (this) {
-                                knownNodes.put(peer.getID(),
-                                        new LocalNode(peer));
+                                present = (knownNodes.put(peer.getID(),
+                                        new LocalNode(peer)) != null);
+
+                            }
+                            if (!present && peer.isHub()) {
+                                // register peer as hub
+                                node.getIPLServer().addHubs(
+                                        peer.getAddress().machine());
+
                             }
                         }
                     }

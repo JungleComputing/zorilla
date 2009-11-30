@@ -40,9 +40,9 @@
 
         <tstamp />
 
-        <mkdir dir="lib" />
         <mkdir dir="tmp" />
-
+        <mkdir dir="../lib" />
+        
         <!-- Compile the java code from src into tmp -->
         <javac srcdir="src" 
                destdir="tmp" 
@@ -53,7 +53,7 @@
 		<compilerarg value="-Xlint:unchecked" />
 	</javac>
 
-        <jar destfile="lib/${ant.project.name}${version}.jar" 
+        <jar destfile="../lib/${ant.project.name}${version}.jar" 
             basedir="tmp" 
             includes="**/*.class">
         </jar>
@@ -64,7 +64,6 @@
 
     <target name="clean" description="clean up">
         <delete dir="tmp" />
-        <delete dir="lib" />
         <delete dir="javadoc" />
     </target>
 

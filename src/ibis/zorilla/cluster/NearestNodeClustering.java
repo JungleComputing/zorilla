@@ -160,7 +160,7 @@ public class NearestNodeClustering extends ClusterService implements Runnable {
     }
 
     /**
-     * Perges unreachable neighbours. Removes furthest neighbours if there are
+     * Purges unreachable neighbours. Removes furthest neighbours if there are
      * to many neighbours. If possible adds a candidate new neighbour.
      */
     protected synchronized void updateNeighbourList() {
@@ -225,6 +225,9 @@ public class NearestNodeClustering extends ClusterService implements Runnable {
                 logger.debug("new candidate: " + newInfo);
                 neighbours.put(newNeighbour.getID(), newNeighbour);
                 added++;
+                if (newInfo.isHub()) {
+                    node.getIPLServer().addHubs(newInfo.getAddress().machine());
+                }
             }
         }
 

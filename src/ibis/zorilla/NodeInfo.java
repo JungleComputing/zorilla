@@ -27,6 +27,8 @@ public class NodeInfo implements Serializable {
     private final long creationTime;
 
     private final long version;
+    
+    private final boolean hub;
 
     static NodeInfo newest(NodeInfo one, NodeInfo other) {
         if (one == null) {
@@ -41,13 +43,14 @@ public class NodeInfo implements Serializable {
     }
 
     NodeInfo(UUID id, String name, String clusterName, Coordinates coordinate,
-            VirtualSocketAddress address, long version) {
+            VirtualSocketAddress address, long version, boolean hub) {
         this.id = id;
         this.name = name;
         this.clusterName = clusterName;
         this.coordinates = coordinate;
         this.address = address;
         this.version = version;
+        this.hub = hub;
 
         creationTime = System.currentTimeMillis();
     }
@@ -78,6 +81,10 @@ public class NodeInfo implements Serializable {
 
     public long getVersion() {
         return version;
+    }
+    
+    public boolean isHub() {
+        return hub;
     }
 
     public boolean sameNodeAs(NodeInfo other) {

@@ -458,4 +458,8 @@ public class ZorillaProperties extends TypedProperties {
     public int getPort() {
         return getIntProperty(PORT);
     }
+    
+    public boolean isHub() {
+        return getBooleanProperty(START_HUB, true);
+    }
 }

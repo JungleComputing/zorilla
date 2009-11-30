@@ -122,9 +122,10 @@ public final class Node implements Runnable {
                 + config.getPort());
 
         // copy-paste start hub property to server
-        if (config.getProperty(ZorillaProperties.START_HUB) != null) {
-            serverProperties.setProperty(ServerProperties.START_HUB, config
-                    .getProperty(ZorillaProperties.START_HUB));
+        if (config.isHub()) {
+            serverProperties.setProperty(ServerProperties.START_HUB, "true");
+        } else {
+            serverProperties.setProperty(ServerProperties.START_HUB, "false");
         }
 
         // copy-paste hub addresses property to server
@@ -230,7 +231,7 @@ public final class Node implements Runnable {
     public NodeInfo getInfo() {
         return new NodeInfo(id, name, config
                 .getProperty(ZorillaProperties.CLUSTER_NAME), vivaldiService
-                .getCoordinates(), network.getAddress(), version);
+                .getCoordinates(), network.getAddress(), version, config.isHub());
     }
 
     public long getStartTime() {
@@ -279,6 +280,10 @@ public final class Node implements Runnable {
 
     public SlaveService getSlaveService() {
         return slaveService;
+    }
+    
+    public ibis.ipl.server.Server getIPLServer() {
+        return iplServer;
     }
 
     public synchronized void end(long delay) {

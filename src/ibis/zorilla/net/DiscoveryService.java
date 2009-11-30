@@ -48,15 +48,21 @@ public class DiscoveryService implements Service, Runnable {
 
         for (String string : node.config().getStringList(
                 ZorillaProperties.PEERS)) {
+            VirtualSocketAddress address = null;
             try {
                 try {
-                    addresses.add(new VirtualSocketAddress(string));
+                    address = new VirtualSocketAddress(string);
                 } catch (Exception e) {
-                    addresses.add(new VirtualSocketAddress(string,
-                            ZoniProtocol.VIRTUAL_PORT));
+                    address = new VirtualSocketAddress(string,
+                            ZoniProtocol.VIRTUAL_PORT);
                 }
             } catch (Exception e) {
                 logger.warn("invalid peer address: " + string, e);
+            }
+            if (address != null) {
+                addresses.add(address);
+                //register hub
+                node.getIPLServer().addHubs(address.machine());
             }
         }
 
@@ -79,7 +85,10 @@ public class DiscoveryService implements Service, Runnable {
                 synchronized (this) {
                     nodes.put(info.getID(), info);
                 }
-
+                if (info.isHub()) {
+                    //register hub
+                    node.getIPLServer().addHubs(info.getAddress().machine());
+                }
                 return;
             } catch (Exception e) {
                 logger.error("Lookup of peer: " + peer + " failed", e);
