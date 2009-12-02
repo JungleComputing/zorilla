@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
  * @author Niels Drost
  * 
  */
-class Remote implements Runnable {
+public class Remote implements Runnable {
 
     private static final Logger logger = LoggerFactory
             .getLogger(Remote.class);
@@ -39,7 +39,7 @@ class Remote implements Runnable {
 
     private IOException exception = null;
 
-    Remote(InputStream stdout, OutputStream stdin, PrintStream output,
+    public Remote(InputStream stdout, OutputStream stdin, PrintStream output,
             String outputPrefix) {
 
         this.stdout = new BufferedReader(new InputStreamReader(stdout));
@@ -64,7 +64,7 @@ class Remote implements Runnable {
      *             if server fails to start, or address is not available within
      *             the specified time.
      */
-    synchronized String getAddress(long timeout) throws IOException {
+    public synchronized String getAddress(long timeout) throws IOException {
         long deadline = System.currentTimeMillis() + timeout;
         while (address == null) {
             if (exception != null) {
@@ -90,7 +90,7 @@ class Remote implements Runnable {
     /**
      * End Server by closing stream.
      */
-    void end() {
+    public void end() {
         try {
             stdin.close();
         } catch (IOException e) {

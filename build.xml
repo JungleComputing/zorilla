@@ -22,12 +22,6 @@
         <fileset dir="lib">
             <include name="*.jar" />
         </fileset>
-        <fileset dir="lib/ipl">
-            <include name="*.jar" />
-        </fileset>
-        <fileset dir="lib/javagat">
-            <include name="*.jar" />
-        </fileset>
         <pathelement path="tmp" />
     </path>
 
@@ -44,15 +38,15 @@
     <target name="copy">
         <!-- add external stuff to lib -->
         <echo message="using IPL from ${ipl}" />
-        <copy todir="lib/ipl" includeEmptyDirs="false">
+        <copy todir="lib" includeEmptyDirs="false">
             <fileset dir="${ipl}" />
         </copy>
 
         <echo message="using JavaGAT from ${javagat}" />
-        <copy todir="lib/javagat" includeEmptyDirs="false">
+        <copy todir="lib" includeEmptyDirs="false">
             <fileset dir="${javagat}" />
         </copy>
-        
+
         <copy todir="lib">
             <fileset dir="external" includes="*.jar" />
         </copy>
@@ -86,8 +80,6 @@
 
         <delete dir="tmp" />
     </target>
-
-
 
     <target name="clean" description="clean everything">
         <ant dir="zoni" target="clean" />
