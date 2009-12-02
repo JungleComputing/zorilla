@@ -66,25 +66,25 @@ public class Network implements Runnable {
 
 		serverSocket = socketFactory.createServerSocket(VIRTUAL_PORT, 0, null);
 
-		try {
-			ServiceLink sl = socketFactory.getServiceLink();
-			if (sl != null) {
-				// try to register...
-				if (!sl.registerProperty("smartsockets.viz",
-						"Z^Zorilla server:,"
-								+ serverSocket.getLocalSocketAddress()
-										.toString())) {
-					// ...and update if it already exists
-					sl.updateProperty("smartsockets.viz", "Z^Zorilla node:,"
-							+ serverSocket.getLocalSocketAddress().toString());
-				}
-			} else {
-				logger
-						.warn("could not set smartsockets viz property: could not get smartsockets service link");
-			}
-		} catch (Throwable e) {
-			logger.warn("could not register smartsockets viz property", e);
-		}
+//		try {
+//			ServiceLink sl = socketFactory.getServiceLink();
+//			if (sl != null) {
+//				// try to register...
+//				if (!sl.registerProperty("smartsockets.viz",
+//						"Z^Zorilla server:,"
+//								+ serverSocket.getLocalSocketAddress()
+//										.toString())) {
+//					// ...and update if it already exists
+//					sl.updateProperty("smartsockets.viz", "Z^Zorilla node:,"
+//							+ serverSocket.getLocalSocketAddress().toString());
+//				}
+//			} else {
+//				logger
+//						.warn("could not set smartsockets viz property: could not get smartsockets service link");
+//			}
+//		} catch (Throwable e) {
+//			logger.warn("could not register smartsockets viz property", e);
+//		}
 
 		// Create byte array out of version string. Use the fact that
 		// It is made out of only numbers.
