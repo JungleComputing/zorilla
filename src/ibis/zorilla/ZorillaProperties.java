@@ -104,6 +104,8 @@ public class ZorillaProperties extends TypedProperties {
 
     public static final String RESOURCE_MEMORY = PREFIX + "resource.memory";
 
+    public static final String VIZ_INFO = PREFIX + "viz.info";
+
     private static final Logger logger = Logger
             .getLogger(ZorillaProperties.class);
 
@@ -225,6 +227,8 @@ public class ZorillaProperties extends TypedProperties {
                     "Boolean: if true (default), this Zorilla node will include a SmartSockets Hub." },
 
             { HUB_ADDRESSES, null, "List of additional SmartSockets hubs" },
+
+            { VIZ_INFO, null, "String: info for smartsockets visualization" },
 
     // { MASTER_ADDRESS, null, "Address of the master node" },
     };
@@ -458,7 +462,7 @@ public class ZorillaProperties extends TypedProperties {
     public int getPort() {
         return getIntProperty(PORT);
     }
-    
+
     public boolean isHub() {
         return getBooleanProperty(START_HUB, true);
     }

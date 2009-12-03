@@ -101,7 +101,7 @@ public final class Node implements Runnable {
         return UUID.randomUUID();
     }
 
-    public Node(TypedProperties properties) throws Exception {
+    public Node(Properties properties) throws Exception {
         // Log.initLog4J("ibis.zorilla", Level.INFO);
 
         config = new ZorillaProperties(properties);
@@ -132,6 +132,11 @@ public final class Node implements Runnable {
         if (config.getProperty(ZorillaProperties.HUB_ADDRESSES) != null) {
             serverProperties.setProperty(ServerProperties.HUB_ADDRESSES, config
                     .getProperty(ZorillaProperties.HUB_ADDRESSES));
+        }
+        
+        if (config.getProperty(ZorillaProperties.VIZ_INFO) != null) {
+            serverProperties.setProperty(ServerProperties.VIZ_INFO, config
+                    .getProperty(ZorillaProperties.VIZ_INFO));
         }
 
         //start ipl server

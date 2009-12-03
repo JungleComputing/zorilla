@@ -176,7 +176,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
             // create ibis
 
-            ibis = Factory.createIbis(id.toString());
+            ibis = Factory.createIbis(id.toString(), node);
 
             endPoint = newEndPoint(id.toString(), this);
 

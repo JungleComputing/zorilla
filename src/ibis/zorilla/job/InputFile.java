@@ -154,12 +154,14 @@ public class InputFile implements Receiver {
 
         logger.debug("destination file = " + destFile);
 
+        FileInputStream in = null;
+        FileOutputStream out = null;
         try {
 
             byte[] buffer = new byte[BUFFER_SIZE];
 
-            FileInputStream in = new FileInputStream(file);
-            FileOutputStream out = new FileOutputStream(destFile);
+            in = new FileInputStream(file);
+            out = new FileOutputStream(destFile);
 
             while (true) {
                 int read = in.read(buffer);
@@ -174,8 +176,14 @@ public class InputFile implements Receiver {
 
         } catch (IOException e) {
             throw new Exception("could not copy file", e);
+        } finally {
+            if (in != null) {
+                in.close();
+            }
+            if (out != null) {
+                out.close();
+            }
         }
-
     }
 
     public void receive(ReadMessage message) {

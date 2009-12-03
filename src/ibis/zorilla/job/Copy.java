@@ -127,7 +127,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
         localWorkers = new HashMap<UUID, Worker>();
 
-        ibis = Factory.createIbis(jobID.toString());
+        ibis = Factory.createIbis(jobID.toString(), node);
 
         endPoint = new EndPoint(id.toString(), this, ibis);
 

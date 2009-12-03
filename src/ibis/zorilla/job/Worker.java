@@ -1,5 +1,6 @@
 package ibis.zorilla.job;
 
+import ibis.ipl.IbisProperties;
 import ibis.util.RunProcess;
 import ibis.util.ThreadPool;
 import ibis.zorilla.ZorillaProperties;
@@ -265,9 +266,9 @@ public final class Worker implements Runnable {
 
         context.addPreference("file.create", "true");
 
-        //context.addPreference("resourcebroker.adaptor.name", "sshtrilead");
+        // context.addPreference("resourcebroker.adaptor.name", "sshtrilead");
 
-        //context.addPreference("file.adaptor.name", "local,sshtrilead");
+        // context.addPreference("file.adaptor.name", "local,sshtrilead");
 
         return context;
 
@@ -293,17 +294,16 @@ public final class Worker implements Runnable {
         sd.addJavaSystemProperty("java.security.policy", "=file:"
                 + securityFile.getAbsolutePath());
 
-        sd.setJavaOptions("-Xmx" + 
-                zorillaJob.getStringAttribute(JobAttributes.MEMORY_MAX)
+        sd
+                .setJavaOptions("-Xmx"
+                        + zorillaJob
+                                .getStringAttribute(JobAttributes.MEMORY_MAX)
                         + "m");
 
         // node port
         sd.addJavaSystemProperty("zorilla.node.port", "" + nodePort);
 
         sd.addJavaSystemProperty("zorilla.cluster", zorillaJob.cluster());
-
-        sd.addJavaSystemProperty("ibis.pool.size=", ""
-                + zorillaJob.getAttributes().getProcessCount());
 
         // class path
 
@@ -342,6 +342,20 @@ public final class Worker implements Runnable {
 
             sd.addJavaSystemProperty(entry.getKey(), entry.getValue());
         }
+
+        // set hub address, prefix with our hub address
+        String hubAddresses = zorillaJob.getDescription()
+                .getJavaSystemProperties().get(IbisProperties.HUB_ADDRESSES);
+        if (hubAddresses == null) {
+            hubAddresses = node.network().getAddress().hub().toString();
+        } else {
+            hubAddresses = node.network().getAddress().hub().toString() + ","
+                    + hubAddresses;
+        }
+        sd.addJavaSystemProperty(IbisProperties.HUB_ADDRESSES, hubAddresses);
+
+        sd.addJavaSystemProperty("ibis.pool.size=", ""
+                + zorillaJob.getAttributes().getProcessCount());
 
         // main class and options
         sd.setJavaMain(zorillaJob.getDescription().getJavaMain());
@@ -459,7 +473,6 @@ public final class Worker implements Runnable {
                 logger.debug("post staging: " + file + " does not exist");
             }
         }
-
     }
 
     public void run() {

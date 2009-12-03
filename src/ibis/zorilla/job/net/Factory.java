@@ -5,7 +5,9 @@ import ibis.ipl.IbisCapabilities;
 import ibis.ipl.IbisFactory;
 import ibis.ipl.IbisProperties;
 import ibis.ipl.PortType;
+import ibis.zorilla.Node;
 
+import java.awt.Color;
 import java.util.Properties;
 
 public class Factory {
@@ -21,15 +23,20 @@ public class Factory {
             PortType.CONNECTION_ONE_TO_ONE, PortType.RECEIVE_EXPLICIT,
             PortType.RECEIVE_TIMEOUT);
 
-    public final static Ibis createIbis(String pool) throws Exception {
+    public final static Ibis createIbis(String pool, Node node)
+            throws Exception {
         Ibis result;
 
         Properties properties = new Properties();
 
         properties.setProperty(IbisProperties.POOL_NAME, pool);
-        properties.setProperty(IbisProperties.REGISTRY_IMPLEMENTATION,
-                "null");
+        properties.setProperty(IbisProperties.REGISTRY_IMPLEMENTATION, "null");
         properties.setProperty(IbisProperties.IMPLEMENTATION, "smartsockets");
+
+        properties.setProperty(IbisProperties.LOCATION_COLOR, "" + Color.BLACK.getRGB());
+
+        properties.setProperty(IbisProperties.HUB_ADDRESSES, node.network()
+                .getAddress().hub().toString());
 
         // no capabilities needed from ibis
         IbisCapabilities capabilities = new IbisCapabilities();
