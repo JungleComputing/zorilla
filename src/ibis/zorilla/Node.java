@@ -1,7 +1,6 @@
 package ibis.zorilla;
 
 import ibis.ipl.server.ServerProperties;
-import ibis.util.TypedProperties;
 import ibis.zorilla.cluster.ClusterService;
 import ibis.zorilla.cluster.VivaldiService;
 import ibis.zorilla.gossip.GossipService;

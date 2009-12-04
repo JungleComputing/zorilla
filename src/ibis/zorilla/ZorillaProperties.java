@@ -187,10 +187,10 @@ public class ZorillaProperties extends TypedProperties {
 
             {
                     RESOURCE_ADAPTOR,
-                    null,
+                    "local",
                     "JavaGAT adaptor used to access Zorilla node resources. Defaults to local adaptor" },
 
-            { RESOURCE_URI, null,
+            { RESOURCE_URI, "local://localhost",
                     "URI to resources of this Zorilla nodes. Defaults to using localhost." },
 
             {

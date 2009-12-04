@@ -258,7 +258,7 @@ public final class Worker implements Runnable {
         return result.toArray(new String[0]);
     }
 
-    private static GATContext createGATContext() throws Exception {
+    private static GATContext createGATContext(ZorillaProperties config) throws Exception {
         GATContext context = new GATContext();
         SecurityContext securityContext = new CertificateSecurityContext(null,
                 null, System.getProperty("user.name"), null);
@@ -266,7 +266,7 @@ public final class Worker implements Runnable {
 
         context.addPreference("file.create", "true");
 
-        // context.addPreference("resourcebroker.adaptor.name", "sshtrilead");
+        context.addPreference("resourcebroker.adaptor.name", config.getProperty(ZorillaProperties.RESOURCE_ADAPTOR));
 
         // context.addPreference("file.adaptor.name", "local,sshtrilead");
 
@@ -510,7 +510,7 @@ public final class Worker implements Runnable {
             setStatus(Status.PRE_STAGE);
             workingDir = createScratchDir(id);
 
-            GATContext gatContext = createGATContext();
+            GATContext gatContext = createGATContext(node.config());
 
             JobDescription jobDescription;
             if (zorillaJob.getDescription().isJava()) {
@@ -526,7 +526,7 @@ public final class Worker implements Runnable {
             log.printlog("running job: " + jobDescription);
 
             ResourceBroker jobBroker = GAT.createResourceBroker(gatContext,
-                    new URI("local://localhost"));
+                    new URI(node.config().getProperty(ZorillaProperties.RESOURCE_URI)));
 
             // GAT job
             gatJob = jobBroker.submitJob(jobDescription);

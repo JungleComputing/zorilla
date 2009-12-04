@@ -70,14 +70,20 @@ public final class Main {
         out.println("\tenable the running of native applications by this node");
         out.println("\tWARNING: SECURITY RISK!");
 
-        out.println("--max-workers WORKERS");
-        out
-                .println("\tmaximum number of workers for this node. Defaults to number");
-        out.println("\tof processors available");
-
         out.println("--random-ports");
         out.println("\t shortcut to set all the port options to 0");
-
+        
+        out.println("--resource-adaptor");
+        out.println("\t adaptor used to access resources.");
+        out.println("--resource-uri");
+        out.println("\t URI used to access resources.");
+        out.println("--nodes");
+        out.println("\t Number of nodes available.");
+        out.println("--cores");
+        out.println("\t Number of cores available.");
+        out.println("--memory");
+        out.println("\t Memory available per node.");
+        
         // out.println("--master");
         // out
         // .println("\t make this node a master node (does not have any workers)");
@@ -166,9 +172,26 @@ public final class Main {
             } else if (args[i].equalsIgnoreCase("--no-native-jobs")) {
                 commandLineProperties.put(ZorillaProperties.NATIVE_JOBS,
                         "false");
-            } else if (args[i].equalsIgnoreCase("--max-workers")) {
+                
+            } else if (args[i].equalsIgnoreCase("--resource-adaptor")) {
+                i++;
+                commandLineProperties.put(ZorillaProperties.RESOURCE_ADAPTOR,
+                        args[i]);
+            } else if (args[i].equalsIgnoreCase("--resource-uri")) {
+                i++;
+                commandLineProperties.put(ZorillaProperties.RESOURCE_URI,
+                        args[i]);
+            } else if (args[i].equalsIgnoreCase("--nodes")) {
+                i++;
+                commandLineProperties.put(ZorillaProperties.RESOURCE_NODES,
+                        args[i]);
+            } else if (args[i].equalsIgnoreCase("--cores")) {
                 i++;
                 commandLineProperties.put(ZorillaProperties.RESOURCE_CORES,
+                        args[i]);
+            } else if (args[i].equalsIgnoreCase("--memory")) {
+                i++;
+                commandLineProperties.put(ZorillaProperties.RESOURCE_MEMORY,
                         args[i]);
             } else if (args[i].equalsIgnoreCase("--random-ports")) {
                 commandLineProperties.put(ZorillaProperties.PORT, "0");
