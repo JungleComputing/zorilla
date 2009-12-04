@@ -47,6 +47,7 @@ public class ZoniService implements Service {
         ZorillaJobDescription jobDescription = new ZorillaJobDescription(in,
                 node.config().getTmpDir());
 
+
         ZoniCallback callback = null;
 
         if (in.readBoolean()) {

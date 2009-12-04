@@ -288,11 +288,6 @@ public final class Zubmit {
             String jobID;
             jobID = connection.submitJob(jobDescription, null);
 
-            // close input streams of files (if applicable)
-            for (ZoniInputFile file : jobDescription.getInputFiles()) {
-                file.closeStream();
-            }
-
             if (verbose || !interactive) {
                 System.err.println("submitted job, id = " + jobID);
             }

@@ -185,7 +185,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             ZoniInputFile[] zoniInputFiles = description.getInputFiles();
 
             preStageFiles = new InputFile[zoniInputFiles.length];
-
+            
             for (int i = 0; i < preStageFiles.length; i++) {
                 ZoniInputFile file = zoniInputFiles[i];
                 preStageFiles[i] = new InputFile(file.getFile(), file

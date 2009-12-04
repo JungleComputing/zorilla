@@ -27,21 +27,25 @@ public final class Hash implements Serializable {
         FileInputStream in = new FileInputStream(file);
 
         try {
-            digest = MessageDigest.getInstance("SHA-1");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IOException("could not load SHA-1 algorithmn");
-        }
-
-        byte[] buffer = new byte[1024];
-
-        while (true) {
-            int read = in.read(buffer);
-            if (read == -1) {
-                // EOF
-                hash = digest.digest();
-                return;
+            try {
+                digest = MessageDigest.getInstance("SHA-1");
+            } catch (NoSuchAlgorithmException e) {
+                throw new IOException("could not load SHA-1 algorithmn");
             }
-            digest.update(buffer, 0, read);
+
+            byte[] buffer = new byte[1024];
+
+            while (true) {
+                int read = in.read(buffer);
+                if (read == -1) {
+                    // EOF
+                    hash = digest.digest();
+                    return;
+                }
+                digest.update(buffer, 0, read);
+            }
+        } finally {
+            in.close();
         }
     }
 
