@@ -1,7 +1,7 @@
 package ibis.zorilla.net;
 
 import ibis.util.ThreadPool;
-import ibis.zorilla.ZorillaProperties;
+import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
@@ -91,10 +91,10 @@ public final class UdpDiscoveryService implements Runnable, Service {
 
         knownNodes = new HashMap<UUID, LocalNode>();
 
-        int port = node.config().getIntProperty(ZorillaProperties.PORT);
+        int port = node.config().getIntProperty(Config.PORT);
 
         if (port == 0) {
-            logger.info(ZorillaProperties.PORT
+            logger.info(Config.PORT
                     + " set to 0, Disabling UDP Discovery service");
             channel = null;
             selector = null;

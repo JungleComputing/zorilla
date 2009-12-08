@@ -13,7 +13,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import ibis.smartsockets.virtual.VirtualSocket;
-import ibis.zorilla.ZorillaProperties;
+import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
@@ -98,7 +98,7 @@ public final class FloodService implements Service {
 
         if (metric == null) {
             metric = node.config().getProperty(
-                    ZorillaProperties.DEFAULT_FLOOD_METRIC);
+                    Config.DEFAULT_FLOOD_METRIC);
         }
 
         if (metric.equalsIgnoreCase("hops")) {

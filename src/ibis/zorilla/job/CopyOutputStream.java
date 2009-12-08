@@ -49,7 +49,12 @@ final class CopyOutputStream extends OutputStream implements Receiver {
 
     public synchronized void write(byte[] data, int offset, int length)
             throws IOException {
-        logger.debug("sending data to " + primary);
+        logger.debug("sending data of length " + length + " to " + primary);
+
+        if (length == 0) {
+            //Done already :-)
+            return;
+        }
 
         WriteMessage message = endPoint.send(primary);
 

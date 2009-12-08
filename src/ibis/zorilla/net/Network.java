@@ -1,7 +1,7 @@
 package ibis.zorilla.net;
 
 import ibis.util.ThreadPool;
-import ibis.zorilla.ZorillaProperties;
+import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 
@@ -58,7 +58,7 @@ public class Network implements Runnable {
 
 	private final byte[] versionBytes;
 
-	public Network(Node node, ZorillaProperties properties,
+	public Network(Node node, Config properties,
 			VirtualSocketFactory factory) throws IOException, Exception {
 		this.node = node;
 
@@ -100,7 +100,7 @@ public class Network implements Runnable {
 
 	public void start() {
 		boolean firewalled = node.config().getBooleanProperty(
-				ZorillaProperties.FIREWALL, false);
+				Config.FIREWALL, false);
 		if (!firewalled) {
 			// start handling connections
 			ThreadPool.createNew(this, "network connection handler");

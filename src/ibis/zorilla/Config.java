@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -30,7 +31,7 @@ import org.apache.log4j.Logger;
  *         </UL>
  * 
  */
-public class ZorillaProperties extends TypedProperties {
+public class Config extends TypedProperties {
 
     private static final long serialVersionUID = 1L;
 
@@ -98,6 +99,8 @@ public class ZorillaProperties extends TypedProperties {
 
     public static final String RESOURCE_URI = PREFIX + "resource.uri";
 
+    public static final String RESOURCE_WRAPPER = PREFIX + "resource.wrapper";
+
     public static final String RESOURCE_CORES = PREFIX + "resource.cores";
 
     public static final String RESOURCE_NODES = PREFIX + "resource.nodes";
@@ -107,7 +110,7 @@ public class ZorillaProperties extends TypedProperties {
     public static final String VIZ_INFO = PREFIX + "viz.info";
 
     private static final Logger logger = Logger
-            .getLogger(ZorillaProperties.class);
+            .getLogger(Config.class);
 
     private static final String[][] propertiesList = {
 
@@ -193,6 +196,8 @@ public class ZorillaProperties extends TypedProperties {
             { RESOURCE_URI, "local://localhost",
                     "URI to resources of this Zorilla nodes. Defaults to using localhost." },
 
+            { RESOURCE_WRAPPER, null, "Wrapper script used when running a job." },
+
             {
                     RESOURCE_CORES,
                     null,
@@ -260,8 +265,10 @@ public class ZorillaProperties extends TypedProperties {
     private final File logDir;
     private final File tmpDir;
 
+    private final String[] hosts;
+
     private File createConfigDir() throws Exception {
-        File configDir = getFileProperty(ZorillaProperties.CONFIG_DIR);
+        File configDir = getFileProperty(Config.CONFIG_DIR);
 
         if (!configDir.equals("?")) {
             if (!configDir.isAbsolute()) {
@@ -293,7 +300,7 @@ public class ZorillaProperties extends TypedProperties {
     }
 
     private File createLogDir() throws Exception {
-        File logDir = getFileProperty(ZorillaProperties.LOG_DIR);
+        File logDir = getFileProperty(Config.LOG_DIR);
         if (!logDir.isAbsolute()) {
             // make absolute by resolving against user home directory
             String userHome = System.getProperty("user.home");
@@ -323,7 +330,7 @@ public class ZorillaProperties extends TypedProperties {
     }
 
     private File createTmpDir() throws Exception {
-        File tmpDir = getFileProperty(ZorillaProperties.TMP_DIR);
+        File tmpDir = getFileProperty(Config.TMP_DIR);
         if (!tmpDir.isAbsolute()) {
             // make absolute by resolving against java system tmp
             String systemTmp = System.getProperty("java.io.tmpdir");
@@ -338,7 +345,37 @@ public class ZorillaProperties extends TypedProperties {
         return tmpDir;
     }
 
-    ZorillaProperties(Properties userProperties) throws Exception {
+    private static String[] parseHostnames(String string) {
+        ArrayList<String> result = new ArrayList<String>();
+        
+        if (string == null) {
+            return new String[0];
+        }
+
+        if (string.contains("[")) {
+            String prefix = string.substring(0, string.indexOf('['));
+            String range = string.substring(string.indexOf('[') + 1, string
+                    .indexOf(']'));
+            String postfix = string.substring(string.indexOf(']') + 1, string
+                    .length());
+
+            String[] ranges = range.split("-");
+            int start = Integer.parseInt(ranges[0]);
+            int end = Integer.parseInt(ranges[1]);
+            int width = ranges[0].length();
+
+            for (int i = start; i <= end; i++) {
+                result.add(String.format("%s%0" + width + "d%s", prefix, i,
+                        postfix));
+            }
+        } else {
+            result.add(string);
+        }
+
+        return result.toArray(new String[0]);
+    }
+
+    Config(Properties userProperties) throws Exception {
         Properties defaultProperties = getHardcodedProperties();
         Properties classpathProperties = new Properties(defaultProperties);
         Properties fileProperties = new Properties(classpathProperties);
@@ -383,6 +420,15 @@ public class ZorillaProperties extends TypedProperties {
 
         logDir = createLogDir();
         tmpDir = createTmpDir();
+
+        String resourceURI = getProperty(RESOURCE_URI);
+        if (resourceURI != null
+                && resourceURI.startsWith("multissh:")) {
+            hosts = parseHostnames(resourceURI.substring(9));
+            logger.info("Hosts used by this node: " + Arrays.toString(hosts));
+        } else {
+            hosts = new String[0];
+        }
     }
 
     public File getConfigDir() {
@@ -465,5 +511,9 @@ public class ZorillaProperties extends TypedProperties {
 
     public boolean isHub() {
         return getBooleanProperty(START_HUB, true);
+    }
+
+    public String[] getHosts() {
+        return hosts.clone();
     }
 }

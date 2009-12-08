@@ -52,6 +52,16 @@ public final class StreamWriter implements Runnable {
                     }
                     return;
                 }
+                
+                if (bytesRead == 0) {
+                    logger.error("Read 0 bytes from stream: " + in  + ", Assuming EOS");
+                    synchronized (this) {
+                        done = true;
+                        notifyAll();
+                    }
+                    return;
+                }
+                
                 for (int i = 0; i < outputs.length; i++) {
                     if (outputs[i] != null) {
                         outputs[i].write(data, 0, bytesRead);

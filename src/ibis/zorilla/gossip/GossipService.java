@@ -15,7 +15,7 @@ import java.util.Random;
 import org.apache.log4j.Logger;
 
 import ibis.smartsockets.virtual.VirtualSocket;
-import ibis.zorilla.ZorillaProperties;
+import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
@@ -46,16 +46,16 @@ public class GossipService implements Service {
 
     public GossipService(Node node) throws Exception {
         this.node = node;
-        ZorillaProperties config = node.config();
+        Config config = node.config();
 
         random = new Random();
         messageLossFraction = config
-                .getIntProperty(ZorillaProperties.MESSAGE_LOSS_PERCENTAGE) / 100.0;
+                .getIntProperty(Config.MESSAGE_LOSS_PERCENTAGE) / 100.0;
         bootstrapTimeout = config
-                .getIntProperty(ZorillaProperties.BOOTSTRAP_TIMEOUT) * 1000;
+                .getIntProperty(Config.BOOTSTRAP_TIMEOUT) * 1000;
 
         int disconnectSeconds = config
-                .getIntProperty(ZorillaProperties.DISCONNECT_TIME);
+                .getIntProperty(Config.DISCONNECT_TIME);
         if (disconnectSeconds > 0) {
             disconnectTime = System.currentTimeMillis()
                     + (disconnectSeconds * 1000);
@@ -64,7 +64,7 @@ public class GossipService implements Service {
         }
 
         int reconnectSeconds = config
-                .getIntProperty(ZorillaProperties.RECONNECT_TIME);
+                .getIntProperty(Config.RECONNECT_TIME);
         if (reconnectSeconds > 0) {
             reconnectTime = System.currentTimeMillis()
                     + (reconnectSeconds * 1000);
@@ -78,14 +78,14 @@ public class GossipService implements Service {
         }
 
         wanDisconnect = config
-                .getBooleanProperty(ZorillaProperties.WAN_DISCONNECT);
+                .getBooleanProperty(Config.WAN_DISCONNECT);
 
         int cacheSize = config
-                .getIntProperty(ZorillaProperties.GOSSIP_CACHE_SIZE);
+                .getIntProperty(Config.GOSSIP_CACHE_SIZE);
         int sendSize = config
-                .getIntProperty(ZorillaProperties.GOSSIP_SEND_SIZE);
+                .getIntProperty(Config.GOSSIP_SEND_SIZE);
         int interval = config
-                .getIntProperty(ZorillaProperties.GOSSIP_INTERVAL) * 1000;
+                .getIntProperty(Config.GOSSIP_INTERVAL) * 1000;
 
         algorithms = new HashMap<String, GossipAlgorithm>();
 
@@ -98,7 +98,7 @@ public class GossipService implements Service {
         algorithms.put(arrg.getName(), arrg);
 
         if (node.config().getBooleanProperty(
-                ZorillaProperties.ADDITIONAL_GOSSIP_ALGORITHMS)) {
+                Config.ADDITIONAL_GOSSIP_ALGORITHMS)) {
             GossipAlgorithm noFallbackARRG = new ARRG("noFallbackARRG", false,
                     false, cacheSize, sendSize, interval, this, statsDir, node
                             .getID());

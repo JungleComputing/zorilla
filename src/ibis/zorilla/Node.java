@@ -25,6 +25,7 @@ import java.util.UUID;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.gridlab.gat.GAT;
 
 /**
  * General peer-to-peer node. Implements a communication structure for "modules"
@@ -48,7 +49,7 @@ public final class Node implements Runnable {
         return version;
     }
 
-    private final ZorillaProperties config;
+    private final Config config;
 
     private final ibis.ipl.server.Server iplServer;
 
@@ -103,10 +104,10 @@ public final class Node implements Runnable {
     public Node(Properties properties) throws Exception {
         // Log.initLog4J("ibis.zorilla", Level.INFO);
 
-        config = new ZorillaProperties(properties);
+        config = new Config(properties);
 
         // make up a UUID for this node
-        String idString = config.getProperty(ZorillaProperties.NODE_ID);
+        String idString = config.getProperty(Config.NODE_ID);
         if (idString == null) {
             id = generateUUID();
         } else {
@@ -128,14 +129,14 @@ public final class Node implements Runnable {
         }
 
         // copy-paste hub addresses property to server
-        if (config.getProperty(ZorillaProperties.HUB_ADDRESSES) != null) {
+        if (config.getProperty(Config.HUB_ADDRESSES) != null) {
             serverProperties.setProperty(ServerProperties.HUB_ADDRESSES, config
-                    .getProperty(ZorillaProperties.HUB_ADDRESSES));
+                    .getProperty(Config.HUB_ADDRESSES));
         }
         
-        if (config.getProperty(ZorillaProperties.VIZ_INFO) != null) {
+        if (config.getProperty(Config.VIZ_INFO) != null) {
             serverProperties.setProperty(ServerProperties.VIZ_INFO, config
-                    .getProperty(ZorillaProperties.VIZ_INFO));
+                    .getProperty(Config.VIZ_INFO));
         }
 
         //start ipl server
@@ -144,19 +145,19 @@ public final class Node implements Runnable {
         network = new Network(this, config, iplServer.getSocketFactory());
 
         // give this node a (user friendly) name
-        if (config.getProperty(ZorillaProperties.NODE_NAME) != null) {
-            name = config.getProperty(ZorillaProperties.NODE_NAME);
+        if (config.getProperty(Config.NODE_NAME) != null) {
+            name = config.getProperty(Config.NODE_NAME);
         } else {
-            String cluster = config.getProperty(ZorillaProperties.CLUSTER_NAME);
+            String cluster = config.getProperty(Config.CLUSTER_NAME);
             String hostName = InetAddress.getLocalHost().getHostName();
             int port = network.getAddress().machine().getPorts(false)[0];
 
             if (cluster == null) {
                 name = hostName + ":" + port;
-                config.put(ZorillaProperties.NODE_NAME, name);
+                config.put(Config.NODE_NAME, name);
             } else {
                 name = hostName + ":" + port + "@" + cluster;
-                config.put(ZorillaProperties.NODE_NAME, name);
+                config.put(Config.NODE_NAME, name);
             }
         }
 
@@ -204,7 +205,7 @@ public final class Node implements Runnable {
         zoniService.start();
         webService.start();
 
-        long maxRunTime = config.getLongProperty(ZorillaProperties.MAX_RUNTIME,
+        long maxRunTime = config.getLongProperty(Config.MAX_RUNTIME,
                 0);
         if (maxRunTime > 0) {
             deadline = System.currentTimeMillis() + (maxRunTime * 1000);
@@ -220,7 +221,7 @@ public final class Node implements Runnable {
         logger.info("Node " + name + " started");
     }
 
-    public synchronized ZorillaProperties config() {
+    public synchronized Config config() {
         return config;
     }
 
@@ -234,7 +235,7 @@ public final class Node implements Runnable {
 
     public NodeInfo getInfo() {
         return new NodeInfo(id, name, config
-                .getProperty(ZorillaProperties.CLUSTER_NAME), vivaldiService
+                .getProperty(Config.CLUSTER_NAME), vivaldiService
                 .getCoordinates(), network.getAddress(), version, config.isHub());
     }
 
@@ -299,6 +300,8 @@ public final class Node implements Runnable {
         }
         slaveService.end();
     }
+    
+
 
     public Map<String, String> getStats() {
         Map<String, String> result = new LinkedHashMap<String, String>();
@@ -352,10 +355,12 @@ public final class Node implements Runnable {
         logger.debug("waiting until deadline");
 
         waitUntilDeadline(0);
+        
+        GAT.end();
 
         slaveService.end();
         network.end();
-
+        
         logger.debug("node done");
 
     }

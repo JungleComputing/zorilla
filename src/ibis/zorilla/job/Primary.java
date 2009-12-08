@@ -5,7 +5,7 @@ import ibis.ipl.IbisIdentifier;
 import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
-import ibis.zorilla.ZorillaProperties;
+import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.io.ObjectOutput;
@@ -45,7 +45,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
     public static final int MAX_ADVERT_RADIUS = 15;
 
-    public static final long WAIT_TIMEOUT = 100;
+    public static final long WAIT_TIMEOUT = 1000;
 
     static final int REGISTER = 0;
 
@@ -149,7 +149,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         this.node = node;
 
         cluster = node.config()
-                .getProperty(ZorillaProperties.CLUSTER_NAME);
+                .getProperty(Config.CLUSTER_NAME);
 
         id = Node.generateUUID();
         this.jobDescription = description;
@@ -659,11 +659,10 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
         if (localWorkers.size() == 0 && phase > RUNNING) {
             if (constituents.remove(id) != null) {
-                log("unregisterred outselves");
-            }
-            log("now " + constituents.size() + " constituents");
-            for (UUID id : constituents.keySet()) {
-                log(id.toString());
+                log("unregisterred outselves, now " + constituents.size() + " constituents");
+                for (UUID id : constituents.keySet()) {
+                    log(id.toString());
+                }
             }
         }
 
@@ -806,7 +805,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     private synchronized void createNewLocalWorkers() {
         if (!isJava()
                 && !node.config().getBooleanProperty(
-                        ZorillaProperties.NATIVE_JOBS)) {
+                        Config.NATIVE_JOBS)) {
             logger.debug("not creating worker, native jobs not allowed");
             return;
         }
@@ -854,6 +853,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     }
 
     private synchronized void finish() {
+        logger.info("finishing job");
         try {
             for (InputFile file : preStageFiles) {
                 file.close();
@@ -1102,7 +1102,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         for (int i = 0; i < nrOfWorkers; i++) {
             if (!isJava()
                     && !node.config().getBooleanProperty(
-                            ZorillaProperties.NATIVE_JOBS)) {
+                            Config.NATIVE_JOBS)) {
                 log("cannot create native worker");
                 break;
             }
@@ -1145,7 +1145,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
             if (!isJava()
                     && !node.config().getBooleanProperty(
-                            ZorillaProperties.NATIVE_JOBS)) {
+                            Config.NATIVE_JOBS)) {
                 maxNrOfWorkers = 0;
             }
 
@@ -1351,6 +1351,12 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         }
         // issue final state update callbacks
         sendStateUpdate();
+        //give peers a minute to finish writing output etc.
+        try {
+            Thread.sleep(60000);
+        } catch (InterruptedException e) {
+            //IGNORE
+        }
         finish();
         log("job finished");
     }

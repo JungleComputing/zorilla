@@ -3,7 +3,7 @@ package ibis.zorilla.net;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.util.ThreadPool;
-import ibis.zorilla.ZorillaProperties;
+import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
@@ -12,6 +12,7 @@ import ibis.zorilla.zoni.ZoniProtocol;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -33,7 +34,7 @@ public class DiscoveryService implements Service, Runnable {
     private static final Logger logger = Logger
             .getLogger(DiscoveryService.class);
 
-    private final VirtualSocketAddress[] addresses;
+    private final Set<VirtualSocketAddress> addresses;
 
     private final Node node;
 
@@ -44,29 +45,35 @@ public class DiscoveryService implements Service, Runnable {
 
         nodes = new HashMap<UUID, NodeInfo>();
 
-        Set<VirtualSocketAddress> addresses = new HashSet<VirtualSocketAddress>();
+        addresses = new HashSet<VirtualSocketAddress>();
 
         for (String string : node.config().getStringList(
-                ZorillaProperties.PEERS)) {
-            VirtualSocketAddress address = null;
-            try {
-                try {
-                    address = new VirtualSocketAddress(string);
-                } catch (Exception e) {
-                    address = new VirtualSocketAddress(string,
-                            ZoniProtocol.VIRTUAL_PORT);
-                }
-            } catch (Exception e) {
-                logger.warn("invalid peer address: " + string, e);
-            }
-            if (address != null) {
-                addresses.add(address);
-                //register hub
-                node.getIPLServer().addHubs(address.machine());
-            }
+                Config.PEERS)) {
+            addPeer(string);
         }
-
-        this.addresses = addresses.toArray(new VirtualSocketAddress[0]);
+    }
+    
+    public synchronized void addPeer(String address) {
+        VirtualSocketAddress socketAddress = null;
+        try {
+            try {
+                socketAddress = new VirtualSocketAddress(address);
+            } catch (Exception e) {
+                socketAddress = new VirtualSocketAddress(address,
+                        ZoniProtocol.VIRTUAL_PORT);
+            }
+        } catch (Exception e) {
+            logger.warn("invalid peer address: " + address, e);
+        }
+        if (socketAddress != null) {
+            addresses.add(socketAddress);
+            //register hub
+            node.getIPLServer().addHubs(socketAddress.machine());
+        }
+    }
+   
+    private synchronized VirtualSocketAddress[] getAddresses() {
+        return addresses.toArray(new VirtualSocketAddress[0]);
     }
 
     public void start() {
@@ -152,7 +159,7 @@ public class DiscoveryService implements Service, Runnable {
 
     public void run() {
         while (true) {
-            for (VirtualSocketAddress peer : addresses) {
+            for (VirtualSocketAddress peer : getAddresses()) {
                 doRequests(peer);
             }
 
@@ -170,4 +177,6 @@ public class DiscoveryService implements Service, Runnable {
         return result;
 
     }
+
+   
 }

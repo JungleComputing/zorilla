@@ -2,7 +2,7 @@ package ibis.zorilla.job;
 
 import ibis.util.ThreadPool;
 import ibis.zorilla.Node;
-import ibis.zorilla.ZorillaProperties;
+import ibis.zorilla.Config;
 import ibis.zorilla.Service;
 import ibis.zorilla.zoni.ZorillaJobDescription;
 
@@ -10,9 +10,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.management.MBeanServer;
@@ -38,6 +43,8 @@ public final class JobService implements Service, Runnable {
     private final Resources availableResources;
 
     private final Map<UUID, Resources> usedResources;
+    
+    private final Map<String, Worker> availableHosts;
 
     // return 90% of physical memory size as max memory available
     private static int freeMemory() {
@@ -54,7 +61,7 @@ public final class JobService implements Service, Runnable {
             return ONE_GB;
         }
     }
-
+    
     public JobService(Node node) throws Exception {
         this.node = node;
         jobs = new HashMap<UUID, ZorillaJob>();
@@ -63,21 +70,29 @@ public final class JobService implements Service, Runnable {
                 "worker.security.policy"));
 
         int availableCores = node.config().getIntProperty(
-                ZorillaProperties.RESOURCE_CORES,
+                Config.RESOURCE_CORES,
                 Runtime.getRuntime().availableProcessors());
-        logger.info("Available cores on this node: " + availableCores);
+        logger.info("Available cores on each node: " + availableCores);
 
-        int freeMemory = freeMemory();
+        int freeMemory = node.config().getIntProperty(
+                Config.RESOURCE_MEMORY, freeMemory());
         logger.info("Total memory available: " + freeMemory + " Mb");
 
         int usableDiskSpace = (int) (node.config().getTmpDir().getUsableSpace() / 1024.0 / 1024.0);
         logger.info("Total diskspace available: " + usableDiskSpace + " Mb");
+        
+        int nodes = node.config().getIntProperty(Config.RESOURCE_NODES, 1);
 
-        // 1 node available
-        availableResources = new Resources(1, availableCores, freeMemory,
+        logger.info("Available nodes: " + availableCores);
+        availableResources = new Resources(nodes, availableCores, freeMemory,
                 usableDiskSpace);
 
         usedResources = new HashMap<UUID, Resources>();
+
+        availableHosts = new HashMap<String, Worker>();
+        for(String host: node.config().getHosts()) {
+            availableHosts.put(host, null);
+        }
     }
 
     private static void createWorkerSecurityFile(File file) throws Exception {
@@ -149,8 +164,8 @@ public final class JobService implements Service, Runnable {
         return jobs.values().toArray(new ZorillaJob[0]);
     }
 
-    public ZorillaJob submitJob(ZorillaJobDescription description, Callback callback)
-            throws Exception {
+    public ZorillaJob submitJob(ZorillaJobDescription description,
+            Callback callback) throws Exception {
 
         synchronized (this) {
             if (killed) {
@@ -236,6 +251,16 @@ public final class JobService implements Service, Runnable {
         logger.debug("result for resource request: " + result);
 
         return result;
+    }
+    
+    synchronized String getHost(Worker worker) {
+        for(Map.Entry<String, Worker> entry: availableHosts.entrySet()) {
+            if (entry.getValue() == null || entry.getValue().finished()) {
+                entry.setValue(worker);
+                return entry.getKey();
+            }
+        }
+        return null;
     }
 
     public void start() {

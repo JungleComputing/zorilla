@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.zorilla.Node;
 import ibis.zorilla.Service;
-import ibis.zorilla.ZorillaProperties;
+import ibis.zorilla.Config;
 
 public class SlaveService implements Service {
 
@@ -147,7 +147,7 @@ public class SlaveService implements Service {
 
     public SlaveService(Node node) throws Exception {
         hostNames = parseSlaveHostnames(node.config().getStringList(
-                ZorillaProperties.SLAVES));
+                Config.SLAVES));
 
         nodeAddress = node.network().getAddress().toString();
     }

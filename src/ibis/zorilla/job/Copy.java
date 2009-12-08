@@ -5,7 +5,7 @@ import ibis.ipl.IbisIdentifier;
 import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
-import ibis.zorilla.ZorillaProperties;
+import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.io.ObjectInput;
@@ -119,8 +119,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
         id = Node.generateUUID();
 
-        cluster = node.config()
-                .getProperty(ZorillaProperties.CLUSTER_NAME);
+        cluster = node.config().getProperty(Config.CLUSTER_NAME);
 
         jobID = (UUID) ad.getJobID();
         primary = (ReceivePortIdentifier) ad.getPrimaryReceivePort();
@@ -429,12 +428,12 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         for (int i = 0; i < nrOfWorkers; i++) {
             if (!isJava()
                     && !node.config().getBooleanProperty(
-                            ZorillaProperties.NATIVE_JOBS)) {
-                log("cannot create native worker");
+                            Config.NATIVE_JOBS)) {
+                logger.debug("cannot create native worker");
                 break;
             }
             if (node.jobService().nrOfResourceSetsAvailable(workerResources) < 1) {
-                log("cannot claim resources");
+                logger.debug("cannot claim resources");
                 break;
             }
 
@@ -563,7 +562,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
             if (!jobDescription.isJava()
                     && !node.config().getBooleanProperty(
-                            ZorillaProperties.NATIVE_JOBS)) {
+                            Config.NATIVE_JOBS)) {
                 throw new Exception("running of non-java job not allowed");
             }
 
@@ -592,7 +591,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
             if (!isJava()
                     && !node.config().getBooleanProperty(
-                            ZorillaProperties.NATIVE_JOBS)) {
+                            Config.NATIVE_JOBS)) {
                 logger.debug("cannot start worker, no native jobs allowed");
                 nrOfWorkers = 0;
             }
@@ -657,7 +656,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
     private boolean createNewLocalWorkers() throws IOException, Exception {
         if (!isJava()
                 && !node.config().getBooleanProperty(
-                        ZorillaProperties.NATIVE_JOBS)) {
+                        Config.NATIVE_JOBS)) {
             log("not creating worker, native jobs not allowed");
             return false;
         }
@@ -803,8 +802,9 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         }
 
         try {
-            // dowbload input files
+            // download input files
             for (InputFile file : preStageFiles) {
+                logger.debug("downloading " + file);
                 file.download();
             }
 

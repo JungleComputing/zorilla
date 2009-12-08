@@ -3,7 +3,7 @@ package ibis.zorilla.job;
 import ibis.ipl.IbisProperties;
 import ibis.util.RunProcess;
 import ibis.util.ThreadPool;
-import ibis.zorilla.ZorillaProperties;
+import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.util.StreamWriter;
@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -24,9 +25,8 @@ import org.gridlab.gat.resources.JavaSoftwareDescription;
 import org.gridlab.gat.resources.Job;
 import org.gridlab.gat.resources.JobDescription;
 import org.gridlab.gat.resources.ResourceBroker;
+import org.gridlab.gat.resources.SoftwareDescription;
 import org.gridlab.gat.resources.Job.JobState;
-import org.gridlab.gat.security.CertificateSecurityContext;
-import org.gridlab.gat.security.SecurityContext;
 
 /**
  * @author Niels Drost
@@ -51,6 +51,26 @@ public final class Worker implements Runnable {
     private static final Logger logger = Logger.getLogger(Worker.class
             .getName());
 
+    private static GATContext createGATContext(Config config) throws Exception {
+        GATContext context = new GATContext();
+        // SecurityContext securityContext = new
+        // CertificateSecurityContext(null,
+        // null, System.getProperty("user.name"), null);
+        //        
+        // context.addSecurityContext(securityContext);
+
+        context.addPreference("file.create", "true");
+
+        String adaptor = config.getProperty(Config.RESOURCE_ADAPTOR);
+
+        context.addPreference("resourcebroker.adaptor.name", adaptor);
+
+        // context.addPreference("file.adaptor.name", "local,sshtrilead");
+
+        return context;
+
+    }
+
     private final UUID id;
 
     // port on which the node is listening for connections
@@ -73,6 +93,9 @@ public final class Worker implements Runnable {
     /**
      * creates a new child for a given ZorillaJobDescription.
      * 
+     * @throws Exception
+     *             if creating the worker failed
+     * 
      */
     public Worker(ZorillaJob job, UUID id, Node node, long deadline) {
         this.zorillaJob = job;
@@ -93,6 +116,7 @@ public final class Worker implements Runnable {
             failureDate = System.currentTimeMillis()
                     + (Node.randomTimeout(mtbf) * 1000);
         }
+
     }
 
     public void start() {
@@ -225,57 +249,8 @@ public final class Worker implements Runnable {
      * }
      */
 
-    private static String[] parseSlaveHostnames(String[] strings) {
-        if (strings == null || strings.length == 0) {
-            return new String[0];
-        }
-
-        ArrayList<String> result = new ArrayList<String>();
-
-        for (String string : strings) {
-            if (string.contains("[")) {
-                String prefix = string.substring(0, string.indexOf('['));
-                String range = string.substring(string.indexOf('[') + 1, string
-                        .indexOf(']'));
-                String postfix = string.substring(string.indexOf(']') + 1,
-                        string.length());
-
-                String[] ranges = range.split("-");
-                int start = Integer.parseInt(ranges[0]);
-                int end = Integer.parseInt(ranges[1]);
-                int width = ranges[0].length();
-
-                for (int i = start; i <= end; i++) {
-                    result.add(String.format("%s%0" + width + "d%s", prefix, i,
-                            postfix));
-                }
-
-            } else {
-                result.add(string);
-            }
-        }
-
-        return result.toArray(new String[0]);
-    }
-
-    private static GATContext createGATContext(ZorillaProperties config) throws Exception {
-        GATContext context = new GATContext();
-        SecurityContext securityContext = new CertificateSecurityContext(null,
-                null, System.getProperty("user.name"), null);
-        context.addSecurityContext(securityContext);
-
-        context.addPreference("file.create", "true");
-
-        context.addPreference("resourcebroker.adaptor.name", config.getProperty(ZorillaProperties.RESOURCE_ADAPTOR));
-
-        // context.addPreference("file.adaptor.name", "local,sshtrilead");
-
-        return context;
-
-    }
-
-    private JobDescription createJavaJobDescription(GATContext context,
-            File workingDir) throws Exception {
+    private JavaSoftwareDescription createJavaSoftwareDescription(
+            File workingDir, GATContext context) throws Exception {
         JavaSoftwareDescription sd = new JavaSoftwareDescription();
 
         // FIXME: assumes java is on same location as localhost
@@ -311,8 +286,8 @@ public final class Worker implements Runnable {
 
         if (appClassPath == null) {
             // add root of job to classpath
-            appClassPath = "." + File.pathSeparator;
-            // appClassPath = "";
+            // appClassPath = "." + File.pathSeparator;
+            appClassPath = "";
 
             InputFile[] inputs = zorillaJob.getPreStageFiles();
 
@@ -374,11 +349,82 @@ public final class Worker implements Runnable {
         sd.enableStreamingStdout(true);
         sd.enableStreamingStdin(true);
 
-        JobDescription result = new JobDescription(sd);
+        return sd;
+    }
 
-        // FIXME: support multiple resources / nodes / etc
-        result.setProcessCount(1);
-        result.setResourceCount(1);
+    /**
+     * Create a job description
+     * 
+     * @param sd
+     *            java software description
+     * @param prefix
+     *            prefix java job with these arguments. Starts with executable
+     * @return software description
+     * @throws Exception
+     */
+    private org.gridlab.gat.resources.JobDescription createJobDescription(
+            JavaSoftwareDescription sd, GATContext context) throws Exception {
+        org.gridlab.gat.resources.JobDescription result;
+
+        String wrapper = node.config().getProperty(Config.RESOURCE_WRAPPER);
+
+        if (wrapper == null) {
+            result = new org.gridlab.gat.resources.JobDescription(sd);
+            result.setProcessCount(1);
+            result.setResourceCount(1);
+        } else {
+            // copy all settings from the java description to a "normal"
+            // software description
+            SoftwareDescription wrapperSd = new SoftwareDescription();
+            if (sd.getAttributes() != null) {
+                wrapperSd.setAttributes(sd.getAttributes());
+            }
+            if (sd.getEnvironment() != null) {
+                wrapperSd.setEnvironment(sd.getEnvironment());
+            }
+            if (sd.getPreStaged() != null) {
+                for (org.gridlab.gat.io.File src : sd.getPreStaged().keySet()) {
+                    wrapperSd.addPreStagedFile(src, sd.getPreStaged().get(src));
+                }
+            }
+            if (sd.getPostStaged() != null) {
+                for (org.gridlab.gat.io.File src : sd.getPostStaged().keySet()) {
+                    wrapperSd.addPostStagedFile(src, sd.getPostStaged()
+                            .get(src));
+                }
+            }
+
+            // set first prefix element as executable
+            wrapperSd.setExecutable("/bin/sh");
+
+            // add wrapper to pre-stage files
+            wrapperSd.addPreStagedFile(GAT.createFile(context, wrapper), GAT
+                    .createFile(context, "."));
+
+            // prepend arguments with script, java exec, resource and process
+            // count
+            List<String> argumentList = new ArrayList<String>();
+
+            argumentList.add(wrapper);
+            argumentList.add("1");
+            argumentList.add("1");
+            argumentList.add(sd.getExecutable());
+            if (sd.getArguments() != null) {
+                for (String arg : sd.getArguments()) {
+                    argumentList.add(arg);
+                }
+            }
+            wrapperSd.setArguments(argumentList.toArray(new String[argumentList
+                    .size()]));
+
+            wrapperSd.enableStreamingStderr(true);
+            wrapperSd.enableStreamingStdin(true);
+            wrapperSd.enableStreamingStdout(true);
+
+            result = new org.gridlab.gat.resources.JobDescription(wrapperSd);
+            result.setProcessCount(1);
+            result.setResourceCount(1);
+        }
 
         return result;
     }
@@ -495,10 +541,10 @@ public final class Worker implements Runnable {
         }
 
         try {
+
             // this should not be the case, but just to be safe we check again
             if (!zorillaJob.isJava()
-                    && !node.config().getBooleanProperty(
-                            ZorillaProperties.NATIVE_JOBS)) {
+                    && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
                 throw new Exception("cannot run native worker, not allowed");
             }
 
@@ -510,12 +556,13 @@ public final class Worker implements Runnable {
             setStatus(Status.PRE_STAGE);
             workingDir = createScratchDir(id);
 
-            GATContext gatContext = createGATContext(node.config());
+            GATContext context = createGATContext(node.config());
 
             JobDescription jobDescription;
             if (zorillaJob.getDescription().isJava()) {
-                jobDescription = createJavaJobDescription(gatContext,
-                        workingDir);
+                jobDescription = createJobDescription(
+                        createJavaSoftwareDescription(workingDir, context),
+                        context);
             } else {
                 logger.error("native jobs not supported for now");
                 setStatus(Status.ERROR);
@@ -525,8 +572,23 @@ public final class Worker implements Runnable {
             logger.debug("running job: " + jobDescription);
             log.printlog("running job: " + jobDescription);
 
-            ResourceBroker jobBroker = GAT.createResourceBroker(gatContext,
-                    new URI(node.config().getProperty(ZorillaProperties.RESOURCE_URI)));
+            URI resourceURI = new URI(node.config().getProperty(
+                    Config.RESOURCE_URI));
+
+            if (resourceURI.getScheme().equalsIgnoreCase("multissh")) {
+                String host = node.jobService().getHost(this);
+
+                if (host == null) {
+                    logger.error("Could not allocate host in multissh scheme");
+                    setStatus(Status.ERROR);
+                    return;
+                }
+
+                resourceURI = new URI("ssh://" + host);
+            }
+
+            ResourceBroker jobBroker = GAT.createResourceBroker(context,
+                    resourceURI);
 
             // GAT job
             gatJob = jobBroker.submitJob(jobDescription);
@@ -552,7 +614,9 @@ public final class Worker implements Runnable {
 
                 JobState gatState = gatJob.getState();
 
-                if (gatState == JobState.STOPPED
+                logger.debug("worker Gat job status now " + gatState);
+
+                if (gatState.equals(JobState.STOPPED)
                         || gatState.equals(JobState.SUBMISSION_ERROR)) {
                     int exitStatus = gatJob.getExitStatus();
                     outWriter.waitFor();
@@ -578,13 +642,15 @@ public final class Worker implements Runnable {
                             + ") exited with code " + exitStatus);
                 } else {
                     // process not yet done...
+                    boolean kill = false;
                     synchronized (this) {
                         long currentTime = System.currentTimeMillis();
                         if (currentTime >= deadline) {
-                            // kill process
-                            gatJob.stop();
+                            logger.info("killing worker process");
+                            kill = true;
                         } else if (currentTime >= failureDate) {
-                            gatJob.stop();
+                            logger.info("making worker process fail");
+                            kill = true;
                         } else {
                             try {
                                 long timeout = Math.min(deadline - currentTime,
@@ -594,6 +660,9 @@ public final class Worker implements Runnable {
                                 // IGNORE
                             }
                         }
+                    }
+                    if (kill) {
+                        gatJob.stop();
                     }
                 }
             }

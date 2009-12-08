@@ -33,31 +33,31 @@ public final class Main {
     }
 
     private static void printUsage(PrintStream out) {
-        Map<String, String> properties = ZorillaProperties.getDescriptions();
+        Map<String, String> properties = Config.getDescriptions();
 
         out.println("Zorilla usage:");
         out.println();
 
         out.println("--config-dir DIR | -c");
-        out.println("\t" + properties.get(ZorillaProperties.CONFIG_DIR));
+        out.println("\t" + properties.get(Config.CONFIG_DIR));
 
         out.println("--cluster-name NAME");
-        out.println("\t" + properties.get(ZorillaProperties.CLUSTER_NAME));
+        out.println("\t" + properties.get(Config.CLUSTER_NAME));
 
         out.println("--network-name NAME");
-        out.println("\t" + properties.get(ZorillaProperties.NETWORK_NAME));
+        out.println("\t" + properties.get(Config.NETWORK_NAME));
 
         out.println("--peers ADDRESS[,ADDRESS]... | -p");
-        out.println("\t" + properties.get(ZorillaProperties.PEERS));
+        out.println("\t" + properties.get(Config.PEERS));
 
         out.println("--port PORT_NR");
-        out.println("\t" + properties.get(ZorillaProperties.PORT));
+        out.println("\t" + properties.get(Config.PORT));
 
         // out.println("--zoni-port PORT_NR");
         // out.println("\t" + properties.get(Config.ZONI_PORT));
 
         out.println("--www-port PORT_NR");
-        out.println("\t" + properties.get(ZorillaProperties.WWW_PORT));
+        out.println("\t" + properties.get(Config.WWW_PORT));
 
         // out.println("--discovery-port PORT_NR");
         // out.println("\t" + properties.get(Config.DISCOVERY_PORT));
@@ -77,6 +77,8 @@ public final class Main {
         out.println("\t adaptor used to access resources.");
         out.println("--resource-uri");
         out.println("\t URI used to access resources.");
+        out.println("--resource-wrapper");
+        out.println("\t Wrapper used to access resources.");
         out.println("--nodes");
         out.println("\t Number of nodes available.");
         out.println("--cores");
@@ -141,77 +143,81 @@ public final class Main {
                     || args[i].equalsIgnoreCase("-c")) {
                 i++;
                 commandLineProperties
-                        .put(ZorillaProperties.CONFIG_DIR, args[i]);
+                        .put(Config.CONFIG_DIR, args[i]);
             } else if (args[i].equalsIgnoreCase("--cluster-name")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.CLUSTER_NAME,
+                commandLineProperties.put(Config.CLUSTER_NAME,
                         args[i]);
             } else if (args[i].equalsIgnoreCase("--network-name")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.NETWORK_NAME,
+                commandLineProperties.put(Config.NETWORK_NAME,
                         args[i]);
             } else if (args[i].equalsIgnoreCase("--peers")
                     || args[i].equalsIgnoreCase("-p")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.PEERS, args[i]);
+                commandLineProperties.put(Config.PEERS, args[i]);
             } else if (args[i].equalsIgnoreCase("--port")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.PORT, args[i]);
+                commandLineProperties.put(Config.PORT, args[i]);
                 // } else if (args[i].equalsIgnoreCase("--zoni-port")) {
                 // i++;
                 // commandLineProperties.put(Config.ZONI_PORT, args[i]);
             } else if (args[i].equalsIgnoreCase("--www-port")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.WWW_PORT, args[i]);
+                commandLineProperties.put(Config.WWW_PORT, args[i]);
                 // } else if (args[i].equalsIgnoreCase("--discovery-port")) {
                 // i++;
                 // commandLineProperties.put(Config.DISCOVERY_PORT, args[i]);
             } else if (args[i].equalsIgnoreCase("--native-jobs")) {
                 commandLineProperties
-                        .put(ZorillaProperties.NATIVE_JOBS, "true");
+                        .put(Config.NATIVE_JOBS, "true");
             } else if (args[i].equalsIgnoreCase("--no-native-jobs")) {
-                commandLineProperties.put(ZorillaProperties.NATIVE_JOBS,
+                commandLineProperties.put(Config.NATIVE_JOBS,
                         "false");
                 
             } else if (args[i].equalsIgnoreCase("--resource-adaptor")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.RESOURCE_ADAPTOR,
+                commandLineProperties.put(Config.RESOURCE_ADAPTOR,
                         args[i]);
             } else if (args[i].equalsIgnoreCase("--resource-uri")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.RESOURCE_URI,
+                commandLineProperties.put(Config.RESOURCE_URI,
+                        args[i]);
+            } else if (args[i].equalsIgnoreCase("--resource-wrapper")) {
+                i++;
+                commandLineProperties.put(Config.RESOURCE_WRAPPER,
                         args[i]);
             } else if (args[i].equalsIgnoreCase("--nodes")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.RESOURCE_NODES,
+                commandLineProperties.put(Config.RESOURCE_NODES,
                         args[i]);
             } else if (args[i].equalsIgnoreCase("--cores")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.RESOURCE_CORES,
+                commandLineProperties.put(Config.RESOURCE_CORES,
                         args[i]);
             } else if (args[i].equalsIgnoreCase("--memory")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.RESOURCE_MEMORY,
+                commandLineProperties.put(Config.RESOURCE_MEMORY,
                         args[i]);
             } else if (args[i].equalsIgnoreCase("--random-ports")) {
-                commandLineProperties.put(ZorillaProperties.PORT, "0");
+                commandLineProperties.put(Config.PORT, "0");
                 // commandLineProperties.put(Config.ZONI_PORT, "0");
-                commandLineProperties.put(ZorillaProperties.WWW_PORT, "0");
+                commandLineProperties.put(Config.WWW_PORT, "0");
                 // commandLineProperties.put(Config.DISCOVERY_PORT, "0");
                 // } else if (args[i].equalsIgnoreCase("--worker")) {
                 // commandLineProperties.put(ZorillaProperties.WORKER, "true");
                 // } else if (args[i].equalsIgnoreCase("--master")) {
                 // commandLineProperties.put(ZorillaProperties.MASTER, "true");
             } else if (args[i].equalsIgnoreCase("--start-hub")) {
-                commandLineProperties.put(ZorillaProperties.START_HUB, "true");
+                commandLineProperties.put(Config.START_HUB, "true");
             } else if (args[i].equalsIgnoreCase("--no-hub")) {
-                commandLineProperties.put(ZorillaProperties.START_HUB, "false");
+                commandLineProperties.put(Config.START_HUB, "false");
             } else if (args[i].equalsIgnoreCase("--hub-addresses")) {
                 i++;
-                commandLineProperties.put(ZorillaProperties.HUB_ADDRESSES,
+                commandLineProperties.put(Config.HUB_ADDRESSES,
                         args[i]);
             } else if (args[i].equalsIgnoreCase("--config-properties")) {
-                Map<String, String> properties = ZorillaProperties
+                Map<String, String> properties = Config
                         .getDescriptions();
                 for (Map.Entry<String, String> property : properties.entrySet()) {
                     System.out.println(property.getKey());
