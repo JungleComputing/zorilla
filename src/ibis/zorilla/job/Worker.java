@@ -59,6 +59,8 @@ public final class Worker implements Runnable {
         //        
         // context.addSecurityContext(securityContext);
 
+        context.addPreference("sshtrilead.stoppable", "true");
+
         context.addPreference("file.create", "true");
 
         String adaptor = config.getProperty(Config.RESOURCE_ADAPTOR);
@@ -345,6 +347,8 @@ public final class Worker implements Runnable {
                     + file.getAbsolutePath()));
         }
 
+        sd.setStderr(GAT.createFile(id.toString() + ".err"));
+        sd.setStdout(GAT.createFile(id.toString() + ".our"));
         sd.enableStreamingStderr(true);
         sd.enableStreamingStdout(true);
         sd.enableStreamingStdin(true);
@@ -420,6 +424,8 @@ public final class Worker implements Runnable {
             wrapperSd.enableStreamingStderr(true);
             wrapperSd.enableStreamingStdin(true);
             wrapperSd.enableStreamingStdout(true);
+            wrapperSd.setStderr(GAT.createFile(id.toString() + ".err"));
+            wrapperSd.setStdout(GAT.createFile(id.toString() + ".our"));
 
             result = new org.gridlab.gat.resources.JobDescription(wrapperSd);
             result.setProcessCount(1);
@@ -596,10 +602,16 @@ public final class Worker implements Runnable {
             setStatus(Status.RUNNING);
             logger.debug("made process");
 
-            outWriter = new StreamWriter(gatJob.getStdout(), zorillaJob
-                    .getStdout());
-            errWriter = new StreamWriter(gatJob.getStderr(), zorillaJob
-                    .getStderr());
+            if (node.config().getProperty(Config.RESOURCE_ADAPTOR)
+                    .equals("sge")) {
+                outWriter = null;
+                errWriter = null;
+            } else {
+                outWriter = new StreamWriter(gatJob.getStdout(), zorillaJob
+                        .getStdout());
+                errWriter = new StreamWriter(gatJob.getStderr(), zorillaJob
+                        .getStderr());
+            }
 
             // TODO reimplement stdin
             // FileReader fileReader = new FileReader(job.getStdin(), process
@@ -619,6 +631,16 @@ public final class Worker implements Runnable {
                 if (gatState.equals(JobState.STOPPED)
                         || gatState.equals(JobState.SUBMISSION_ERROR)) {
                     int exitStatus = gatJob.getExitStatus();
+                    if (outWriter == null) {
+                        outWriter = new StreamWriter(GAT
+                                .createFileInputStream(id.toString() + ".out"),
+                                zorillaJob.getStdout());
+                    }
+                    if (errWriter == null) {
+                        errWriter = new StreamWriter(GAT
+                                .createFileInputStream(id.toString() + ".err"),
+                                zorillaJob.getStderr());
+                    }
                     outWriter.waitFor();
                     errWriter.waitFor();
                     logger.debug("worker " + this + " done, exit code "

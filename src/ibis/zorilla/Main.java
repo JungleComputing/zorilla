@@ -246,6 +246,10 @@ public final class Main {
                 System.exit(1);
             }
         }
+        
+        for (Map.Entry<String, String> entry: System.getenv().entrySet()) {
+            System.err.println(entry.getKey() + " = " + entry.getValue());
+        }
 
         Node node = null;
         try {

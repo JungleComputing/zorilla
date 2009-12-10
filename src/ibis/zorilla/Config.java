@@ -344,32 +344,35 @@ public class Config extends TypedProperties {
 
         return tmpDir;
     }
-
-    private static String[] parseHostnames(String string) {
-        ArrayList<String> result = new ArrayList<String>();
-        
-        if (string == null) {
+    
+    private static String[] parseHostnames(String[] strings) {
+        if (strings == null || strings.length == 0) {
             return new String[0];
         }
 
-        if (string.contains("[")) {
-            String prefix = string.substring(0, string.indexOf('['));
-            String range = string.substring(string.indexOf('[') + 1, string
-                    .indexOf(']'));
-            String postfix = string.substring(string.indexOf(']') + 1, string
-                    .length());
+        ArrayList<String> result = new ArrayList<String>();
 
-            String[] ranges = range.split("-");
-            int start = Integer.parseInt(ranges[0]);
-            int end = Integer.parseInt(ranges[1]);
-            int width = ranges[0].length();
+        for (String string : strings) {
+            if (string.contains("[")) {
+                String prefix = string.substring(0, string.indexOf('['));
+                String range = string.substring(string.indexOf('[') + 1, string
+                        .indexOf(']'));
+                String postfix = string.substring(string.indexOf(']') + 1,
+                        string.length());
 
-            for (int i = start; i <= end; i++) {
-                result.add(String.format("%s%0" + width + "d%s", prefix, i,
-                        postfix));
+                String[] ranges = range.split("-");
+                int start = Integer.parseInt(ranges[0]);
+                int end = Integer.parseInt(ranges[1]);
+                int width = ranges[0].length();
+
+                for (int i = start; i <= end; i++) {
+                    result.add(String.format("%s%0" + width + "d%s", prefix, i,
+                            postfix));
+                }
+
+            } else {
+                result.add(string);
             }
-        } else {
-            result.add(string);
         }
 
         return result.toArray(new String[0]);
@@ -424,7 +427,7 @@ public class Config extends TypedProperties {
         String resourceURI = getProperty(RESOURCE_URI);
         if (resourceURI != null
                 && resourceURI.startsWith("multissh:")) {
-            hosts = parseHostnames(resourceURI.substring(9));
+            hosts = parseHostnames(resourceURI.substring(9).split(","));
             logger.info("Hosts used by this node: " + Arrays.toString(hosts));
         } else {
             hosts = new String[0];

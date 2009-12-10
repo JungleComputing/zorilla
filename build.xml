@@ -58,7 +58,7 @@
         <mkdir dir="lib" />
 
         <!-- Compile the java code from src into tmp -->
-        <javac srcdir="src" destdir="tmp" debug="on" source="1.6" target="1.6" classpathref="class_path">
+        <javac srcdir="src" destdir="tmp" debug="on" source="1.5" target="1.5" classpathref="class_path">
             <compilerarg value="-Xlint:unchecked" />
         </javac>
 
