@@ -47,12 +47,11 @@ public class DiscoveryService implements Service, Runnable {
 
         addresses = new HashSet<VirtualSocketAddress>();
 
-        for (String string : node.config().getStringList(
-                Config.PEERS)) {
+        for (String string : node.config().getStringList(Config.PEERS)) {
             addPeer(string);
         }
     }
-    
+
     public synchronized void addPeer(String address) {
         VirtualSocketAddress socketAddress = null;
         try {
@@ -67,11 +66,13 @@ public class DiscoveryService implements Service, Runnable {
         }
         if (socketAddress != null) {
             addresses.add(socketAddress);
-            //register hub
+            // register hub
             node.getIPLServer().addHubs(socketAddress.machine());
         }
+        // nudge the discovery thread
+        notifyAll();
     }
-   
+
     private synchronized VirtualSocketAddress[] getAddresses() {
         return addresses.toArray(new VirtualSocketAddress[0]);
     }
@@ -93,7 +94,7 @@ public class DiscoveryService implements Service, Runnable {
                     nodes.put(info.getID(), info);
                 }
                 if (info.isHub()) {
-                    //register hub
+                    // register hub
                     node.getIPLServer().addHubs(info.getAddress().machine());
                 }
                 return;
@@ -163,10 +164,12 @@ public class DiscoveryService implements Service, Runnable {
                 doRequests(peer);
             }
 
-            try {
-                Thread.sleep(DISCOVERY_INTERVAL);
-            } catch (InterruptedException e) {
-                // IGNORE
+            synchronized (this) {
+                try {
+                    wait(DISCOVERY_INTERVAL);
+                } catch (InterruptedException e) {
+                    // IGNORE
+                }
             }
         }
     }
@@ -178,5 +181,4 @@ public class DiscoveryService implements Service, Runnable {
 
     }
 
-   
 }

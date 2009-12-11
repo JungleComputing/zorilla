@@ -233,7 +233,7 @@ public class Config extends TypedProperties {
 
             { HUB_ADDRESSES, null, "List of additional SmartSockets hubs" },
 
-            { VIZ_INFO, null, "String: info for smartsockets visualization" },
+            { VIZ_INFO, "Z^Zorilla Node", "String: info for smartsockets visualization" },
 
     // { MASTER_ADDRESS, null, "Address of the master node" },
     };
