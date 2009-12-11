@@ -247,6 +247,7 @@ public final class Main {
             }
         }
         
+        System.err.println("Environment:");
         for (Map.Entry<String, String> entry: System.getenv().entrySet()) {
             System.err.println(entry.getKey() + " = " + entry.getValue());
         }

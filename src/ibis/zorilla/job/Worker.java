@@ -348,7 +348,7 @@ public final class Worker implements Runnable {
         }
 
         sd.setStderr(GAT.createFile(id.toString() + ".err"));
-        sd.setStdout(GAT.createFile(id.toString() + ".our"));
+        sd.setStdout(GAT.createFile(id.toString() + ".out"));
         sd.enableStreamingStderr(true);
         sd.enableStreamingStdout(true);
         sd.enableStreamingStdin(true);
@@ -425,7 +425,7 @@ public final class Worker implements Runnable {
             wrapperSd.enableStreamingStdin(true);
             wrapperSd.enableStreamingStdout(true);
             wrapperSd.setStderr(GAT.createFile(id.toString() + ".err"));
-            wrapperSd.setStdout(GAT.createFile(id.toString() + ".our"));
+            wrapperSd.setStdout(GAT.createFile(id.toString() + ".out"));
 
             result = new org.gridlab.gat.resources.JobDescription(wrapperSd);
             result.setProcessCount(1);
