@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 public final class Main {
 
     public static final long NODE_SHUTDOWN_TIMEOUT = 2 * 1000;
-    
+
     public static final String ADDRESS_LINE_PREFIX = "ZORILLA NODE RUNNING ON: ";
 
     public static final String ADDRESS_LINE_POSTFIX = "EOA";
@@ -72,7 +72,7 @@ public final class Main {
 
         out.println("--random-ports");
         out.println("\t shortcut to set all the port options to 0");
-        
+
         out.println("--resource-adaptor");
         out.println("\t adaptor used to access resources.");
         out.println("--resource-uri");
@@ -85,7 +85,7 @@ public final class Main {
         out.println("\t Number of cores available.");
         out.println("--memory");
         out.println("\t Memory available per node.");
-        
+
         // out.println("--master");
         // out
         // .println("\t make this node a master node (does not have any workers)");
@@ -93,10 +93,12 @@ public final class Main {
         // out.println("--worker");
         // out
         // .println("\t make this node a worker node (does not accept job submissions)");
-        
+
         out.println("--remote");
-        out.println("\t Print the address of this node, end node if stdin is closed.");
-        out.println("\t Designed to be used together with the ibis.zorilla.util.Remote class");
+        out
+                .println("\t Print the address of this node, end node if stdin is closed.");
+        out
+                .println("\t Designed to be used together with the ibis.zorilla.util.Remote class");
 
         out.println("--start-hub");
         out.println("\t start a SmartSocket hub (default)");
@@ -142,16 +144,13 @@ public final class Main {
             if (args[i].equalsIgnoreCase("--config-dir")
                     || args[i].equalsIgnoreCase("-c")) {
                 i++;
-                commandLineProperties
-                        .put(Config.CONFIG_DIR, args[i]);
+                commandLineProperties.put(Config.CONFIG_DIR, args[i]);
             } else if (args[i].equalsIgnoreCase("--cluster-name")) {
                 i++;
-                commandLineProperties.put(Config.CLUSTER_NAME,
-                        args[i]);
+                commandLineProperties.put(Config.CLUSTER_NAME, args[i]);
             } else if (args[i].equalsIgnoreCase("--network-name")) {
                 i++;
-                commandLineProperties.put(Config.NETWORK_NAME,
-                        args[i]);
+                commandLineProperties.put(Config.NETWORK_NAME, args[i]);
             } else if (args[i].equalsIgnoreCase("--peers")
                     || args[i].equalsIgnoreCase("-p")) {
                 i++;
@@ -169,36 +168,28 @@ public final class Main {
                 // i++;
                 // commandLineProperties.put(Config.DISCOVERY_PORT, args[i]);
             } else if (args[i].equalsIgnoreCase("--native-jobs")) {
-                commandLineProperties
-                        .put(Config.NATIVE_JOBS, "true");
+                commandLineProperties.put(Config.NATIVE_JOBS, "true");
             } else if (args[i].equalsIgnoreCase("--no-native-jobs")) {
-                commandLineProperties.put(Config.NATIVE_JOBS,
-                        "false");
-                
+                commandLineProperties.put(Config.NATIVE_JOBS, "false");
+
             } else if (args[i].equalsIgnoreCase("--resource-adaptor")) {
                 i++;
-                commandLineProperties.put(Config.RESOURCE_ADAPTOR,
-                        args[i]);
+                commandLineProperties.put(Config.RESOURCE_ADAPTOR, args[i]);
             } else if (args[i].equalsIgnoreCase("--resource-uri")) {
                 i++;
-                commandLineProperties.put(Config.RESOURCE_URI,
-                        args[i]);
+                commandLineProperties.put(Config.RESOURCE_URI, args[i]);
             } else if (args[i].equalsIgnoreCase("--resource-wrapper")) {
                 i++;
-                commandLineProperties.put(Config.RESOURCE_WRAPPER,
-                        args[i]);
+                commandLineProperties.put(Config.RESOURCE_WRAPPER, args[i]);
             } else if (args[i].equalsIgnoreCase("--nodes")) {
                 i++;
-                commandLineProperties.put(Config.RESOURCE_NODES,
-                        args[i]);
+                commandLineProperties.put(Config.RESOURCE_NODES, args[i]);
             } else if (args[i].equalsIgnoreCase("--cores")) {
                 i++;
-                commandLineProperties.put(Config.RESOURCE_CORES,
-                        args[i]);
+                commandLineProperties.put(Config.RESOURCE_CORES, args[i]);
             } else if (args[i].equalsIgnoreCase("--memory")) {
                 i++;
-                commandLineProperties.put(Config.RESOURCE_MEMORY,
-                        args[i]);
+                commandLineProperties.put(Config.RESOURCE_MEMORY, args[i]);
             } else if (args[i].equalsIgnoreCase("--random-ports")) {
                 commandLineProperties.put(Config.PORT, "0");
                 // commandLineProperties.put(Config.ZONI_PORT, "0");
@@ -214,11 +205,9 @@ public final class Main {
                 commandLineProperties.put(Config.START_HUB, "false");
             } else if (args[i].equalsIgnoreCase("--hub-addresses")) {
                 i++;
-                commandLineProperties.put(Config.HUB_ADDRESSES,
-                        args[i]);
+                commandLineProperties.put(Config.HUB_ADDRESSES, args[i]);
             } else if (args[i].equalsIgnoreCase("--config-properties")) {
-                Map<String, String> properties = Config
-                        .getDescriptions();
+                Map<String, String> properties = Config.getDescriptions();
                 for (Map.Entry<String, String> property : properties.entrySet()) {
                     System.out.println(property.getKey());
                     System.out.println("\t" + property.getValue());
@@ -246,10 +235,12 @@ public final class Main {
                 System.exit(1);
             }
         }
-        
-        System.err.println("Environment:");
-        for (Map.Entry<String, String> entry: System.getenv().entrySet()) {
-            System.err.println(entry.getKey() + " = " + entry.getValue());
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Environment:");
+            for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
+                logger.debug(entry.getKey() + " = " + entry.getValue());
+            }
         }
 
         Node node = null;
@@ -270,8 +261,8 @@ public final class Main {
         }
 
         if (remote) {
-            System.out.println(ADDRESS_LINE_PREFIX + node.getIPLServer().getAddress()
-                    + ADDRESS_LINE_POSTFIX);
+            System.out.println(ADDRESS_LINE_PREFIX
+                    + node.getIPLServer().getAddress() + ADDRESS_LINE_POSTFIX);
             System.out.flush();
             ThreadPool.createNew(node, "Zorilla node");
             waitUntilFinished();
