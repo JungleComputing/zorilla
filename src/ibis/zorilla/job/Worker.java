@@ -331,13 +331,17 @@ public final class Worker implements Runnable {
         }
         sd.addJavaSystemProperty(IbisProperties.HUB_ADDRESSES, hubAddresses);
 
-        sd.addJavaSystemProperty("ibis.pool.size=", ""
+        sd.addJavaSystemProperty("ibis.pool.size", ""
                 + zorillaJob.getAttributes().getProcessCount());
+        
+        sd.addJavaSystemProperty("ibis.location", 
+                System.getProperty(IbisProperties.LOCATION));
+
 
         // main class and options
         sd.setJavaMain(zorillaJob.getDescription().getJavaMain());
 
-        sd.setJavaArguments(zorillaJob.getDescription().getArguments());
+        sd.setJavaArguments(zorillaJob.getDescription().getJavaArguments());
 
         // FIXME:DEBUG
         sd.addAttribute("sandbox.delete", "false");
@@ -663,6 +667,10 @@ public final class Worker implements Runnable {
                     logger.info("worker " + this + "(" + status()
                             + ") exited with code " + exitStatus);
                 } else {
+                    if (!gatState.equals(JobState.RUNNING)) {
+                        logger.error("Job state now: " + gatState);
+                    }
+                    
                     // process not yet done...
                     boolean kill = false;
                     synchronized (this) {

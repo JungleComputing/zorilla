@@ -193,21 +193,6 @@ public class Starter {
 
     }
 
-    private String buildClasspath(File file) {
-        if (file.isFile()) {
-            return file.getAbsolutePath();
-        } else if (file.isDirectory()) {
-            String result = file.getAbsolutePath();
-            for (File child : file.listFiles()) {
-                result = result + ":" + buildClasspath(child);
-            }
-            return result;
-        } else {
-            return "";
-        }
-
-    }
-
     private Process startProcess() throws IOException {
         ProcessBuilder builder = new ProcessBuilder();
 
@@ -222,7 +207,8 @@ public class Starter {
         builder.command().add("-server");
 
         builder.command().add("-cp");
-        builder.command().add(buildClasspath(libDir));
+        builder.command().add(libDir.getAbsolutePath() + ":" + libDir.getAbsolutePath() + File.separator + "*");
+        
 
         // log4j stuff
         builder.command().add(
@@ -232,7 +218,9 @@ public class Starter {
         // add user home (just in case)
         builder.command().add("-Duser.home=" + System.getProperty("user.home"));
         
-        builder.command().add("-XX:+HeapDumpOnOutOfMemoryError");
+        //builder.command().add("-XX:+HeapDumpOnOutOfMemoryError");
+        
+        builder.command().add("-Dgat.adaptor.path=" + libDir.getAbsolutePath() + File.separator + "adaptors");
 
         builder.command().add("ibis.zorilla.Main");
 

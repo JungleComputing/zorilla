@@ -99,7 +99,7 @@ public class DiscoveryService implements Service, Runnable {
                 }
                 return;
             } catch (Exception e) {
-                logger.error("Lookup of peer: " + peer + " failed", e);
+                logger.warn("Lookup of peer: " + peer + " failed", e);
             }
             try {
                 Thread.sleep(1000);
