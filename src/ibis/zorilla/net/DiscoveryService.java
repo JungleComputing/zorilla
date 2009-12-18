@@ -113,7 +113,7 @@ public class DiscoveryService implements Service, Runnable {
         logger.debug("sending lookup request to " + address);
 
         VirtualSocket socket = node.network().connect(address,
-                Network.DISCOVERY_SERVICE, CONNECT_TIMEOUT);
+                Network.DISCOVERY_SERVICE);
 
         logger.debug("connected!");
 

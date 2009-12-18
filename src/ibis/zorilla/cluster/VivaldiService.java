@@ -22,7 +22,7 @@ public class VivaldiService implements Service, Runnable {
     public static final int CONNECTION_TIMEOUT = 10 * 1000;
 
     // how long do we wait between two "pings"
-    public static final int PING_INTERVAL = 10 * 1000;
+    public static final int PING_INTERVAL = 20 * 1000;
 
     public static final int TRIES = 4;
 
@@ -46,7 +46,7 @@ public class VivaldiService implements Service, Runnable {
         double result = Double.MAX_VALUE;
 
         VirtualSocket socket = node.network().connect(peer,
-                Network.VIVALDI_SERVICE, CONNECTION_TIMEOUT);
+                Network.VIVALDI_SERVICE);
         socket.setTcpNoDelay(true);
 
         InputStream in = socket.getInputStream();

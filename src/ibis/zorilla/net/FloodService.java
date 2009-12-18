@@ -26,7 +26,7 @@ public final class FloodService implements Service {
 
     public static final long NETWORK_KILL_TIMEOUT = 10 * 1000;
 
-    public static final int REQUEST_TIMEOUT = 5 * 1000;
+    public static final int REQUEST_TIMEOUT = 15 * 1000;
 
     public static final int KILL_NETWORK_RADIUS = 100;
 
@@ -56,9 +56,8 @@ public final class FloodService implements Service {
 
         for (NodeInfo neighbour : neighbours) {
             try {
-                VirtualSocket socket = node.network().connect(
-                        neighbour.getAddress(), Network.FLOOD_SERVICE,
-                        REQUEST_TIMEOUT);
+                VirtualSocket socket = node.network().connect(neighbour,
+                        Network.FLOOD_SERVICE);
                 socket.getOutputStream().write(OPCODE_NETWORK_KILL);
                 DataOutputStream out = new DataOutputStream(socket
                         .getOutputStream());
@@ -97,8 +96,7 @@ public final class FloodService implements Service {
         String metric = advert.getMetric();
 
         if (metric == null) {
-            metric = node.config().getProperty(
-                    Config.DEFAULT_FLOOD_METRIC);
+            metric = node.config().getProperty(Config.DEFAULT_FLOOD_METRIC);
         }
 
         if (metric.equalsIgnoreCase("hops")) {
@@ -135,9 +133,8 @@ public final class FloodService implements Service {
         for (NodeInfo neighbour : neighbours) {
             logger.debug("sending out advert: " + advert + " to " + neighbour);
             try {
-                VirtualSocket socket = node.network().connect(
-                        neighbour.getAddress(), Network.FLOOD_SERVICE,
-                        REQUEST_TIMEOUT);
+                VirtualSocket socket = node.network().connect(neighbour,
+                        Network.FLOOD_SERVICE);
                 socket.getOutputStream().write(OPCODE_JOB_ADVERT_HOPS);
                 ObjectOutputStream out = new ObjectOutputStream(socket
                         .getOutputStream());
@@ -192,9 +189,8 @@ public final class FloodService implements Service {
                 logger.debug("sending advert to " + info + ": "
                         + distanceToNode + " < " + distance);
                 try {
-                    VirtualSocket socket = node.network().connect(
-                            info.getAddress(), Network.FLOOD_SERVICE,
-                            REQUEST_TIMEOUT);
+                    VirtualSocket socket = node.network().connect(info,
+                            Network.FLOOD_SERVICE);
                     socket.getOutputStream().write(OPCODE_JOB_ADVERT_LATENCY);
                     ObjectOutputStream out = new ObjectOutputStream(socket
                             .getOutputStream());

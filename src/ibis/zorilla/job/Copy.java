@@ -802,7 +802,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         }
 
         try {
-            // download input files
+            logger.info("downloading input files for " + this);
             for (InputFile file : preStageFiles) {
                 logger.debug("downloading " + file);
                 file.download();

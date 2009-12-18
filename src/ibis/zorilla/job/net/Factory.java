@@ -16,12 +16,13 @@ public class Factory {
 
     public static final PortType callType = new PortType(
             PortType.SERIALIZATION_OBJECT, PortType.COMMUNICATION_RELIABLE,
-            PortType.CONNECTION_MANY_TO_ONE, PortType.RECEIVE_AUTO_UPCALLS);
+            PortType.CONNECTION_LIGHT, PortType.CONNECTION_MANY_TO_ONE,
+            PortType.RECEIVE_AUTO_UPCALLS);
 
     public static final PortType replyType = new PortType(
             PortType.SERIALIZATION_OBJECT, PortType.COMMUNICATION_RELIABLE,
-            PortType.CONNECTION_ONE_TO_ONE, PortType.RECEIVE_EXPLICIT,
-            PortType.RECEIVE_TIMEOUT);
+            PortType.CONNECTION_LIGHT, PortType.CONNECTION_ONE_TO_ONE,
+            PortType.RECEIVE_EXPLICIT, PortType.RECEIVE_TIMEOUT);
 
     public final static Ibis createIbis(String pool, Node node)
             throws Exception {
@@ -33,7 +34,8 @@ public class Factory {
         properties.setProperty(IbisProperties.REGISTRY_IMPLEMENTATION, "null");
         properties.setProperty(IbisProperties.IMPLEMENTATION, "smartsockets");
 
-        properties.setProperty(IbisProperties.LOCATION_COLOR, "" + Color.BLACK.getRGB());
+        properties.setProperty(IbisProperties.LOCATION_COLOR, ""
+                + Color.BLACK.getRGB());
 
         properties.setProperty(IbisProperties.HUB_ADDRESSES, node.network()
                 .getAddress().hub().toString());

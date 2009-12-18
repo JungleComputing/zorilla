@@ -202,7 +202,7 @@ class ARRG implements GossipAlgorithm, Runnable {
                     // IGNORE
                 }
             } else {
-                logger.warn("gossips took " + remaining / -1000.0
+                logger.debug("gossips took " + remaining / -1000.0
                         + " seconds too long");
             }
         }

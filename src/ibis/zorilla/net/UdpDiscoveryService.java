@@ -261,16 +261,13 @@ public final class UdpDiscoveryService implements Runnable, Service {
                     time = System.currentTimeMillis();
                 }
             } catch (ClosedChannelException e) {
-                logger.error("UdpHandler: caught exception "
-                        + "while recieving message ", e);
+                logger.error("Exception in UDP Discovery", e);
                 return;
             } catch (IOException e) {
-                logger.error("UdpHandler: caught exception while "
-                        + "recieving message ", e);
+                logger.error("Exception in UDP Discovery", e);
                 return;
-
             } catch (ClassNotFoundException e) {
-                logger.error("error on receiving broadcast", e);
+                logger.error("Exception in UDP Discovery", e);
             }
         }
     }

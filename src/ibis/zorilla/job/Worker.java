@@ -252,7 +252,8 @@ public final class Worker implements Runnable {
      */
 
     private JavaSoftwareDescription createJavaSoftwareDescription(
-            File workingDir, GATContext context) throws Exception {
+            File workingDir, GATContext context, boolean streaming)
+            throws Exception {
         JavaSoftwareDescription sd = new JavaSoftwareDescription();
 
         // FIXME: assumes java is on same location as localhost
@@ -331,12 +332,11 @@ public final class Worker implements Runnable {
         }
         sd.addJavaSystemProperty(IbisProperties.HUB_ADDRESSES, hubAddresses);
 
-        sd.addJavaSystemProperty("ibis.pool.size", ""
+        sd.addJavaSystemProperty(IbisProperties.POOL_SIZE, ""
                 + zorillaJob.getAttributes().getProcessCount());
-        
-        sd.addJavaSystemProperty("ibis.location", 
-                System.getProperty(IbisProperties.LOCATION));
 
+        sd.addJavaSystemProperty(IbisProperties.LOCATION_POSTFIX, System
+                .getProperty(IbisProperties.LOCATION));
 
         // main class and options
         sd.setJavaMain(zorillaJob.getDescription().getJavaMain());
@@ -351,11 +351,14 @@ public final class Worker implements Runnable {
                     + file.getAbsolutePath()));
         }
 
-        sd.setStderr(GAT.createFile(id.toString() + ".err"));
-        sd.setStdout(GAT.createFile(id.toString() + ".out"));
-        sd.enableStreamingStderr(true);
-        sd.enableStreamingStdout(true);
-        sd.enableStreamingStdin(true);
+        if (streaming) {
+            sd.enableStreamingStderr(true);
+            sd.enableStreamingStdout(true);
+            sd.enableStreamingStdin(true);
+        } else {
+            sd.setStderr(GAT.createFile(id.toString() + ".err"));
+            sd.setStdout(GAT.createFile(id.toString() + ".out"));
+        }
 
         return sd;
     }
@@ -371,7 +374,8 @@ public final class Worker implements Runnable {
      * @throws Exception
      */
     private org.gridlab.gat.resources.JobDescription createJobDescription(
-            JavaSoftwareDescription sd, GATContext context) throws Exception {
+            JavaSoftwareDescription sd, GATContext context, boolean streaming)
+            throws Exception {
         org.gridlab.gat.resources.JobDescription result;
 
         String wrapper = node.config().getProperty(Config.RESOURCE_WRAPPER);
@@ -425,11 +429,14 @@ public final class Worker implements Runnable {
             wrapperSd.setArguments(argumentList.toArray(new String[argumentList
                     .size()]));
 
-            wrapperSd.enableStreamingStderr(true);
-            wrapperSd.enableStreamingStdin(true);
-            wrapperSd.enableStreamingStdout(true);
-            wrapperSd.setStderr(GAT.createFile(id.toString() + ".err"));
-            wrapperSd.setStdout(GAT.createFile(id.toString() + ".out"));
+            if (streaming) {
+                wrapperSd.enableStreamingStderr(true);
+                wrapperSd.enableStreamingStdin(true);
+                wrapperSd.enableStreamingStdout(true);
+            } else {
+                wrapperSd.setStderr(GAT.createFile(id.toString() + ".err"));
+                wrapperSd.setStdout(GAT.createFile(id.toString() + ".out"));
+            }
 
             result = new org.gridlab.gat.resources.JobDescription(wrapperSd);
             result.setProcessCount(1);
@@ -467,7 +474,7 @@ public final class Worker implements Runnable {
     }
 
     private synchronized void setStatus(Status status) {
-        logger.debug("worker status now: " + status);
+        logger.info("worker status now: " + status);
         this.status = status;
         notifyAll();
     }
@@ -568,11 +575,14 @@ public final class Worker implements Runnable {
 
             GATContext context = createGATContext(node.config());
 
+            boolean streaming = !node.config().getProperty(
+                    Config.RESOURCE_ADAPTOR).equals("sge");
+
             JobDescription jobDescription;
             if (zorillaJob.getDescription().isJava()) {
                 jobDescription = createJobDescription(
-                        createJavaSoftwareDescription(workingDir, context),
-                        context);
+                        createJavaSoftwareDescription(workingDir, context,
+                                streaming), context, streaming);
             } else {
                 logger.error("native jobs not supported for now");
                 setStatus(Status.ERROR);
@@ -606,15 +616,15 @@ public final class Worker implements Runnable {
             setStatus(Status.RUNNING);
             logger.debug("made process");
 
-            if (node.config().getProperty(Config.RESOURCE_ADAPTOR)
-                    .equals("sge")) {
-                outWriter = null;
-                errWriter = null;
-            } else {
+            if (streaming) {
                 outWriter = new StreamWriter(gatJob.getStdout(), zorillaJob
                         .getStdout());
                 errWriter = new StreamWriter(gatJob.getStderr(), zorillaJob
                         .getStderr());
+            } else {
+                outWriter = null;
+                errWriter = null;
+
             }
 
             // TODO reimplement stdin
@@ -630,7 +640,7 @@ public final class Worker implements Runnable {
 
                 JobState gatState = gatJob.getState();
 
-                logger.debug("worker Gat job status now " + gatState);
+                logger.trace("worker Gat job status now " + gatState);
 
                 if (gatState.equals(JobState.STOPPED)
                         || gatState.equals(JobState.SUBMISSION_ERROR)) {
@@ -667,10 +677,6 @@ public final class Worker implements Runnable {
                     logger.info("worker " + this + "(" + status()
                             + ") exited with code " + exitStatus);
                 } else {
-                    if (!gatState.equals(JobState.RUNNING)) {
-                        logger.error("Job state now: " + gatState);
-                    }
-                    
                     // process not yet done...
                     boolean kill = false;
                     synchronized (this) {

@@ -68,8 +68,7 @@ public class Neighbour {
         VirtualSocket socket = null;
         try {
             NodeInfo oldInfo = getInfo();
-            socket = node.network().connect(oldInfo, Network.CLUSTER_SERVICE,
-                    REQUEST_TIMEOUT);
+            socket = node.network().connect(oldInfo, Network.CLUSTER_SERVICE);
 
             OutputStream out = socket.getOutputStream();
             out.write(ClusterService.OPCODE_NEIGHBOUR_INFO_REQUEST);

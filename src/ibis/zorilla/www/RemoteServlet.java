@@ -64,7 +64,7 @@ public final class RemoteServlet extends HttpServlet {
         try {
             logger.debug("connecting to remote node");
             VirtualSocket connection = node.network().connect(address,
-                    Network.WEB_SERVICE, CONNECT_TIMEOUT);
+                    Network.WEB_SERVICE);
 
             logger.debug("sending out request");
 

@@ -138,7 +138,7 @@ public final class Node implements Runnable {
             serverProperties.setProperty(ServerProperties.VIZ_INFO, config
                     .getProperty(Config.VIZ_INFO));
         }
-
+        
         //start ipl server
         iplServer = new ibis.ipl.server.Server(serverProperties);
         

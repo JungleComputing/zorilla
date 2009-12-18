@@ -151,7 +151,7 @@ public class GossipService implements Service {
         try {
             logger.debug("doing tcp request to " + request.getReceiver());
             VirtualSocket socket = node.network().connect(
-                    request.getReceiver(), Network.GOSSIP_SERVICE, timeout);
+                    request.getReceiver(), Network.GOSSIP_SERVICE);
 
             ObjectOutputStream out = new ObjectOutputStream(
                     new BufferedOutputStream(socket.getOutputStream()));
