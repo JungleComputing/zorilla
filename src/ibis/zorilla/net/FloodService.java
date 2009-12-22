@@ -68,7 +68,7 @@ public final class FloodService implements Service {
                 socket.close();
 
             } catch (IOException e) {
-                logger.error("could not send out network kill to " + neighbour,
+                logger.debug("could not send out network kill to " + neighbour,
                         e);
             }
         }
@@ -86,7 +86,7 @@ public final class FloodService implements Service {
             node.end(NETWORK_KILL_TIMEOUT);
 
         } catch (Exception e) {
-            logger.error("could not handle/forward job advert", e);
+            logger.error("could not handle/forward network kill", e);
         }
     }
 

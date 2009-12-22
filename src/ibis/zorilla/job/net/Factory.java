@@ -5,6 +5,7 @@ import ibis.ipl.IbisCapabilities;
 import ibis.ipl.IbisFactory;
 import ibis.ipl.IbisProperties;
 import ibis.ipl.PortType;
+import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.zorilla.Node;
 
 import java.awt.Color;
@@ -37,8 +38,11 @@ public class Factory {
         properties.setProperty(IbisProperties.LOCATION_COLOR, ""
                 + Color.BLACK.getRGB());
 
-        properties.setProperty(IbisProperties.HUB_ADDRESSES, node.network()
-                .getAddress().hub().toString());
+        DirectSocketAddress hubAddress = node.network().getAddress().hub();
+        if (hubAddress != null) {
+            properties.setProperty(IbisProperties.HUB_ADDRESSES, ""
+                    + hubAddress);
+        }
 
         // no capabilities needed from ibis
         IbisCapabilities capabilities = new IbisCapabilities();

@@ -22,8 +22,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -427,8 +430,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
         for (int i = 0; i < nrOfWorkers; i++) {
             if (!isJava()
-                    && !node.config().getBooleanProperty(
-                            Config.NATIVE_JOBS)) {
+                    && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
                 logger.debug("cannot create native worker");
                 break;
             }
@@ -561,8 +563,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
             call.finish();
 
             if (!jobDescription.isJava()
-                    && !node.config().getBooleanProperty(
-                            Config.NATIVE_JOBS)) {
+                    && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
                 throw new Exception("running of non-java job not allowed");
             }
 
@@ -590,8 +591,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
             logger.debug("possible number of NEW3 workers: " + nrOfWorkers);
 
             if (!isJava()
-                    && !node.config().getBooleanProperty(
-                            Config.NATIVE_JOBS)) {
+                    && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
                 logger.debug("cannot start worker, no native jobs allowed");
                 nrOfWorkers = 0;
             }
@@ -654,9 +654,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
      * @return true if more workers could be created later, false if not.
      */
     private boolean createNewLocalWorkers() throws IOException, Exception {
-        if (!isJava()
-                && !node.config().getBooleanProperty(
-                        Config.NATIVE_JOBS)) {
+        if (!isJava() && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
             log("not creating worker, native jobs not allowed");
             return false;
         }
@@ -803,9 +801,15 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
         try {
             logger.info("downloading input files for " + this);
-            for (InputFile file : preStageFiles) {
-                logger.debug("downloading " + file);
-                file.download();
+            // download files in random order. helps to spread load over nodes
+            Random random = new Random();
+            ArrayList<InputFile> input = new ArrayList<InputFile>();
+            input.addAll(Arrays.asList(preStageFiles));
+
+            while (input.size() > 0) {
+                InputFile next = input.remove(random.nextInt(input.size()));
+                logger.info("downloading " + next);
+                next.download();
             }
 
             while (true) {
