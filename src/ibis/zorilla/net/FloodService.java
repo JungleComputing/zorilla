@@ -28,7 +28,7 @@ public final class FloodService implements Service {
 
     public static final int REQUEST_TIMEOUT = 15 * 1000;
 
-    public static final int KILL_NETWORK_RADIUS = 100;
+    public static final int KILL_NETWORK_RADIUS = 5;
 
     public static final int OPCODE_NETWORK_KILL = 1;
 
@@ -57,7 +57,7 @@ public final class FloodService implements Service {
         for (NodeInfo neighbour : neighbours) {
             try {
                 VirtualSocket socket = node.network().connect(neighbour,
-                        Network.FLOOD_SERVICE);
+                        Network.FLOOD_SERVICE, false);
                 socket.getOutputStream().write(OPCODE_NETWORK_KILL);
                 DataOutputStream out = new DataOutputStream(socket
                         .getOutputStream());

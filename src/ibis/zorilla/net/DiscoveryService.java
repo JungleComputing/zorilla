@@ -65,12 +65,16 @@ public class DiscoveryService implements Service, Runnable {
             logger.warn("invalid peer address: " + address, e);
         }
         if (socketAddress != null) {
-            addresses.add(socketAddress);
-            // register hub
-            node.getIPLServer().addHubs(socketAddress.machine());
+            boolean present = addresses.add(socketAddress);
+
+            if (!present) {
+                // register hub at smartsockets too
+                node.getIPLServer().addHubs(socketAddress.machine());
+
+                // nudge the discovery thread
+                notifyAll();
+            }
         }
-        // nudge the discovery thread
-        notifyAll();
     }
 
     private synchronized VirtualSocketAddress[] getAddresses() {
@@ -87,6 +91,7 @@ public class DiscoveryService implements Service, Runnable {
     }
 
     private void doRequests(VirtualSocketAddress peer) {
+        Exception exception = null;
         for (int i = 0; i < MAX_TRIES; i++) {
             try {
                 NodeInfo info = doRequest(peer);
@@ -99,7 +104,7 @@ public class DiscoveryService implements Service, Runnable {
                 }
                 return;
             } catch (Exception e) {
-                logger.warn("Lookup of peer: " + peer + " failed", e);
+                exception = e;
             }
             try {
                 Thread.sleep(1000);
@@ -107,6 +112,8 @@ public class DiscoveryService implements Service, Runnable {
                 // IGNORE
             }
         }
+        logger.warn("Lookup of peer: " + peer + " failed after " + MAX_TRIES
+                + " tries", exception);
     }
 
     private NodeInfo doRequest(VirtualSocketAddress address) throws IOException {

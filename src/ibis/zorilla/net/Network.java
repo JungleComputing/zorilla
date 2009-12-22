@@ -127,8 +127,15 @@ public class Network implements Runnable {
 
     public VirtualSocket connect(NodeInfo peer, byte serviceID)
             throws IOException {
-        VirtualSocket result = socketFactory.createClientSocket(peer
-                .getAddress(), CONNECTION_TIMEOUT, true, lightConnection);
+        return connect(peer, serviceID, true);
+    }
+
+    public VirtualSocket connect(NodeInfo peer, byte serviceID,
+            boolean fillTimeout) throws IOException {
+
+        VirtualSocket result = socketFactory
+                .createClientSocket(peer.getAddress(), CONNECTION_TIMEOUT,
+                        fillTimeout, lightConnection);
 
         result.getOutputStream().write(TYPE_NODE);
         result.getOutputStream().write(versionBytes);
@@ -140,8 +147,13 @@ public class Network implements Runnable {
 
     public VirtualSocket connect(VirtualSocketAddress address, byte serviceID)
             throws IOException {
+        return connect(address, serviceID, true);
+    }
+
+    public VirtualSocket connect(VirtualSocketAddress address, byte serviceID,
+            boolean fillTimeout) throws IOException {
         VirtualSocket result = socketFactory.createClientSocket(address,
-                CONNECTION_TIMEOUT, true, lightConnection);
+                CONNECTION_TIMEOUT, fillTimeout, lightConnection);
 
         result.getOutputStream().write(TYPE_NODE);
         result.getOutputStream().write(versionBytes);
