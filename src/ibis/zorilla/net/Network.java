@@ -71,7 +71,7 @@ public class Network implements Runnable {
 
         serverSocket = socketFactory.createServerSocket(VIRTUAL_PORT, 0, null);
 
-        lightConnection.put("connect.module.allow", "ConnectModule(HubRouted)");
+        //lightConnection.put("connect.module.allow", "ConnectModule(HubRouted)");
 
         // try {
         // ServiceLink sl = socketFactory.getServiceLink();

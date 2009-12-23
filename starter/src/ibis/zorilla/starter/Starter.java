@@ -35,6 +35,8 @@ public class Starter {
 
     private final List<String> options;
 
+    private final List<String> jvmOptions;
+
     private final File zipFile;
 
     private final File libDir;
@@ -42,10 +44,11 @@ public class Starter {
     private long timestamp;
 
     Starter(URL location, File workingDir, List<String> options,
-            String startScript, String killScript) {
+            List<String> jvmOptions, String startScript, String killScript) {
         this.location = location;
         this.workingDir = workingDir;
         this.options = options;
+        this.jvmOptions = jvmOptions;
         this.startScript = startScript;
         this.killScript = killScript;
         timestamp = 0;
@@ -207,8 +210,9 @@ public class Starter {
         builder.command().add("-server");
 
         builder.command().add("-cp");
-        builder.command().add(libDir.getAbsolutePath() + ":" + libDir.getAbsolutePath() + File.separator + "*");
-        
+        builder.command().add(
+                libDir.getAbsolutePath() + ":" + libDir.getAbsolutePath()
+                        + File.separator + "*");
 
         // log4j stuff
         builder.command().add(
@@ -217,10 +221,15 @@ public class Starter {
 
         // add user home (just in case)
         builder.command().add("-Duser.home=" + System.getProperty("user.home"));
+
+        // builder.command().add("-XX:+HeapDumpOnOutOfMemoryError");
+
+        builder.command().add(
+                "-Dgat.adaptor.path=" + libDir.getAbsolutePath()
+                        + File.separator + "adaptors");
         
-        //builder.command().add("-XX:+HeapDumpOnOutOfMemoryError");
-        
-        builder.command().add("-Dgat.adaptor.path=" + libDir.getAbsolutePath() + File.separator + "adaptors");
+        // add additional jvm command line options;
+        builder.command().addAll(jvmOptions);
 
         builder.command().add("ibis.zorilla.Main");
 
@@ -353,6 +362,7 @@ public class Starter {
         String workingDir = System.getProperty("java.io.tmpdir")
                 + File.separator + "zorilla.starter";
         ArrayList<String> options = new ArrayList<String>();
+        ArrayList<String> jvmOptions = new ArrayList<String>();
         String startScript = null;
         String killScript = null;
 
@@ -372,6 +382,8 @@ public class Starter {
             } else if (args[i].equalsIgnoreCase("--starter-killscript")) {
                 i++;
                 killScript = args[i];
+            } else if (args[i].startsWith("-D")) {
+                jvmOptions.add(args[i]);
             } else {
                 options.add(args[i]);
             }
@@ -379,7 +391,7 @@ public class Starter {
 
         try {
             Starter starter = new Starter(new URL(location), new File(
-                    workingDir), options, startScript, killScript);
+                    workingDir), options, jvmOptions, startScript, killScript);
 
             starter.run();
         } catch (MalformedURLException e) {

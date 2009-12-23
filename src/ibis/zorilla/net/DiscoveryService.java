@@ -67,13 +67,11 @@ public class DiscoveryService implements Service, Runnable {
         if (socketAddress != null) {
             boolean present = addresses.add(socketAddress);
 
-            if (!present) {
-                // register hub at smartsockets too
-                node.getIPLServer().addHubs(socketAddress.machine());
+            // nudge the discovery thread
+            notifyAll();
 
-                // nudge the discovery thread
-                notifyAll();
-            }
+            // register hub at smartsockets too
+            node.getIPLServer().addHubs(socketAddress.machine());
         }
     }
 
