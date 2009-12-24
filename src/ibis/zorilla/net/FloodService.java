@@ -128,9 +128,14 @@ public final class FloodService implements Service {
             return;
         }
 
-        NodeInfo[] neighbours = node.clusterService().getNeighbourInfos();
+        //NodeInfo[] neighbours = node.clusterService().getNeighbourInfos();
+        
+        HashSet<NodeInfo> nodes = new HashSet<NodeInfo>();
+        nodes.addAll(Arrays.asList(node.clusterService().getNeighbourInfos()));
+        nodes.addAll(Arrays.asList(node.gossipService().getNodesList()));
+        nodes.addAll(Arrays.asList(node.gossipService().getFallbackNodesList()));
 
-        for (NodeInfo neighbour : neighbours) {
+        for (NodeInfo neighbour : nodes) {
             logger.debug("sending out advert: " + advert + " to " + neighbour);
             try {
                 VirtualSocket socket = node.network().connect(neighbour,
@@ -149,6 +154,7 @@ public final class FloodService implements Service {
                 logger.error("could not send out advert to " + neighbour, e);
             }
         }
+
     }
 
     private void handleJobAdvertHops(VirtualSocket socket) {
