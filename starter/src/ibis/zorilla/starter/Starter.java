@@ -223,6 +223,8 @@ public class Starter {
         builder.command().add("-Duser.home=" + System.getProperty("user.home"));
 
         // builder.command().add("-XX:+HeapDumpOnOutOfMemoryError");
+        
+        builder.command().add("-Xmx256M");
 
         builder.command().add(
                 "-Dgat.adaptor.path=" + libDir.getAbsolutePath()

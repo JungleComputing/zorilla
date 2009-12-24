@@ -134,7 +134,7 @@ public final class FloodService implements Service {
             logger.debug("sending out advert: " + advert + " to " + neighbour);
             try {
                 VirtualSocket socket = node.network().connect(neighbour,
-                        Network.FLOOD_SERVICE);
+                        Network.FLOOD_SERVICE, false);
                 socket.getOutputStream().write(OPCODE_JOB_ADVERT_HOPS);
                 ObjectOutputStream out = new ObjectOutputStream(socket
                         .getOutputStream());

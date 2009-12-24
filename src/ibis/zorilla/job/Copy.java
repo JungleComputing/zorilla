@@ -35,7 +35,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
     public static final long JOB_STATE_REFRESH_TIMEOUT = 60 * 1000;
 
-    public static final long JOB_WAIT_TIMEOUT = 1 * 1000;
+    public static final long JOB_WAIT_TIMEOUT = 60 * 1000;
 
     // functions
 
@@ -713,8 +713,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         }
     }
 
-    private boolean removeFinishedLocalWorkers() throws IOException, Exception {
-        boolean error = false;
+    private void removeFinishedLocalWorkers() throws IOException, Exception {
         Worker[] workers;
 
         synchronized (this) {
@@ -723,9 +722,6 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
         for (Worker worker : workers) {
             if (worker.finished()) {
-                if (worker.failed()) {
-                    error = true;
-                }
                 synchronized (this) {
                     localWorkers.remove(worker.id());
                 }
@@ -745,7 +741,6 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                 call.finish();
             }
         }
-        return error;
     }
 
     private synchronized void killWorkers() {
@@ -808,16 +803,12 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
             while (input.size() > 0) {
                 InputFile next = input.remove(random.nextInt(input.size()));
-                logger.info("downloading " + next);
+                logger.debug("downloading " + next);
                 next.download();
             }
 
             while (true) {
-                if (removeFinishedLocalWorkers()) {
-                    // a worker ended in an error, stop creating new workers
-                    // for this job
-                    moreWorkersPossible = false;
-                }
+                removeFinishedLocalWorkers();
 
                 if (moreWorkersPossible) {
                     moreWorkersPossible = createNewLocalWorkers();

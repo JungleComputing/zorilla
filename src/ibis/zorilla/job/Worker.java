@@ -575,8 +575,10 @@ public final class Worker implements Runnable {
 
             GATContext context = createGATContext(node.config());
 
-            boolean streaming = !node.config().getProperty(
-                    Config.RESOURCE_ADAPTOR).equals("sge");
+            String adaptor = node.config().getProperty(Config.RESOURCE_ADAPTOR);
+
+            boolean streaming = !(adaptor.equals("sge") || adaptor
+                    .equals("globus"));
 
             JobDescription jobDescription;
             if (zorillaJob.getDescription().isJava()) {
