@@ -430,7 +430,7 @@ public class Config extends TypedProperties {
             hosts = parseHostnames(resourceURI.substring(9).split(","));
             logger.info("Hosts used by this node: " + Arrays.toString(hosts));
         } else {
-            hosts = new String[0];
+            hosts = null;
         }
     }
 
@@ -517,6 +517,6 @@ public class Config extends TypedProperties {
     }
 
     public String[] getHosts() {
-        return hosts.clone();
+        return hosts;
     }
 }

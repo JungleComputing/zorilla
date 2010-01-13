@@ -434,19 +434,29 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                 logger.debug("cannot create native worker");
                 break;
             }
-            if (node.jobService().nrOfResourceSetsAvailable(workerResources) < 1) {
+            
+            if (!node.jobService()
+                    .resourcesAvailable(workerResources)) {
                 logger.debug("cannot claim resources");
-                break;
+                break; 
             }
 
             UUID workerID = Node.generateUUID();
             Worker worker = new Worker(this, workerID, node, deadline);
+            
+            String hostname = node.jobService().addWorker(worker); 
+            
+            if (hostname == null) {
+                logger.debug("cannot claim resources");
+                worker.abort();
+                break; // might get more resources later
+            }
+            
+            worker.setHostname(hostname);
 
             synchronized (this) {
                 // claim resources, do not start worker yet.
                 localWorkers.put(workerID, worker);
-                node.jobService().setResourcesUsed(getID(),
-                        workerResources.mult(localWorkers.size()));
             }
 
         }
@@ -577,8 +587,11 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
     }
 
     private void sendMaxNrOfWorkers() throws IOException, Exception {
-        int nrOfWorkers = node.jobService().nrOfResourceSetsAvailable(
-                workerResources);
+        int nrOfWorkers = 0;
+        
+        if (node.jobService().resourcesAvailable(workerResources)) {
+            nrOfWorkers = node.jobService().freeNodes();
+        }
 
         logger.debug("possible number of NEW workers: " + nrOfWorkers);
 
@@ -674,19 +687,26 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
             }
 
             synchronized (this) {
-                if (node.jobService()
-                        .nrOfResourceSetsAvailable(workerResources) < 1) {
+                if (!node.jobService()
+                        .resourcesAvailable(workerResources)) {
                     log("cannot claim resources");
                     return true; // might get more resources later
                 }
 
                 workerID = Node.generateUUID();
                 worker = new Worker(this, workerID, node, deadline);
+                
+                String hostname = node.jobService().addWorker(worker); 
+                
+                if (hostname == null) {
+                    log("cannot claim resources");
+                    return true; // might get more resources later
+                }
+                
+                worker.setHostname(hostname);
 
                 // claim resources, do not start worker yet.
                 localWorkers.put(workerID, worker);
-                node.jobService().setResourcesUsed(getID(),
-                        workerResources.mult(localWorkers.size()));
             }
 
             Call call = endPoint.call(primary);
@@ -703,6 +723,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
             if (!allowed) {
                 log("creation of worker denied by primary");
+                worker.abort();
                 synchronized (this) {
                     localWorkers.remove(workerID);
                 }
@@ -813,10 +834,6 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                 if (moreWorkersPossible) {
                     moreWorkersPossible = createNewLocalWorkers();
                 }
-
-                // update resource usage
-                node.jobService().setResourcesUsed(getID(),
-                        workerResources.mult(getNrOfWorkers()));
 
                 if (!getBooleanAttribute("malleable")
                         && getPhase() <= SCHEDULING) {

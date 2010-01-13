@@ -91,6 +91,8 @@ public final class Worker implements Runnable {
     private Status status;
 
     private int exitStatus;
+    
+    private String hostname;
 
     /**
      * creates a new child for a given ZorillaJobDescription.
@@ -120,6 +122,11 @@ public final class Worker implements Runnable {
         }
 
     }
+    
+    public synchronized void abort() {
+        status = Status.KILLED;
+    }
+
 
     public void start() {
         ThreadPool.createNew(this, "worker " + id);
@@ -598,15 +605,7 @@ public final class Worker implements Runnable {
                     Config.RESOURCE_URI));
 
             if (resourceURI.getScheme().equalsIgnoreCase("multissh")) {
-                String host = node.jobService().getHost(this);
-
-                if (host == null) {
-                    logger.error("Could not allocate host in multissh scheme");
-                    setStatus(Status.ERROR);
-                    return;
-                }
-
-                resourceURI = new URI("ssh://" + host);
+                resourceURI = new URI("ssh://" + getHostname());
             }
 
             ResourceBroker jobBroker = GAT.createResourceBroker(context,
@@ -730,6 +729,17 @@ public final class Worker implements Runnable {
             }
         }
     }
+
+    private synchronized String getHostname() {
+        // TODO Auto-generated method stub
+        return hostname;
+    }
+    
+    synchronized void setHostname(String hostname) {
+        // TODO Auto-generated method stub
+        this.hostname = hostname;
+    }
+
 
     /*
      * public void run() { ProcessBuilder processBuilder; Process process =

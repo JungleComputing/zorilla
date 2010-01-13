@@ -10,14 +10,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.util.BitSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import javax.management.MBeanServer;
@@ -40,11 +35,13 @@ public final class JobService implements Service, Runnable {
 
     private boolean killed = false;
 
-    private final Resources availableResources;
+    private final int nodes;
 
-    private final Map<UUID, Resources> usedResources;
-    
-    private final Map<String, Worker> availableHosts;
+    private final String[] hostnames;
+
+    private final Resources nodeResources;
+
+    private final Worker[] workers;
 
     // return 90% of physical memory size as max memory available
     private static int freeMemory() {
@@ -61,7 +58,7 @@ public final class JobService implements Service, Runnable {
             return ONE_GB;
         }
     }
-    
+
     public JobService(Node node) throws Exception {
         this.node = node;
         jobs = new HashMap<UUID, ZorillaJob>();
@@ -74,25 +71,36 @@ public final class JobService implements Service, Runnable {
                 Runtime.getRuntime().availableProcessors());
         logger.info("Available cores on each node: " + availableCores);
 
-        int freeMemory = node.config().getIntProperty(
-                Config.RESOURCE_MEMORY, freeMemory());
+        int freeMemory = node.config().getIntProperty(Config.RESOURCE_MEMORY,
+                freeMemory());
         logger.info("Total memory available: " + freeMemory + " Mb");
 
         int usableDiskSpace = (int) (node.config().getTmpDir().getUsableSpace() / 1024.0 / 1024.0);
         logger.info("Total diskspace available: " + usableDiskSpace + " Mb");
-        
-        int nodes = node.config().getIntProperty(Config.RESOURCE_NODES, 1);
 
-        logger.info("Available nodes: " + availableCores);
-        availableResources = new Resources(nodes, availableCores, freeMemory,
+        nodeResources = new Resources(availableCores, freeMemory,
                 usableDiskSpace);
 
-        usedResources = new HashMap<UUID, Resources>();
-
-        availableHosts = new HashMap<String, Worker>();
-        for(String host: node.config().getHosts()) {
-            availableHosts.put(host, null);
+        nodes = node.config().getIntProperty(Config.RESOURCE_NODES, 1);
+        String[] hostnames = node.config().getHosts();
+        if (hostnames == null) {
+            hostnames = new String[nodes];
+            for (int i = 0; i < nodes; i++) {
+                hostnames[i] = "localhost";
+            }
         }
+
+        if (hostnames.length < nodes) {
+            throw new Exception("cannot initialize JobService, only "
+                    + hostnames.length + " hostnames provided, but " + nodes
+                    + " required.");
+        }
+
+        this.hostnames = hostnames;
+
+        workers = new Worker[nodes];
+
+        logger.info("Available nodes: " + nodes);
     }
 
     private static void createWorkerSecurityFile(File file) throws Exception {
@@ -206,60 +214,19 @@ public final class JobService implements Service, Runnable {
         }
     }
 
-    public synchronized boolean setResourcesUsed(UUID id, Resources resources) {
-        usedResources.put(id, resources);
-
-        return true;
+    public boolean resourcesAvailable(Resources workerResources) {
+        return nodeResources.subtract(workerResources).greaterOrEqualZero();
     }
 
-    /**
-     * Useful to get resources for workers and such
-     */
-    public synchronized int nrOfResourceSetsAvailable(Resources request) {
-        Resources free = availableResources;
-
-        logger.debug("getting request for resources: " + request);
-
-        for (Resources resources : usedResources.values()) {
-            free = free.subtract(resources);
-        }
-
-        logger.debug("free resources: " + free);
-
-        if (free.negative()) {
-            logger.warn("negative resources free: " + free);
-        }
-
-        int result = 0;
-
-        if (request.zero()) {
-            // infinite-loop-preventer
-            logger
-                    .warn(
-                            "tried to check number of times \"zero\" resources are available, returning 0",
-                            new Exception());
-            return 0;
-        }
-
-        free = free.subtract(request);
-        while (free.greaterOrEqualZero()) {
-            result++;
-
-            free = free.subtract(request);
-        }
-
-        logger.debug("result for resource request: " + result);
-
-        return result;
-    }
-    
-    synchronized String getHost(Worker worker) {
-        for(Map.Entry<String, Worker> entry: availableHosts.entrySet()) {
-            if (entry.getValue() == null || entry.getValue().finished()) {
-                entry.setValue(worker);
-                return entry.getKey();
+    public synchronized String addWorker(Worker worker) {
+        for (int i = 0; i < workers.length; i++) {
+            if (workers[i] == null || workers[i].finished()) {
+                workers[i] = worker;
+                return hostnames[i];
             }
         }
+
+        // no node available
         return null;
     }
 
@@ -316,7 +283,19 @@ public final class JobService implements Service, Runnable {
     }
 
     public Resources getResources() {
-        return availableResources;
+        return nodeResources;
+    }
+
+    public synchronized int freeNodes() {
+        int result = 0;
+
+        for (Worker worker : workers) {
+            if (worker == null || worker.finished()) {
+                result++;
+            }
+
+        }
+        return result;
     }
 
 }

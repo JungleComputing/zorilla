@@ -825,22 +825,35 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                 logger.debug("cannot create new worker, wrong phase");
                 return;
             }
-
-            if (node.jobService().nrOfResourceSetsAvailable(workerResources) < 1) {
-                logger.debug("cannot claim resources");
-                return;
+            
+            if (!node.jobService()
+                    .resourcesAvailable(workerResources)) {
+                log("cannot claim resources");
+                return; // might get more resources later
             }
 
             UUID workerID = Node.generateUUID();
+            Worker worker = new Worker(this, workerID, node, deadline);
+            
+            String hostname = node.jobService().addWorker(worker); 
+            
+            if (hostname == null) {
+                log("cannot claim resources");
+                return ; // might get more resources later
+            }
+            
+            worker.setHostname(hostname);
+
+            // claim resources, do not start worker yet.
+            localWorkers.put(workerID, worker);
+
             if (!newWorker(constituents.get(id), workerID)) {
                 logger.debug("creation of worker denied by newWorker()");
+                worker.abort();
+                localWorkers.remove(workerID);
                 return;
             }
-            Worker worker = new Worker(this, workerID, node, deadline);
-            localWorkers.put(workerID, worker);
-            node.jobService().setResourcesUsed(getID(),
-                    workerResources.mult(localWorkers.size()));
-
+     
             worker.start();
         }
 
@@ -1106,34 +1119,43 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                 log("cannot create native worker");
                 break;
             }
-            if (node.jobService().nrOfResourceSetsAvailable(workerResources) < 1) {
-                log("cannot claim resources");
-                break;
+            
+            
+            if (!node.jobService()
+                    .resourcesAvailable(workerResources)) {
+                logger.debug("cannot claim resources");
+                break; 
             }
 
             UUID workerID = Node.generateUUID();
             Worker worker = new Worker(this, workerID, node, deadline);
+            
+            String hostname = node.jobService().addWorker(worker); 
+            
+            if (hostname == null) {
+                logger.debug("cannot claim resources");
+                worker.abort();
+                break; // might get more resources later
+            }
+            
+            worker.setHostname(hostname);
 
-            // claim resources, do not start worker yet.
-            localWorkers.put(workerID, worker);
-            node.jobService().setResourcesUsed(getID(),
-                    workerResources.mult(localWorkers.size()));
-
+            synchronized (this) {
+                // claim resources, do not start worker yet.
+                localWorkers.put(workerID, worker);
+            }
         }
 
         return localWorkers.keySet().toArray(new UUID[0]);
     }
 
     private void updateLocalMaxWorkers() {
-        Resources resources;
-
-        synchronized (this) {
-            resources = new Resources(workerResources);
+        int maxNrOfWorkers = 0;
+        
+        if (node.jobService().resourcesAvailable(workerResources)) {
+            maxNrOfWorkers = node.jobService().freeNodes();
         }
-
-        int maxNrOfWorkers = node.jobService().nrOfResourceSetsAvailable(
-                resources);
-
+        
         synchronized (this) {
             Constituent constituent = constituents.get(id);
 
@@ -1295,7 +1317,6 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
     public void run() {
         boolean done = false;
-        
 
         setPhase(PRE_STAGE);
         // no work needed for pre-stage
@@ -1308,10 +1329,6 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             createNewLocalWorkers();
             advertise();
             sendStateUpdate();
-
-            // update resource usage
-            node.jobService().setResourcesUsed(getID(),
-                    workerResources.mult(localWorkers.size()));
 
             if (getPhase() == SCHEDULING
                     && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
