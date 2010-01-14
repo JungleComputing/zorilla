@@ -80,7 +80,7 @@ class Constituent implements Serializable {
     }
 
     public String toString() {
-        return id.toString().substring(0, 8);
+        return info.getName();
     }
 
     public NodeInfo getInfo() {

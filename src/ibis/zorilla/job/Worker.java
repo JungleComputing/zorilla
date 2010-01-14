@@ -351,7 +351,7 @@ public final class Worker implements Runnable {
         sd.setJavaArguments(zorillaJob.getDescription().getJavaArguments());
 
         // FIXME:DEBUG
-        sd.addAttribute("sandbox.delete", "false");
+        //sd.addAttribute("sandbox.delete", "false");
 
         for (File file : workingDir.getAbsoluteFile().listFiles()) {
             sd.addPreStagedFile(GAT.createFile(context, "file:"
