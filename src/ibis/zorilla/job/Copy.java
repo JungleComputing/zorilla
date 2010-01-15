@@ -190,7 +190,8 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
             attributes = (JobAttributes) in.readObject();
             phase = in.readInt();
             constituents = (Map<UUID, Constituent>) in.readObject();
-
+            moreWorkersNeeded = in.readBoolean();
+            
             long now = System.currentTimeMillis();
 
             end(now + in.readLong());
