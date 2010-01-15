@@ -81,6 +81,8 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
     private Map<UUID, Constituent> constituents;
 
     private long deadline;
+    
+    private boolean moreWorkersNeeded;
 
     // *** LOCAL DATA *** \\
 
@@ -111,7 +113,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
     private int sendMaxNrOfWorkers = 0;
 
     static final int STATE_UPDATE = 6;
-
+    
     public Copy(Advert advert, Node node) throws IOException, Exception {
         if (!(advert instanceof PrimaryCopyAdvert)) {
             throw new Exception("wrong advert type");
@@ -149,6 +151,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         phase = UNKNOWN;
         constituents = new HashMap<UUID, Constituent>();
         deadline = Integer.MAX_VALUE;
+        moreWorkersNeeded = false;
 
         log("copy created for " + id.toString());
 
@@ -207,6 +210,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
             attributes = (JobAttributes) in.readObject();
             phase = in.readInt();
             constituents = (Map<UUID, Constituent>) in.readObject();
+            moreWorkersNeeded = in.readBoolean();
 
             long now = System.currentTimeMillis();
 
@@ -218,6 +222,10 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         }
     }
 
+    private synchronized boolean moreWorkersNeeded() {
+        return moreWorkersNeeded;
+    }
+    
     @Override
     public UUID getID() {
         return jobID;
@@ -797,7 +805,6 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
     }
 
     public void run() {
-        boolean moreWorkersPossible = true;
 
         try {
             if (!initialize()) {
@@ -831,8 +838,8 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
             while (true) {
                 removeFinishedLocalWorkers();
 
-                if (moreWorkersPossible) {
-                    moreWorkersPossible = createNewLocalWorkers();
+                if (moreWorkersNeeded()) {
+                    createNewLocalWorkers();
                 }
 
                 if (!getBooleanAttribute("malleable")
@@ -853,7 +860,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                         killWorkers();
                     }
 
-                    if (!moreWorkersPossible && localWorkers.size() == 0) {
+                    if (phase > RUNNING && localWorkers.size() == 0) {
                         finish();
                         return;
                     }
@@ -939,8 +946,8 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
     }
 
     @Override
-    public NodeInfo[] getConstituentInfos() {
-        return new NodeInfo[0];
+    public Constituent[] getConstituents() {
+        return new Constituent[0];
     }
 
 }

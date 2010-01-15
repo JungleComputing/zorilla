@@ -4,6 +4,7 @@ import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.cluster.Coordinates;
 import ibis.zorilla.cluster.Neighbour;
+import ibis.zorilla.job.Constituent;
 import ibis.zorilla.job.ZorillaJob;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -201,6 +202,52 @@ public final class PageServlet extends HttpServlet {
         out.println("</table>");
     }
 
+    private void printConstituentList(Constituent[] constituents, PrintWriter out)
+            throws Exception {
+        if (constituents.length == 0) {
+            out.println("- None -");
+            return;
+        }
+
+        Coordinates nodeCoordinates = node.vivaldiService().getCoordinates();
+
+        out.println("<table border=frame rules=all cellspacing=15>"
+                + "<tr><th>Name</th>" + "<th>ID</th>"
+                +
+                // "<th>Address</th>" +
+                "<th>Vivaldi Coordinate</th>" + "<th>Distance</th>"
+                + "<th>Cluster</th>" + "<th>Workers</th></tr>");
+
+        for (Constituent constituent : constituents) {
+            NodeInfo info = constituent.getInfo();
+
+            out.println("<tr>");
+            out.println("<td><a href=" + WebService.linkTo(info) + "/>"
+                    + info.getName() + "</a></td>");
+            out.println("<td>" + info.getID() + "</td>");
+            // out.println("<td>" + info.getAddress() + "</td>");
+            out.println("<td>" + info.getCoordinates() + "</td>");
+            // out.println("<td title=\"Coordinate: " + info.getCoordinates()
+            // + "\">");
+
+            if (nodeCoordinates.isOrigin() || info.getCoordinates().isOrigin()) {
+                out.println("<td>UNKNOWN");
+            } else {
+                out.println(String.format("<td align=center>%.2f", info
+                        .getCoordinates().distance(nodeCoordinates)));
+            }
+
+            out.println("<td>" + info.getClusterName() + "</td>");
+
+            out.println("<td>" + constituent.nrOfWorkers() + "</td>");
+                    
+            out.println("</tr>");
+        }
+
+        out.println("</table>");
+
+    }
+
     private void printNodeList(NodeInfo[] nodes, PrintWriter out)
             throws Exception {
         if (nodes.length == 0) {
@@ -298,7 +345,7 @@ public final class PageServlet extends HttpServlet {
         printMap(job.getDescription().toStringMap(), out);
 
         out.println("<h3>Constituents</h3>");
-        printNodeList(job.getConstituentInfos(), out);
+        printConstituentList(job.getConstituents(), out);
 
         out.println("<h3>Stats</h3>");
         printMap(job.getStats(), out);

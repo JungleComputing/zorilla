@@ -244,5 +244,5 @@ public abstract class ZorillaJob {
 
     public abstract JobAttributes getAttributes();
 
-    public abstract NodeInfo[] getConstituentInfos();
+    public abstract Constituent[] getConstituents();
 }

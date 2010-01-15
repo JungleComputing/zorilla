@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-class Constituent implements Serializable {
+public class Constituent implements Serializable {
 
     private static final long serialVersionUID = -3561973367471333047L;
 
@@ -44,7 +44,7 @@ class Constituent implements Serializable {
         expirationDate = System.currentTimeMillis() + EXPIRATION_TIMEOUT;
     }
 
-    UUID getID() {
+    public UUID getID() {
         return id;
     }
 
@@ -67,7 +67,7 @@ class Constituent implements Serializable {
         }
     }
 
-    synchronized int nrOfWorkers() {
+    public synchronized int nrOfWorkers() {
         return workers.size();
     }
 

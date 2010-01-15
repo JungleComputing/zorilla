@@ -513,6 +513,25 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
         return result;
     }
+    
+    private synchronized boolean moreWorkersNeeded() {
+        if (!getBooleanAttribute(JobAttributes.MALLEABLE)) {
+            // workers started by scheduler
+            return false;
+        }
+
+        if (getNrOfWorkers() >= maxNrOfWorkers()) {
+            log("creation of a new worker denied, we already "
+                    + "have at least " + maxNrOfWorkers() + " workers");
+            return false;
+        }
+
+        if (!(phase == SCHEDULING || phase == RUNNING)) {
+            return false;
+        }
+        
+        return true;
+    }
 
     private synchronized boolean newWorker(Constituent constituent,
             UUID workerID) {
@@ -918,9 +937,9 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             }
 
             log("adding new constituent: "
-                    + constituentID.toString().substring(0, 7));
+                    + constituent);
             logger.info("adding new constituent: "
-                    + constituentID.toString().substring(0, 7));
+                    + constituent);
 
             constituents.put(constituentID, constituent);
         }
@@ -1023,9 +1042,9 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         constituents.remove(constituent.getID());
 
         log("removed constituent "
-                + constituent.getID().toString().substring(0, 7));
+                + constituent);
         logger.info("removed constituent "
-                + constituent.getID().toString().substring(0, 7));
+                + constituent);
 
         if (constituent.nrOfWorkers() > 0) {
             throw new Exception("removed constituent with workers remaining");
@@ -1038,6 +1057,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         output.writeObject(attributes);
         output.writeInt(phase);
         output.writeObject(constituents);
+        output.writeBoolean(moreWorkersNeeded());
         output.writeLong(deadline - System.currentTimeMillis());
     }
 
@@ -1175,7 +1195,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         }
     }
 
-    private synchronized Constituent[] getConstituents() {
+    public synchronized Constituent[] getConstituents() {
         return constituents.values().toArray(new Constituent[0]);
     }
 
@@ -1450,17 +1470,6 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     @Override
     public ZorillaJobDescription getDescription() {
         return jobDescription;
-    }
-
-    @Override
-    public NodeInfo[] getConstituentInfos() {
-        ArrayList<NodeInfo> result = new ArrayList<NodeInfo>();
-
-        for (Constituent constituent : getConstituents()) {
-            result.add(constituent.getInfo());
-        }
-
-        return result.toArray(new NodeInfo[0]);
     }
 
 }
