@@ -107,6 +107,7 @@ public class InputFile implements Receiver {
         }
 
         file = File.createTempFile("zorilla", ".input", tmpDir);
+        file.deleteOnExit();
 
         endPoint = job.newEndPoint(id.toString(), this);
     }
@@ -145,6 +146,7 @@ public class InputFile implements Receiver {
 
         File destFile = new File(dir.getAbsolutePath() + File.separator
                 + sandboxPath);
+        destFile.deleteOnExit();
         destFile.getParentFile().mkdirs();
 
         if (!destFile.getParentFile().isDirectory()) {

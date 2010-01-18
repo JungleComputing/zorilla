@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -109,8 +110,22 @@ public class Config extends TypedProperties {
 
     public static final String VIZ_INFO = PREFIX + "viz.info";
 
-    private static final Logger logger = Logger
-            .getLogger(Config.class);
+    public static final String VERBOSE = PREFIX + "verbose";
+
+    private static final Logger logger = Logger.getLogger(Config.class);
+
+    private static String getHostName() {
+        String result = "unknown";
+
+        try {
+            InetAddress localHost = java.net.InetAddress.getLocalHost();
+            result = localHost.getHostName();
+        } catch (java.net.UnknownHostException e) {
+            // IGNORE
+        }
+
+        return result;
+    }
 
     private static final String[][] propertiesList = {
 
@@ -233,7 +248,10 @@ public class Config extends TypedProperties {
 
             { HUB_ADDRESSES, null, "List of additional SmartSockets hubs" },
 
-            { VIZ_INFO, "Z^Zorilla Node", "String: info for smartsockets visualization" },
+            { VIZ_INFO, "Z^Zorilla Node @ " + getHostName(),
+                    "String: info for smartsockets visualization" },
+
+            { VERBOSE, "false", "Boolean: if true, will be more verbose" },
 
     // { MASTER_ADDRESS, null, "Address of the master node" },
     };
@@ -344,7 +362,7 @@ public class Config extends TypedProperties {
 
         return tmpDir;
     }
-    
+
     private static String[] parseHostnames(String[] strings) {
         if (strings == null || strings.length == 0) {
             return new String[0];
@@ -425,8 +443,7 @@ public class Config extends TypedProperties {
         tmpDir = createTmpDir();
 
         String resourceURI = getProperty(RESOURCE_URI);
-        if (resourceURI != null
-                && resourceURI.startsWith("multissh:")) {
+        if (resourceURI != null && resourceURI.startsWith("multissh:")) {
             hosts = parseHostnames(resourceURI.substring(9).split(","));
             logger.info("Hosts used by this node: " + Arrays.toString(hosts));
         } else {
