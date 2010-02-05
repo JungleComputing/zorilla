@@ -593,6 +593,7 @@ public final class Worker implements Runnable {
                         createJavaSoftwareDescription(workingDir, context,
                                 streaming), context, streaming);
             } else {
+                
                 logger.error("native jobs not supported for now");
                 setStatus(Status.ERROR);
                 return;
