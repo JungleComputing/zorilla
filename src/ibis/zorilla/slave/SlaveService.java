@@ -9,7 +9,6 @@ import org.gridlab.gat.GAT;
 import org.gridlab.gat.GATContext;
 import org.gridlab.gat.GATInvocationException;
 import org.gridlab.gat.URI;
-import org.gridlab.gat.engine.util.StreamForwarder;
 import org.gridlab.gat.io.File;
 import org.gridlab.gat.resources.JavaSoftwareDescription;
 import org.gridlab.gat.resources.Job;
