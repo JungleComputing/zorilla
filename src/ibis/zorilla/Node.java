@@ -5,6 +5,7 @@ import ibis.zorilla.cluster.ClusterService;
 import ibis.zorilla.cluster.VivaldiService;
 import ibis.zorilla.gossip.GossipService;
 import ibis.zorilla.job.JobService;
+import ibis.zorilla.job.VirtualMachine;
 import ibis.zorilla.net.DiscoveryService;
 import ibis.zorilla.net.FloodService;
 import ibis.zorilla.net.Network;
@@ -226,6 +227,8 @@ public final class Node implements Runnable {
         logger.info("Saving statistics and logs to " + config.getLogDir());
         logger.info("Saving temporary files to " + config.getTmpDir());
         logger.info("Node " + name + " started");
+        
+        new VirtualMachine(new File("/home/ndrost/vm/windowsssh.ovf"));
     }
 
     public synchronized Config config() {
