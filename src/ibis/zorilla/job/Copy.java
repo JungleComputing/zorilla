@@ -7,7 +7,6 @@ import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
-import ibis.zorilla.NodeInfo;
 import ibis.zorilla.io.ObjectInput;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.Call;
@@ -668,6 +667,11 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
     @Override
     public synchronized boolean isJava() {
         return jobDescription.isJava();
+    }
+    
+    @Override
+    public synchronized boolean isVirtual() {
+        return jobDescription.isVirtual();
     }
 
     /**

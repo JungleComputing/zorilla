@@ -291,6 +291,11 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     public boolean isJava() {
         return jobDescription.isJava();
     }
+    
+    @Override
+    public synchronized boolean isVirtual() {
+        return jobDescription.isVirtual();
+    }
 
     @Override
     public synchronized int getExitStatus() {

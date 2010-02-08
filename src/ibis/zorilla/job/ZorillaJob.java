@@ -99,6 +99,8 @@ public abstract class ZorillaJob {
     public abstract UUID getID();
 
     public abstract boolean isJava();
+    
+    public abstract boolean isVirtual();
 
     public abstract void updateAttributes(Map<String, String> attributes)
             throws Exception;
