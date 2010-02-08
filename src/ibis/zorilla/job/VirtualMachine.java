@@ -36,191 +36,209 @@ import com.sun.xml.ws.commons.virtualbox_3_1.VirtualSystemDescriptionType;
  */
 public class VirtualMachine {
 
-    public static final Logger logger = LoggerFactory
-            .getLogger(VirtualMachine.class);
+	public static final Logger logger = LoggerFactory
+			.getLogger(VirtualMachine.class);
 
-    public static final String serviceAddress = "http://localhost:18083/";
+	public static final String serviceAddress = "http://localhost:18083/";
 
-    private final IWebsessionManager mgr;
-    private final IVirtualBox vbox;
-    private final String name;
-    private final IMachine machine;
-    private final IConsole console;
-    private final ISession remoteSession;
+	private final String id;
 
-    private final int sshPort;
 
-    String getVmName(IVirtualSystemDescription description) throws Exception {
+	private final int sshPort;
 
-        List<String> names = description.getValuesByType(
-                org.virtualbox_3_1.VirtualSystemDescriptionType.NAME,
-                VirtualSystemDescriptionValueType.AUTO);
+	String getVmName(IVirtualSystemDescription description) throws Exception {
 
-        if (names.isEmpty()) {
-            throw new Exception("no name found for VM");
-        }
+		List<String> names = description.getValuesByType(
+				org.virtualbox_3_1.VirtualSystemDescriptionType.NAME,
+				VirtualSystemDescriptionValueType.AUTO);
 
-        if (names.size() > 1) {
-            throw new Exception("multiple names found for single VM");
-        }
+		if (names.isEmpty()) {
+			throw new Exception("no name found for VM");
+		}
 
-        return names.get(0);
+		if (names.size() > 1) {
+			throw new Exception("multiple names found for single VM");
+		}
 
-    }
+		return names.get(0);
 
-    public VirtualMachine(File ovfFile, File sandbox) throws Exception {
-        // connect to virtualBox
-        mgr = new IWebsessionManager("http://localhost:18083/");
-        vbox = mgr.logon("test", "test");
+	}
 
-        IAppliance appliance = vbox.createAppliance();
+	public VirtualMachine(File ovfFile, File sandbox) throws Exception {
+		// connect to virtualBox
+		IWebsessionManager mgr = new IWebsessionManager("http://localhost:18083/");
+		IVirtualBox vbox = mgr.logon("test", "test");
 
-        appliance.read(ovfFile.getAbsolutePath());
-        appliance.interpret();
+		IAppliance appliance = vbox.createAppliance();
 
-        List<IVirtualSystemDescription> descriptions = appliance
-                .getVirtualSystemDescriptions();
-        if (descriptions.isEmpty()) {
-            throw new Exception("No virtual systems found in " + ovfFile);
-        }
+		appliance.read(ovfFile.getAbsolutePath());
+		appliance.interpret();
 
-        // name = getVmName(descriptions.get(0));
-        //
-        // logger.info("name = " + name);
-        //
-        // IProgress progress = appliance.importMachines();
-        //
-        // while (!progress.getCompleted()) {
-        // {
-        // logger.info("Progress now " + progress.getPercent());
-        //
-        // try {
-        // Thread.sleep(10000);
-        // } catch (InterruptedException e) {
-        // // IGNORE
-        // }
-        // }
-        // }
+		List<IVirtualSystemDescription> descriptions = appliance
+				.getVirtualSystemDescriptions();
+		if (descriptions.isEmpty()) {
+			throw new Exception("No virtual systems found in " + ovfFile);
+		}
 
-        name = "23444_1";
+		 String name = getVmName(descriptions.get(0));
+		        
+		 logger.info("name = " + name);
+		        
+		 IProgress progress = appliance.importMachines();
+		        
+		 while (!progress.getCompleted()) {
+		 {
+		 logger.info("Progress now " + progress.getPercent());
+		        
+		 try {
+		 Thread.sleep(10000);
+		 } catch (InterruptedException e) {
+		 // IGNORE
+		 }
+		 }
+		 }
 
-        logger.info("importing done!");
 
-        machine = vbox.findMachine(name);
+		logger.info("importing done!");
 
-        if (machine == null) {
-            throw new Exception("could not find virtual machine " + name
-                    + " after importing it");
-        }
+		IMachine machine = vbox.findMachine(name);
+		
 
-        ISession session = mgr.getSessionObject(vbox);
-        vbox.openSession(session, machine.getId()); // machine is now locked
-        IMachine mutable = session.getMachine(); // obtain mutable machine
+		if (machine == null) {
+			throw new Exception("could not find virtual machine " + name
+					+ " after importing it");
+		}
+		
+		id = machine.getId();
 
-        // link sandbox to VirtualMachine
-        // mutable.createSharedFolder("zorilla", sandbox.getAbsolutePath(),
-        // true);
+		ISession session = mgr.getSessionObject(vbox);
+		vbox.openSession(session, id); // machine is now locked
+		IMachine mutable = session.getMachine(); // obtain mutable machine
 
-        // fetch/reserve ephemeral port.
-        ServerSocket socket = new ServerSocket(0);
-        sshPort = socket.getLocalPort();
-        socket.close();
+		// link sandbox to VirtualMachine
+		// mutable.createSharedFolder("zorilla", sandbox.getAbsolutePath(),
+		// true);
 
-        // set NAT forwarding for ssh
-        mutable.setExtraData(
-                "VBoxInternal/Devices/pcnet/0/LUN#0/Config/guestssh/Protocol",
-                "TCP");
-        mutable.setExtraData(
-                "VBoxInternal/Devices/pcnet/0/LUN#0/Config/guestssh/GuestPort",
-                "22");
-        mutable.setExtraData(
-                "VBoxInternal/Devices/pcnet/0/LUN#0/Config/guestssh/HostPort",
-                "" + sshPort);
+		// fetch/reserve ephemeral port.
+		ServerSocket socket = new ServerSocket(0);
+		sshPort = socket.getLocalPort();
+		socket.close();
 
-        mutable.saveSettings();
-        session.close();
+		// set NAT forwarding for ssh
+		mutable.setExtraData(
+				"VBoxInternal/Devices/pcnet/0/LUN#0/Config/guestssh/Protocol",
+				"TCP");
+		mutable.setExtraData(
+				"VBoxInternal/Devices/pcnet/0/LUN#0/Config/guestssh/GuestPort",
+				"22");
+		mutable.setExtraData(
+				"VBoxInternal/Devices/pcnet/0/LUN#0/Config/guestssh/HostPort",
+				"" + sshPort);
 
-        // start VM
+		mutable.setMemorySize(512L);
 
-        remoteSession = mgr.getSessionObject(vbox);
-        IProgress prog = vbox.openRemoteSession(remoteSession, machine.getId(),
-                "vrdp", // session type
-                ""); // possibly environment setting
+		mutable.saveSettings();
+		session.close();
 
-        prog.waitForCompletion(10000); // give the process 10 secs
-        if (prog.getResultCode() != 0) {
-            throw new Exception("Session failed!");
-        }
+		// start VM
 
-        // session will linger until vm is stopped
-        // session.close();
+		ISession remoteSession = mgr.getSessionObject(vbox);
+		IProgress prog = vbox.openRemoteSession(remoteSession, id,
+				"vrdp", // session type
+				""); // possibly environment setting
 
-        console = remoteSession.getConsole();
+		prog.waitForCompletion(10000); // give the process 10 secs
+		if (prog.getResultCode() != 0) {
+			throw new Exception("Session failed!");
+		}
 
-        logger.info("VM VRDP running on "
-                + console.getRemoteDisplayInfo().getPort());
+		// session will linger until vm is stopped
+		// session.close();
 
-        while (console.getState() == MachineState.STARTING) {
-            logger.info("Waiting for machine to finish starting...");
+		IConsole console = remoteSession.getConsole();
 
-            Thread.sleep(1000);
-        }
+		logger.info("VM VRDP running on "
+				+ console.getRemoteDisplayInfo().getPort());
 
-        logger.info("session state = " + session.getState());
-    }
+		while (console.getState() == MachineState.STARTING) {
+			logger.info("Waiting for machine to finish starting...");
 
-    // stop VM (in a rather abrupt manner to save time
-    public void stop() {
-        logger.info("stopping machine");
+			Thread.sleep(1000);
+		}
+		
+		remoteSession.close();
+		mgr.logoff(vbox);
+		
+	}
 
-        // powerdown, wait until complete
-        console.powerDown().waitForCompletion(10000);
-        remoteSession.close();
+	// stop VM (in a rather abrupt manner to save time
+	public void stop() {
+		logger.info("stopping machine");
+		
+		IWebsessionManager mgr = new IWebsessionManager("http://localhost:18083/");
+		IVirtualBox vbox = mgr.logon("test", "test");
+		
+		ISession session = mgr.getSessionObject(vbox);
+		IMachine machine = vbox.getMachine(id);
+		
+		vbox.openExistingSession(session, id);
 
-        logger.info("state of session " + remoteSession.getRef() + " now "
-                + remoteSession.getState());
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            // IGNORE
-        }
+		IConsole console = session.getConsole();
 
-        ISession session = mgr.getSessionObject(vbox);
-        vbox.openSession(session, machine.getId()); // machine is now locked
-        IMachine mutable = session.getMachine(); // obtain mutable machine
+		// powerdown, wait until complete
+		console.powerDown().waitForCompletion(10000);
+		session.close();
 
-        List<IMediumAttachment> media = mutable.getMediumAttachments();
+		logger.info("state of session " + session.getRef() + " now "
+				+ session.getState());
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// IGNORE
+		}
 
-        for (IMediumAttachment medium : media) {
-            if (medium != null && medium.getMedium() != null) {
-                logger.info("removing " + medium.getMedium());
-                machine.detachDevice(medium.getMedium().getName(), medium
-                        .getPort(), medium.getDevice());
-            }
-        }
+		session = mgr.getSessionObject(vbox);
+		vbox.openSession(session, machine.getId()); // machine is now locked
+		IMachine mutable = session.getMachine(); // obtain mutable machine
 
-        mutable.saveSettings();
-        session.close();
+		List<IMediumAttachment> media = mutable.getMediumAttachments();
+		
+		logger.info("media size = " + media);
 
-        for (IMediumAttachment medium : media) {
-            if (medium.getMedium().getDeviceType() == DeviceType.HARD_DISK) {
-                medium.getMedium().deleteStorage();
-            }
-        }
+		for (IMediumAttachment medium : media) {
+			if (medium != null ) {
+				logger.info("removing " + medium);
+				mutable.detachDevice(medium.getController(), medium.getPort(),
+						medium.getDevice());
+			}
+		}
 
-        vbox.unregisterMachine(machine.getId());
-        machine.deleteSettings();
+		mutable.saveSettings();
+		session.close();
 
-        mgr.logoff(vbox);
-    }
+		for (IMediumAttachment medium : media) {
+			if (medium != null
+					&& medium.getMedium() != null
+					&& medium.getMedium().getDeviceType() == DeviceType.HARD_DISK) {
+				logger.info("deleting " + medium.getMedium().getName());
+				medium.getMedium().deleteStorage();
 
-    /**
-     * Port where ssh daemon is reachable on (NAT forwared)
-     * 
-     * @return
-     */
-    public int getSshPort() {
-        return sshPort;
-    }
+			}
+		}
+
+		vbox.unregisterMachine(machine.getId());
+		machine.deleteSettings();
+
+		mgr.logoff(vbox);
+	}
+
+	/**
+	 * Port where ssh daemon is reachable on (NAT forwared)
+	 * 
+	 * @return
+	 */
+	public int getSshPort() {
+		return sshPort;
+	}
 
 }

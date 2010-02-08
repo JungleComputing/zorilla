@@ -84,7 +84,7 @@ public final class Node {
 
     private final UUID id;
 
-    private final VirtualMachine machine; 
+//    private final VirtualMachine machine; 
 
     public static int randomTimeout(int mean) {
         double variance = mean / 10;
@@ -218,8 +218,8 @@ public final class Node {
         logger.info("Saving temporary files to " + config.getTmpDir());
         logger.info("Node " + name + " started");
         
-        machine = new VirtualMachine(new File("/home/ndrost/vm/windowsssh.ovf"), new File("/home/ndrost/tmp/sandbox"));
-        logger.info("vm port = " + machine.getSshPort());
+//        machine = new VirtualMachine(new File("/home/ndrost/vm/windowsssh.ovf"), new File("/home/ndrost/tmp/sandbox"));
+//        logger.info("vm port = " + machine.getSshPort());
     }
 
     public synchronized Config config() {
@@ -308,7 +308,7 @@ public final class Node {
         
         logger.info("node done");
 
-        machine.stop();
+//        machine.stop();
     }
 
     public Map<String, String> getStats() {
