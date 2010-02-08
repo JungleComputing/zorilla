@@ -32,7 +32,7 @@ import org.gridlab.gat.GAT;
  * General peer-to-peer node. Implements a communication structure for "modules"
  * 
  */
-public final class Node implements Runnable {
+public final class Node {
 
     // logger
     private static Logger logger = Logger.getLogger(Node.class);
@@ -84,7 +84,7 @@ public final class Node implements Runnable {
 
     private final UUID id;
 
-    private long deadline;
+    private final VirtualMachine machine; 
 
     public static int randomTimeout(int mean) {
         double variance = mean / 10;
@@ -213,22 +213,13 @@ public final class Node implements Runnable {
         zoniService.start();
         webService.start();
 
-        long maxRunTime = config.getLongProperty(Config.MAX_RUNTIME,
-                0);
-        if (maxRunTime > 0) {
-            deadline = System.currentTimeMillis() + (maxRunTime * 1000);
-            logger.info("Shutting down zorilla node in " + maxRunTime
-                    + " seconds");
-        } else {
-            deadline = Long.MAX_VALUE;
-        }
-
         logger.info("Read configuration from " + config.getConfigDir());
         logger.info("Saving statistics and logs to " + config.getLogDir());
         logger.info("Saving temporary files to " + config.getTmpDir());
         logger.info("Node " + name + " started");
         
-        new VirtualMachine(new File("/home/ndrost/vm/windowsssh.ovf"));
+        machine = new VirtualMachine(new File("/home/ndrost/vm/windowsssh.ovf"), new File("/home/ndrost/tmp/sandbox"));
+        logger.info("vm port = " + machine.getSshPort());
     }
 
     public synchronized Config config() {
@@ -301,17 +292,24 @@ public final class Node implements Runnable {
         return iplServer;
     }
 
-    public synchronized void end(long delay) {
-        long newDeadline = System.currentTimeMillis() + delay;
-
-        if (newDeadline < deadline) {
-            deadline = newDeadline;
-            notifyAll();
-        }
+    public synchronized void end() {
         slaveService.end();
-    }
-    
+        
+        logger.debug("killing al jobs");
 
+        jobService.killAllJobs();
+
+        logger.info("stopping zorilla node");
+        
+        GAT.end();
+
+        slaveService.end();
+        network.end();
+        
+        logger.info("node done");
+
+        machine.stop();
+    }
 
     public Map<String, String> getStats() {
         Map<String, String> result = new LinkedHashMap<String, String>();
@@ -332,46 +330,5 @@ public final class Node implements Runnable {
 
     public String toString() {
         return "Zorilla node " + name;
-    }
-
-    // delay until a certain time before the deadline
-    private synchronized void waitUntilDeadline(long margin) {
-        while (true) {
-            long now = System.currentTimeMillis();
-            long maxDelay = (deadline - now) - margin;
-
-            if (maxDelay <= 0) {
-                return;
-            }
-
-            logger.debug("waiting for: " + maxDelay);
-
-            try {
-                wait(maxDelay);
-            } catch (InterruptedException e) {
-                // IGNORE
-            }
-        }
-    }
-
-    public void run() {
-        logger.debug("waiting until one minute before deadline");
-        waitUntilDeadline(60 * 1000);
-
-        logger.debug("killing al jobs");
-
-        jobService.killAllJobs();
-
-        logger.debug("waiting until deadline");
-
-        waitUntilDeadline(0);
-        
-        GAT.end();
-
-        slaveService.end();
-        network.end();
-        
-        logger.debug("node done");
-
     }
 }

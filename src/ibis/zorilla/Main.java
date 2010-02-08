@@ -28,7 +28,7 @@ public final class Main {
         public void run() {
             logger.info("shutdown hook triggered");
 
-            node.end(0);
+            node.end();
         }
     }
 
@@ -264,13 +264,19 @@ public final class Main {
             System.out.println(ADDRESS_LINE_PREFIX
                     + node.getIPLServer().getAddress() + ADDRESS_LINE_POSTFIX);
             System.out.flush();
-            ThreadPool.createNew(node, "Zorilla node");
             waitUntilFinished();
             System.err
                     .println("Zorilla SLAVE: Standard in closed, stopping Zorilla node");
-            node.end(0);
+            node.end();
         } else {
-            node.run();
+            //keep thread alive so node doesn't end
+            while(true) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    //IGNORE
+                }
+            }
         }
 
     }

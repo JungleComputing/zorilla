@@ -83,7 +83,8 @@ public final class FloodService implements Service {
 
             killNetwork(radius - 1);
 
-            node.end(NETWORK_KILL_TIMEOUT);
+            Thread.sleep(10000);
+            node.end();
 
         } catch (Exception e) {
             logger.error("could not handle/forward network kill", e);

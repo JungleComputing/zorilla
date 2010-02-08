@@ -152,9 +152,10 @@ public class ZoniService implements Service {
 
         if (recursive) {
             node.floodService().killNetwork();
-            node.end(FloodService.NETWORK_KILL_TIMEOUT);
+            Thread.sleep(1000);
+            node.end();
         } else {
-            node.end(0);
+            node.end();
         }
     }
 
