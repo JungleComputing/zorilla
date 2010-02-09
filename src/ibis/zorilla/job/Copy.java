@@ -17,6 +17,7 @@ import ibis.zorilla.job.net.Receiver;
 import ibis.zorilla.zoni.ZoniFileInfo;
 import ibis.zorilla.zoni.ZorillaJobDescription;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
@@ -547,10 +548,12 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
                 jobDescription = (ZorillaJobDescription) call.readObject();
 
+                File jobDir = new File(node.config()
+                            .getTmpDir(), id.toString());
+                
                 preStageFiles = new InputFile[call.readInt()];
                 for (int i = 0; i < preStageFiles.length; i++) {
-                    preStageFiles[i] = new InputFile(call, this, node.config()
-                            .getTmpDir());
+                    preStageFiles[i] = new InputFile(call, this, jobDir);
                 }
 
                 postStageFiles = new String[call.readInt()];

@@ -106,7 +106,8 @@ public class InputFile implements Receiver {
             throw new Exception("could not read bootstrap", e);
         }
 
-        file = File.createTempFile("zorilla", ".input", tmpDir);
+        file = new File(tmpDir, sandboxPath);
+        file.getParentFile().mkdirs();
         file.deleteOnExit();
 
         endPoint = job.newEndPoint(id.toString(), this);

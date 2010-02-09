@@ -40,7 +40,7 @@ public class VirtualMachine {
     public static boolean vboxIsAvailable() {
         try {
             IWebsessionManager mgr = new IWebsessionManager(
-                    "http://localhost:18083/" );
+                    "http://localhost:18083/");
             IVirtualBox vbox = mgr.logon("test", "test");
             mgr.logoff(vbox);
 
@@ -48,7 +48,7 @@ public class VirtualMachine {
             logger.info("VirtualBox web service available");
             return true;
         } catch (Throwable t) {
-            //IGNORE
+            // IGNORE
         }
         logger.info("VirtualBox web service not available");
         return false;
@@ -73,7 +73,7 @@ public class VirtualMachine {
 
     }
 
-    public VirtualMachine(File ovfFile, File sandbox) throws Exception {
+    public VirtualMachine(File ovfFile) throws Exception {
         // connect to virtualBox
         IWebsessionManager mgr = new IWebsessionManager(
                 "http://localhost:18083/");
@@ -159,9 +159,6 @@ public class VirtualMachine {
         if (prog.getResultCode() != 0) {
             throw new Exception("Session failed!");
         }
-
-        // session will linger until vm is stopped
-        // session.close();
 
         IConsole console = remoteSession.getConsole();
 

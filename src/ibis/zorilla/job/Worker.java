@@ -159,17 +159,19 @@ public final class Worker implements Runnable {
         sd.setEnvironment(environment);
 
         for (InputFile inputFile : zorillaJob.getPreStageFiles()) {
-            org.gridlab.gat.io.File src = GAT.createFile(context, "file:"
-                    + inputFile.getFile().getAbsolutePath());
+            if (!inputFile.getSandboxPath().endsWith(".vmdk")) {
+                org.gridlab.gat.io.File src = GAT.createFile(context, "file:"
+                        + inputFile.getFile().getAbsolutePath());
 
-            org.gridlab.gat.io.File dst = GAT.createFile(context, inputFile
-                    .getSandboxPath());
+                org.gridlab.gat.io.File dst = GAT.createFile(context, inputFile
+                        .getSandboxPath());
 
-            logger.info("src = " + src + " dst = " + dst);
+                logger.info("src = " + src + " dst = " + dst);
 
-            sd.addPreStagedFile(src, dst);
+                sd.addPreStagedFile(src, dst);
+            }
         }
-        
+
         for (String path : zorillaJob.getPostStageFiles()) {
             org.gridlab.gat.io.File src = GAT.createFile(context, path);
 
@@ -178,7 +180,6 @@ public final class Worker implements Runnable {
 
             sd.addPostStagedFile(src, dst);
         }
-
 
         if (streaming) {
             sd.enableStreamingStderr(true);
@@ -287,13 +288,15 @@ public final class Worker implements Runnable {
         // sd.addAttribute("sandbox.delete", "false");
 
         for (InputFile inputFile : zorillaJob.getPreStageFiles()) {
-            org.gridlab.gat.io.File src = GAT.createFile(context, "file:"
-                    + inputFile.getFile().getAbsolutePath());
+            if (!inputFile.getSandboxPath().endsWith(".vmdk")) {
+                org.gridlab.gat.io.File src = GAT.createFile(context, "file:"
+                        + inputFile.getFile().getAbsolutePath());
 
-            org.gridlab.gat.io.File dst = GAT.createFile(context, "file:"
-                    + inputFile.getSandboxPath());
+                org.gridlab.gat.io.File dst = GAT.createFile(context, "file:"
+                        + inputFile.getSandboxPath());
 
-            sd.addPreStagedFile(src, dst);
+                sd.addPreStagedFile(src, dst);
+            }
         }
 
         for (String path : zorillaJob.getPostStageFiles()) {
@@ -514,7 +517,12 @@ public final class Worker implements Runnable {
         try {
 
             // this should not be the case, but just to be safe we check again
-            if (!zorillaJob.isJava()
+            if (zorillaJob.isVirtual()) {
+                if (!node.config().getBooleanProperty(Config.VIRTUAL_JOBS)) {
+                    throw new Exception(
+                            "cannot run virtual worker, not allowed and/or possible");
+                }
+            } else if (!zorillaJob.isJava()
                     && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
                 throw new Exception("cannot run native worker, not allowed");
             }
@@ -533,10 +541,38 @@ public final class Worker implements Runnable {
 
             GATContext context = createGATContext(node.config());
 
-            String adaptor = node.config().getProperty(Config.RESOURCE_ADAPTOR);
+            String adaptor;
+            URI resourceURI;
+            boolean streaming;
+            VirtualMachine virtualMachine;
+            if (zorillaJob.isVirtual()) {
+                File ovfFile = null;
+                for (InputFile input : zorillaJob.getPreStageFiles()) {
+                    if (input.getSandboxPath().endsWith(".ovf"))
+                        ;
+                    ovfFile = input.getFile();
+                }
 
-            boolean streaming = !(adaptor.equals("sge") || adaptor
-                    .equals("globus"));
+                virtualMachine = new VirtualMachine(ovfFile);
+
+                adaptor = "ssh";
+                resourceURI = new URI("ssh://localhost:"
+                        + virtualMachine.getSshPort());
+
+                streaming = true;
+            } else {
+                adaptor = node.config().getProperty(Config.RESOURCE_ADAPTOR);
+
+                resourceURI = new URI(node.config().getProperty(
+                        Config.RESOURCE_URI));
+
+                if (resourceURI.getScheme().equalsIgnoreCase("multissh")) {
+                    resourceURI = new URI("ssh://" + getHostname());
+                }
+
+                streaming = !(adaptor.equals("sge") || adaptor.equals("globus"));
+
+            }
 
             JobDescription jobDescription;
             if (zorillaJob.getDescription().isJava()) {
@@ -551,13 +587,6 @@ public final class Worker implements Runnable {
 
             logger.debug("running job: " + jobDescription);
             log.printlog("running job: " + jobDescription);
-
-            URI resourceURI = new URI(node.config().getProperty(
-                    Config.RESOURCE_URI));
-
-            if (resourceURI.getScheme().equalsIgnoreCase("multissh")) {
-                resourceURI = new URI("ssh://" + getHostname());
-            }
 
             ResourceBroker jobBroker = GAT.createResourceBroker(context,
                     resourceURI);
