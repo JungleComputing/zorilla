@@ -7,11 +7,13 @@ import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.util.StreamWriter;
+import ibis.zorilla.zoni.ZorillaJobDescription;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -91,7 +93,7 @@ public final class Worker implements Runnable {
     private Status status;
 
     private int exitStatus;
-    
+
     private String hostname;
 
     /**
@@ -122,11 +124,10 @@ public final class Worker implements Runnable {
         }
 
     }
-    
+
     public synchronized void abort() {
         status = Status.KILLED;
     }
-
 
     public void start() {
         ThreadPool.createNew(this, "worker " + id);
@@ -136,131 +137,63 @@ public final class Worker implements Runnable {
         return id;
     }
 
-    private ProcessBuilder nativeCommand(File workingDir) throws Exception {
-        ProcessBuilder result = new ProcessBuilder();
+    private SoftwareDescription createNativeSoftwareDescription(File outputDir,
+            GATContext context, boolean streaming) throws Exception {
+        SoftwareDescription sd = new SoftwareDescription();
 
-        String location = zorillaJob.getDescription().getExecutable();
-
-        File executableFile = new File(location);
-
-        logger.debug("executable location = " + location);
+        ZorillaJobDescription jobDescription = zorillaJob.getDescription();
 
         // check if the executable is a file in the sandbox, if so: make
         // sure the file is found by exec() by making its path absolute,
         // and try to set the executable bit
-        if (!executableFile.isAbsolute()) {
-            File sandboxExeFile = new File(workingDir, location);
+        sd.setExecutable(jobDescription.getExecutable());
 
-            logger
-                    .debug("executable location (in sandbox) = "
-                            + sandboxExeFile);
+        sd.setArguments(jobDescription.getArguments());
 
-            if (sandboxExeFile.exists()) {
-                logger.debug("exe file " + sandboxExeFile
-                        + " exists in sandbox!");
+        Map<String, Object> environment = new HashMap<String, Object>();
 
-                // set exe bit (first try)
-                new RunProcess("/bin/chmod", "u+x", sandboxExeFile
-                        .getAbsolutePath()).run();
-
-                // set exe bit (second try)
-                new RunProcess("/usr/bin/chmod", "u+x", sandboxExeFile
-                        .getAbsolutePath()).run();
-
-                // override exe location
-                location = sandboxExeFile.getAbsolutePath();
-            }
+        for (Map.Entry<String, String> entry : jobDescription.getEnvironment()
+                .entrySet()) {
+            environment.put(entry.getKey(), entry.getValue());
         }
-        result.command().add(location);
+        sd.setEnvironment(environment);
 
-        // add arguments
-        String[] arguments = zorillaJob.getDescription().getArguments();
-        for (int i = 0; i < arguments.length; i++) {
-            result.command().add(arguments[i]);
+        for (InputFile inputFile : zorillaJob.getPreStageFiles()) {
+            org.gridlab.gat.io.File src = GAT.createFile(context, "file:"
+                    + inputFile.getFile().getAbsolutePath());
+
+            org.gridlab.gat.io.File dst = GAT.createFile(context, inputFile
+                    .getSandboxPath());
+
+            logger.info("src = " + src + " dst = " + dst);
+
+            sd.addPreStagedFile(src, dst);
+        }
+        
+        for (String path : zorillaJob.getPostStageFiles()) {
+            org.gridlab.gat.io.File src = GAT.createFile(context, path);
+
+            org.gridlab.gat.io.File dst = GAT.createFile(context, "file:"
+                    + outputDir.getAbsolutePath() + File.separator + path);
+
+            sd.addPostStagedFile(src, dst);
         }
 
-        result.environment().putAll(
-                zorillaJob.getDescription().getEnvironment());
 
-        result.directory(workingDir);
+        if (streaming) {
+            sd.enableStreamingStderr(true);
+            sd.enableStreamingStdout(true);
+            sd.enableStreamingStdin(true);
+        } else {
+            sd.setStderr(GAT.createFile(id.toString() + ".err"));
+            sd.setStdout(GAT.createFile(id.toString() + ".out"));
+        }
 
-        return result;
+        return sd;
     }
 
-    /*
-     * private ProcessBuilder javaCommand(File workingDir) throws Exception {
-     * ProcessBuilder result = new ProcessBuilder();
-     * 
-     * String javaHome = System.getProperty("java.home"); // String
-     * pathSeparator = System.getProperty("path.separator");
-     * 
-     * File securityFile = new File(node.config().getConfigDir(),
-     * "worker.security.policy");
-     * 
-     * // java executable result.command().add( javaHome + File.separator +
-     * "bin" + File.separator + "java");
-     * 
-     * // security stuff // result.add("-Djava.security.debug=access");
-     * result.command().add("-Djava.security.manager"); result.command().add(
-     * "-Djava.security.policy==file:" + securityFile.getAbsolutePath());
-     * 
-     * result .command() .add( "-Xmx" + job
-     * .getStringAttribute(JobAttributes.MEMORY_MAX) + "m");
-     * 
-     * // node port result.command().add("-Dzorilla.node.port=" + nodePort);
-     * 
-     * result.command().add("-Dzorilla.cluster=" + job.cluster());
-     * 
-     * // Ibis support if (job.getBooleanAttribute("ibis")) {
-     * 
-     * result.command() .add( "-Dibis.pool.size=" +
-     * job.getAttributes().getProcessCount());
-     * 
-     * // result.command().add("-Dibis.pool.cluster=" + job.cluster()); }
-     * 
-     * String appClassPath = job.getDescription().getJavaClassPath(); if
-     * (appClassPath == null) { // add root of job to classpath appClassPath =
-     * "." + File.pathSeparator; // appClassPath = "";
-     * 
-     * InputFile[] inputs = job.getPreStageFiles();
-     * 
-     * for (int i = 0; i < inputs.length; i++) { // path of jar is workingDir +
-     * path of jar file in virtual fs if
-     * (inputs[i].sandboxPath().endsWith(".jar")) {
-     * 
-     * appClassPath = appClassPath + workingDir.getAbsolutePath() +
-     * File.separator + inputs[i].sandboxPath() + File.pathSeparator; } } } else
-     * { // replace all ; with : or the other way around :) appClassPath =
-     * appClassPath.replace(":", File.pathSeparator); appClassPath =
-     * appClassPath.replace(";", File.pathSeparator); }
-     * 
-     * // class path result.command().add("-classpath");
-     * result.command().add(appClassPath);
-     * 
-     * // user specified environment options for (Map.Entry<String, String>
-     * entry : job.getDescription() .getJavaSystemProperties().entrySet()) { if
-     * (entry.getKey().startsWith("java")) { throw new Exception(
-     * "cannot add system properties starting with \"java\""); }
-     * 
-     * result.command() .add("-D" + entry.getKey() + "=" + entry.getValue()); }
-     * 
-     * // add main class
-     * result.command().add(job.getDescription().getJavaMain());
-     * 
-     * // arguments String[] arguments =
-     * job.getDescription().getJavaArguments(); for (int i = 0; i <
-     * arguments.length; i++) { result.command().add(arguments[i]); }
-     * 
-     * result.directory(workingDir);
-     * 
-     * return result;
-     * 
-     * }
-     */
-
-    private JavaSoftwareDescription createJavaSoftwareDescription(
-            File workingDir, GATContext context, boolean streaming)
-            throws Exception {
+    private SoftwareDescription createJavaSoftwareDescription(File outputDir,
+            GATContext context, boolean streaming) throws Exception {
         JavaSoftwareDescription sd = new JavaSoftwareDescription();
 
         // FIXME: assumes java is on same location as localhost
@@ -303,9 +236,9 @@ public final class Worker implements Runnable {
 
             for (int i = 0; i < inputs.length; i++) {
                 // path of jar is workingDir + path of jar file in virtual fs
-                if (inputs[i].sandboxPath().endsWith(".jar")) {
+                if (inputs[i].getSandboxPath().endsWith(".jar")) {
 
-                    appClassPath = appClassPath + inputs[i].sandboxPath()
+                    appClassPath = appClassPath + inputs[i].getSandboxPath()
                             + File.pathSeparator;
                 }
             }
@@ -351,11 +284,25 @@ public final class Worker implements Runnable {
         sd.setJavaArguments(zorillaJob.getDescription().getJavaArguments());
 
         // FIXME:DEBUG
-        //sd.addAttribute("sandbox.delete", "false");
+        // sd.addAttribute("sandbox.delete", "false");
 
-        for (File file : workingDir.getAbsoluteFile().listFiles()) {
-            sd.addPreStagedFile(GAT.createFile(context, "file:"
-                    + file.getAbsolutePath()));
+        for (InputFile inputFile : zorillaJob.getPreStageFiles()) {
+            org.gridlab.gat.io.File src = GAT.createFile(context, "file:"
+                    + inputFile.getFile().getAbsolutePath());
+
+            org.gridlab.gat.io.File dst = GAT.createFile(context, "file:"
+                    + inputFile.getSandboxPath());
+
+            sd.addPreStagedFile(src, dst);
+        }
+
+        for (String path : zorillaJob.getPostStageFiles()) {
+            org.gridlab.gat.io.File src = GAT.createFile(context, path);
+
+            org.gridlab.gat.io.File dst = GAT.createFile(context, "file:"
+                    + outputDir.getAbsolutePath() + File.separator + path);
+
+            sd.addPostStagedFile(src, dst);
         }
 
         if (streaming) {
@@ -381,7 +328,7 @@ public final class Worker implements Runnable {
      * @throws Exception
      */
     private org.gridlab.gat.resources.JobDescription createJobDescription(
-            JavaSoftwareDescription sd, GATContext context, boolean streaming)
+            SoftwareDescription sd, GATContext context, boolean streaming)
             throws Exception {
         org.gridlab.gat.resources.JobDescription result;
 
@@ -504,25 +451,25 @@ public final class Worker implements Runnable {
         }
     }
 
-    private File createScratchDir(UUID id) throws IOException, Exception {
-        File scratchDir = new File(node.config().getTmpDir(), id.toString())
-                .getAbsoluteFile();
-
-        scratchDir.mkdirs();
-        scratchDir.deleteOnExit();
-
-        if (!scratchDir.isDirectory()) {
-            throw new IOException("could not create scratch dir");
-        }
-
-        InputFile[] preStageFiles = zorillaJob.getPreStageFiles();
-        for (int i = 0; i < preStageFiles.length; i++) {
-            logger.debug("copying " + preStageFiles[i] + " to scratch dir");
-            preStageFiles[i].copyTo(scratchDir);
-        }
-
-        return scratchDir;
-    }
+    // private File createScratchDir(UUID id) throws IOException, Exception {
+    // File scratchDir = new File(node.config().getTmpDir(), id.toString())
+    // .getAbsoluteFile();
+    //
+    // scratchDir.mkdirs();
+    // scratchDir.deleteOnExit();
+    //
+    // if (!scratchDir.isDirectory()) {
+    // throw new IOException("could not create scratch dir");
+    // }
+    //
+    // InputFile[] preStageFiles = zorillaJob.getPreStageFiles();
+    // for (int i = 0; i < preStageFiles.length; i++) {
+    // logger.debug("copying " + preStageFiles[i] + " to scratch dir");
+    // preStageFiles[i].copyTo(scratchDir);
+    // }
+    //
+    // return scratchDir;
+    // }
 
     private void postStage(File scratchDir) throws IOException, Exception {
         logger.debug("post staging from scratch dir to job");
@@ -546,7 +493,7 @@ public final class Worker implements Runnable {
     }
 
     public void run() {
-        java.io.File workingDir;
+        java.io.File outputDir;
         ZorillaPrintStream log;
         StreamWriter outWriter;
         StreamWriter errWriter;
@@ -577,8 +524,12 @@ public final class Worker implements Runnable {
             // creates a dir the user can put all files in. puts copies of
             // all input and jar files in it.
             log.printlog("creating scratch dir");
-            setStatus(Status.PRE_STAGE);
-            workingDir = createScratchDir(id);
+
+            // create output dir
+            outputDir = new File(node.config().getTmpDir(), id.toString())
+                    .getAbsoluteFile();
+            outputDir.mkdirs();
+            outputDir.deleteOnExit();
 
             GATContext context = createGATContext(node.config());
 
@@ -590,13 +541,12 @@ public final class Worker implements Runnable {
             JobDescription jobDescription;
             if (zorillaJob.getDescription().isJava()) {
                 jobDescription = createJobDescription(
-                        createJavaSoftwareDescription(workingDir, context,
+                        createJavaSoftwareDescription(outputDir, context,
                                 streaming), context, streaming);
             } else {
-                
-                logger.error("native jobs not supported for now");
-                setStatus(Status.ERROR);
-                return;
+                jobDescription = createJobDescription(
+                        createNativeSoftwareDescription(outputDir, context,
+                                streaming), context, streaming);
             }
 
             logger.debug("running job: " + jobDescription);
@@ -616,7 +566,7 @@ public final class Worker implements Runnable {
             gatJob = jobBroker.submitJob(jobDescription);
 
             setStatus(Status.RUNNING);
-            logger.debug("made process");
+            logger.debug("made gat job");
 
             if (streaming) {
                 outWriter = new StreamWriter(gatJob.getStdout(), zorillaJob
@@ -664,7 +614,8 @@ public final class Worker implements Runnable {
                     setExitStatus(exitStatus);
                     log.printlog("flushing files");
                     setStatus(Status.POST_STAGE);
-                    postStage(workingDir);
+
+                    postStage(outputDir);
                     log.close();
 
                     if (killed) {
@@ -735,12 +686,11 @@ public final class Worker implements Runnable {
         // TODO Auto-generated method stub
         return hostname;
     }
-    
+
     synchronized void setHostname(String hostname) {
         // TODO Auto-generated method stub
         this.hostname = hostname;
     }
-
 
     /*
      * public void run() { ProcessBuilder processBuilder; Process process =

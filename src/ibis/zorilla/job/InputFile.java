@@ -124,7 +124,7 @@ public class InputFile implements Receiver {
         output.writeObject(hash);
     }
 
-    public String sandboxPath() {
+    public String getSandboxPath() {
         return sandboxPath;
     }
 
@@ -191,6 +191,10 @@ public class InputFile implements Receiver {
     public void receive(ReadMessage message) {
         job.log("message received in file", new Exception(
                 "message received in file"));
+    }
+    
+    public File getFile() {
+        return file;
     }
 
     private void readFrom(ObjectInput in) throws IOException {

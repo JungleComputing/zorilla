@@ -1393,12 +1393,6 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         }
         // issue final state update callbacks
         sendStateUpdate();
-        //give peers a minute to finish writing output etc.
-        try {
-            Thread.sleep(60000);
-        } catch (InterruptedException e) {
-            //IGNORE
-        }
         finish();
         log("job finished");
     }

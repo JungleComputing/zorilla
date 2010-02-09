@@ -1,6 +1,7 @@
 package ibis.zorilla;
 
 import ibis.util.TypedProperties;
+import ibis.zorilla.job.VirtualMachine;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -71,6 +72,8 @@ public class Config extends TypedProperties {
     public static final String WAN_DISCONNECT = PREFIX + "wan.disconnect";
 
     public static final String NATIVE_JOBS = PREFIX + "native.jobs";
+
+    public static final String VIRTUAL_JOBS = PREFIX + "virtual.jobs";
 
     public static final String MESSAGE_LOSS_PERCENTAGE = PREFIX
             + "message.loss.percentage";
@@ -181,6 +184,11 @@ public class Config extends TypedProperties {
 
             { NATIVE_JOBS, "false",
                     "if set to \"true\" this node will also run native (non-java) jobs" },
+
+            {
+                    VIRTUAL_JOBS,
+                    "true",
+                    "if set to \"true\" this node will also run virtual jobs (requires VirtualBox web service running on local machine)" },
 
             { MESSAGE_LOSS_PERCENTAGE, "0",
                     "percentage of messages lost by the gossiping service" },
@@ -448,6 +456,18 @@ public class Config extends TypedProperties {
             logger.info("Hosts used by this node: " + Arrays.toString(hosts));
         } else {
             hosts = null;
+        }
+
+        if (getBooleanProperty(VIRTUAL_JOBS)
+                && !VirtualMachine.vboxIsAvailable()) {
+            // virtual jobs allowed, but VirtualBox not available
+            put(VIRTUAL_JOBS, "false");
+        }
+
+        if (getBooleanProperty(NATIVE_JOBS)) {
+            logger.info("Native jobs allowed");
+        } else {
+            logger.info("Native jobs not allowed");
         }
     }
 

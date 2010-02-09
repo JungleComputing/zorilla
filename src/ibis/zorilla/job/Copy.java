@@ -584,6 +584,11 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                     && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
                 throw new Exception("running of non-java job not allowed");
             }
+            
+            if (jobDescription.isVirtual()
+                    && !node.config().getBooleanProperty(Config.VIRTUAL_JOBS)) {
+                throw new Exception("running of virtual jobs not allowed and/or possible");
+            }
 
             initialized = true;
             log("copy " + this + " now initialized");

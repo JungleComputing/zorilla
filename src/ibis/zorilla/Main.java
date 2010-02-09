@@ -171,7 +171,6 @@ public final class Main {
                 commandLineProperties.put(Config.NATIVE_JOBS, "true");
             } else if (args[i].equalsIgnoreCase("--no-native-jobs")) {
                 commandLineProperties.put(Config.NATIVE_JOBS, "false");
-
             } else if (args[i].equalsIgnoreCase("--resource-adaptor")) {
                 i++;
                 commandLineProperties.put(Config.RESOURCE_ADAPTOR, args[i]);
