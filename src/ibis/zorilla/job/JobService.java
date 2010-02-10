@@ -182,7 +182,9 @@ public final class JobService implements Service, Runnable {
         }
 
         if (logger.isDebugEnabled()) {
-            logger.debug("New job submitted: " + description.toString());
+            logger.debug("New job submitted: " + description.toMultilineString());
+        } else {
+            logger.info("New job submitted: " + description.toString());
         }
 
         ZorillaJob job = new Primary(description, callback, node);

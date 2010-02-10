@@ -29,6 +29,7 @@ import org.gridlab.gat.resources.JobDescription;
 import org.gridlab.gat.resources.ResourceBroker;
 import org.gridlab.gat.resources.SoftwareDescription;
 import org.gridlab.gat.resources.Job.JobState;
+import org.gridlab.gat.security.PasswordSecurityContext;
 
 /**
  * @author Niels Drost
@@ -53,7 +54,8 @@ public final class Worker implements Runnable {
     private static final Logger logger = Logger.getLogger(Worker.class
             .getName());
 
-    private static GATContext createGATContext(Config config) throws Exception {
+    private static GATContext createGATContext(Config config, String adaptor)
+            throws Exception {
         GATContext context = new GATContext();
         // SecurityContext securityContext = new
         // CertificateSecurityContext(null,
@@ -64,8 +66,6 @@ public final class Worker implements Runnable {
         context.addPreference("sshtrilead.stoppable", "true");
 
         context.addPreference("file.create", "true");
-
-        String adaptor = config.getProperty(Config.RESOURCE_ADAPTOR);
 
         context.addPreference("resourcebroker.adaptor.name", adaptor);
 
@@ -503,6 +503,7 @@ public final class Worker implements Runnable {
         boolean killed = false; // true if we killed the process ourselves
         boolean failed = false; // true if this worker "failed" on purpose
         Job gatJob = null;
+        VirtualMachine virtualMachine = null;
 
         logger.info("starting worker " + this + " for " + zorillaJob);
 
@@ -539,12 +540,11 @@ public final class Worker implements Runnable {
             outputDir.mkdirs();
             outputDir.deleteOnExit();
 
-            GATContext context = createGATContext(node.config());
-
             String adaptor;
             URI resourceURI;
             boolean streaming;
-            VirtualMachine virtualMachine;
+            GATContext context;
+
             if (zorillaJob.isVirtual()) {
                 File ovfFile = null;
                 for (InputFile input : zorillaJob.getPreStageFiles()) {
@@ -555,11 +555,17 @@ public final class Worker implements Runnable {
 
                 virtualMachine = new VirtualMachine(ovfFile);
 
-                adaptor = "ssh";
+                adaptor = "sshtrilead";
                 resourceURI = new URI("ssh://localhost:"
                         + virtualMachine.getSshPort());
+                
+                resourceURI = new URI("ssh://localhost:"
+                        + "55563");
 
                 streaming = true;
+                
+                context = createGATContext(node.config(), adaptor);
+                context.addSecurityContext(new PasswordSecurityContext("zorilla", "zorilla"));
             } else {
                 adaptor = node.config().getProperty(Config.RESOURCE_ADAPTOR);
 
@@ -571,8 +577,10 @@ public final class Worker implements Runnable {
                 }
 
                 streaming = !(adaptor.equals("sge") || adaptor.equals("globus"));
-
+                
+                context = createGATContext(node.config(), adaptor);
             }
+
 
             JobDescription jobDescription;
             if (zorillaJob.getDescription().isJava()) {
@@ -708,6 +716,13 @@ public final class Worker implements Runnable {
                 logger.warn("had to force status of worker to error");
                 setStatus(Status.ERROR);
             }
+            if (virtualMachine != null) {
+                try {
+                    virtualMachine.stop();
+                } catch (Exception e) {
+                    logger.warn("error on stopping VirtualMachine", e);
+                }
+            }
         }
     }
 
@@ -720,102 +735,6 @@ public final class Worker implements Runnable {
         // TODO Auto-generated method stub
         this.hostname = hostname;
     }
-
-    /*
-     * public void run() { ProcessBuilder processBuilder; Process process =
-     * null; java.io.File workingDir; ZorillaPrintStream log; StreamWriter
-     * outWriter; StreamWriter errWriter; boolean killed = false; // true if we
-     * killed the process ourselves int killedCount = 0; boolean failed = false;
-     * // true if this worker "failed" on purpose
-     * 
-     * logger.info("starting worker " + this + " for " + job);
-     * 
-     * try { log = job.createLogFile(id().toString() + ".log"); } catch
-     * (Exception e) { logger.error("could not create log file", e);
-     * setStatus(Status.ERROR); return; }
-     * 
-     * try { // this should not be the case, but just to be safe we check again
-     * if (!job.isJava() && !node.config().getBooleanProperty(
-     * ZorillaProperties.NATIVE_JOBS)) { throw new
-     * Exception("cannot run native worker, not allowed"); }
-     * 
-     * log.printlog("starting worker " + id + " on node " + node);
-     * 
-     * // creates a dir the user can put all files in. puts copies of // all
-     * input and jar files in it. log.printlog("creating scratch dir");
-     * setStatus(Status.PRE_STAGE); workingDir = createScratchDir(id);
-     * 
-     * if (job.getDescription().isJava()) { processBuilder =
-     * javaCommand(workingDir); } else { processBuilder =
-     * nativeCommand(workingDir); }
-     * 
-     * String cmd = ""; for (String argument : processBuilder.command()) { cmd =
-     * cmd + argument + " "; } logger.debug("running command: " + cmd);
-     * log.printlog("running command: " + cmd);
-     * 
-     * log.printlog("working directory for worker = " +
-     * processBuilder.directory());
-     * logger.debug("working directory for worker = " +
-     * processBuilder.directory());
-     * 
-     * try { process = processBuilder.start(); setStatus(Status.RUNNING);
-     * logger.debug("made process"); } catch (IOException e) {
-     * logger.error("error on forking off worker", e); try { if (job.isJava()) {
-     * // should not happen, must be node error setStatus(Status.ERROR); } else
-     * { setStatus(Status.USER_ERROR); } log.printlog(e.toString());
-     * job.flush(); } catch (Exception e2) { // IGNORE } return; }
-     * 
-     * outWriter = new StreamWriter(process.getInputStream(), job .getStdout());
-     * errWriter = new StreamWriter(process.getErrorStream(), job .getStderr());
-     * 
-     * // TODO reimplement stdin // FileReader fileReader = new
-     * FileReader(job.getStdin(), process // .getOutputStream());
-     * 
-     * logger.debug("created stream writers, waiting for" +
-     * " process to finish");
-     * 
-     * // wait for the process to finish or the deadline to pass // check every
-     * 1 second while (status().equals(Status.RUNNING)) { try { int result =
-     * process.exitValue(); log.printlog("process ended with return value " +
-     * result);
-     * 
-     * // Wait for output stream read threads to finish outWriter.waitFor();
-     * errWriter.waitFor(); logger.debug("worker " + this + " done, exit code "
-     * + result);
-     * 
-     * // fileReader.close();
-     * 
-     * setExitStatus(result);
-     * 
-     * log.printlog("flushing files"); setStatus(Status.POST_STAGE);
-     * postStage(workingDir); log.close();
-     * 
-     * if (killed) { setStatus(Status.KILLED); } else if (failed) {
-     * setStatus(Status.FAILED); } else if (result == 0) {
-     * setStatus(Status.DONE); } else { setStatus(Status.USER_ERROR); }
-     * logger.info("worker " + this + "(" + status() + ") exited with code " +
-     * result); } catch (IllegalThreadStateException e) { // process not yet
-     * done... synchronized (this) { long currentTime =
-     * System.currentTimeMillis(); if (currentTime >= deadline) { // kill
-     * process if (killedCount < 10) { process.destroy(); killed = true;
-     * killedCount++; } else if (killedCount == 10) {
-     * logger.error("Process for worker " + this +
-     * " doesn't seem to want to die. " + "Please kill process manually");
-     * killedCount++; } } else if (currentTime >= failureDate) { // kill process
-     * if (killedCount < 10) { process.destroy(); failed = true; killedCount++;
-     * } else if (killedCount == 10) { logger.error("Process for worker " + this
-     * + " doesn't seem to want to die. " + "Please kill process manually"); } }
-     * else { try { long timeout = Math.min(deadline - currentTime,
-     * POLL_INTERVAL); wait(timeout); } catch (InterruptedException e2) { //
-     * IGNORE } } } } } } catch (Exception e) {
-     * logger.warn("error on running worker", e); try { setStatus(Status.ERROR);
-     * log.printlog(e.toString()); job.flush(); } catch (Exception e2) { //
-     * IGNORE } } finally { // make sure the process is destroyed, and the
-     * worker officially // ends if (process != null) { //
-     * logger.warn("had to force-destroy worker"); process.destroy(); } if
-     * (!finished()) { logger.warn("had to force status of worker to error");
-     * setStatus(Status.ERROR); } } }
-     */
 
     public String toString() {
         return id.toString().substring(0, 8);

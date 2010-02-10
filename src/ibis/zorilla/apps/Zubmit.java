@@ -116,6 +116,7 @@ public final class Zubmit {
                         + "\n                                    is interrupted by Ctrl-C, and retrieves"
                         + "\n                                    output when the job finishes"
                         + "\n-v,  --verbose                      print some more info"
+                        + "\n-V,  --virtual                      use a VM when starting the job"
 
                         + "\n\nFiles options:"
                         + "\n-i,  --input [VIRTUAL_PATH=]PATH    add input file"
@@ -132,6 +133,7 @@ public final class Zubmit {
         boolean waitUntilRunning = false;
         boolean interactive = false;
         boolean verbose = false;
+        boolean virtual = false;
         String hub = null;
 
         try {
@@ -162,6 +164,9 @@ public final class Zubmit {
                 } else if (command[i].equals("-v")
                         || command[i].equals("--verbose")) {
                     verbose = true;
+                } else if (command[i].equals("-V")
+                        || command[i].equals("--virtual")) {
+                    virtual = true;
                 } else if (command[i].equals("-na")
                         || command[i].equals("--node_address")) {
                     i++;
@@ -268,6 +273,7 @@ public final class Zubmit {
             }
 
             jobDescription.setInteractive(interactive);
+            jobDescription.setVirtual(virtual);
 
             if (stdin != null) {
                 jobDescription.setStdinFile(stdin);

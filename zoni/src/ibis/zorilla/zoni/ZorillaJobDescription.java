@@ -261,7 +261,7 @@ public class ZorillaJobDescription implements Serializable {
 
         out.writeInt(inputFiles.size());
         for (ZoniInputFile file : inputFiles) {
-            file.writeTo(out, interactive);
+            file.writeTo(out, false);
         }
 
         out.writeObject(outputFiles);
@@ -345,6 +345,17 @@ public class ZorillaJobDescription implements Serializable {
     }
 
     public String toString() {
+        if (isVirtual()) {
+            return "Virtual job \"" + executable + "\"";
+        } else if (isJava()) {
+            return "Java job \"" + javaMain + "\"";
+        } else {
+            return "Native job \"" + executable + "\"";
+        }
+    }
+
+    
+    public String toMultilineString() {
         String result = "";
 
         result += "\nExecutable = " + executable;

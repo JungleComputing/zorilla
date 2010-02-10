@@ -257,7 +257,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
             log("Primary created for " + id);
             logger.info("new job " + id.toString().substring(0, 7)
-                    + " submitted");
+                    + " created");
             setPhase(INITIAL);
 
             ThreadPool.createNew(this, "Primary of " + this);
@@ -827,6 +827,17 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     }
 
     private synchronized void createNewLocalWorkers() {
+        if (isVirtual()) {
+            if (!node.config().getBooleanProperty(Config.VIRTUAL_JOBS)) {
+                logger.debug("not creating worker, virtual jobs not possible/allowed");
+                return;
+            }
+        } else if (!isJava()
+                && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
+            logger.debug("not creating worker, native jobs not allowed");
+            return;
+        }
+        
         if (!isJava()
                 && !node.config().getBooleanProperty(
                         Config.NATIVE_JOBS)) {
@@ -890,7 +901,6 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     }
 
     private synchronized void finish() {
-        logger.info("finishing job");
         try {
             for (InputFile file : preStageFiles) {
                 file.close();
@@ -921,6 +931,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         } catch (Exception e) {
             log("could not finish job", e);
         }
+        logger.info("job cleanup complete");
         log("finished");
     }
 

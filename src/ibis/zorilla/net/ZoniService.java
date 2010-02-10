@@ -44,6 +44,7 @@ public class ZoniService implements Service {
 
     private void submitJob(ObjectInputStream in, ObjectOutputStream out)
             throws IOException, Exception {
+        logger.debug("receving job submission");
         ZorillaJobDescription jobDescription = new ZorillaJobDescription(in,
                 node.config().getTmpDir());
 
