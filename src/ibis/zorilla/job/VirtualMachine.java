@@ -4,6 +4,10 @@ import java.io.File;
 import java.net.ServerSocket;
 import java.util.List;
 
+import org.gridlab.gat.GAT;
+import org.gridlab.gat.GATContext;
+import org.gridlab.gat.URI;
+import org.gridlab.gat.security.PasswordSecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.virtualbox_3_1.DeviceType;
@@ -33,6 +37,8 @@ public class VirtualMachine {
 
     public static final String serviceAddress = "http://localhost:18083/";
 
+    private static final long TIMEOUT = 60000;
+
     private final String id;
 
     private final int sshPort;
@@ -45,12 +51,12 @@ public class VirtualMachine {
             mgr.logoff(vbox);
 
             // success!
-            logger.info("VirtualBox web service available");
+            logger.info("VirtualBox web service available: yes");
             return true;
         } catch (Throwable t) {
             // IGNORE
         }
-        logger.info("VirtualBox web service not available");
+        logger.info("VirtualBox web service available: no");
         return false;
     }
 
@@ -162,6 +168,8 @@ public class VirtualMachine {
 
         IConsole console = remoteSession.getConsole();
 
+        logger.info("VM ssh on port " + sshPort);
+        
         logger.info("VM VRDP running on "
                 + console.getRemoteDisplayInfo().getPort());
 
@@ -174,6 +182,56 @@ public class VirtualMachine {
         remoteSession.close();
         mgr.logoff(vbox);
 
+        // give the machine some time to startup
+        waitUntilUp();
+    }
+
+    private void waitUntilUp() throws Exception {
+        Exception exception = null;
+        long deadline = System.currentTimeMillis() + TIMEOUT;
+
+        GATContext context = new GATContext();
+
+        context.addSecurityContext(new PasswordSecurityContext("zorilla",
+                "zorilla"));
+
+        context.addPreference("sshtrilead.stoppable", "true");
+
+        context.addPreference("file.create", "true");
+
+        context.addPreference("resourcebroker.adaptor.name", "sshtilead");
+
+        context.addPreference("file.adaptor.name", "local,sshtrilead");
+        
+        context.addPreference("sshtrilead.strictHostKeyChecking", "false");
+        context.addPreference("sshtrilead.noHostKeyChecking", "true");
+
+        context.addPreference("commandlinessh.strictHostKeyChecking", "false");
+        context.addPreference("commandlinessh.noHostKeyChecking", "true");
+
+        
+        while (System.currentTimeMillis() < deadline) {
+
+            try {
+                org.gridlab.gat.io.File randomFile = GAT
+                        .createFile(context, "ssh://localhost:" + getSshPort()
+                                + "/C:/Windows");
+
+                // don't care about result, only that it succeeds
+                boolean exists = randomFile.getFileInterface().exists();
+                logger.info("does this file exist?: " + exists);
+                return;
+            } catch (Exception e) {
+                exception = e;
+                logger.warn("Error while waiting for VM to start", e);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e1) {
+                    // IGNORE
+                }
+            }
+        }
+        throw new Exception("VM failed to come up", exception);
     }
 
     // stop VM (in a rather abrupt manner to save time
