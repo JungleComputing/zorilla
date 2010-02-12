@@ -68,14 +68,14 @@ public final class Worker implements Runnable {
         context.addPreference("file.create", "true");
 
         context.addPreference("resourcebroker.adaptor.name", adaptor);
-        
+
         context.addPreference("sshtrilead.strictHostKeyChecking", "false");
         context.addPreference("sshtrilead.noHostKeyChecking", "true");
 
         context.addPreference("commandlinessh.strictHostKeyChecking", "false");
         context.addPreference("commandlinessh.noHostKeyChecking", "true");
-        
-        //context.addPreference("file.adaptor.name", "local,sshtrilead");
+
+        // context.addPreference("file.adaptor.name", "local,sshtrilead");
 
         return context;
 
@@ -554,21 +554,22 @@ public final class Worker implements Runnable {
             if (zorillaJob.isVirtual()) {
                 File ovfFile = null;
                 for (InputFile input : zorillaJob.getPreStageFiles()) {
-                    if (input.getSandboxPath().endsWith(".ovf"))
-                        ;
-                    ovfFile = input.getFile();
+                    if (input.getSandboxPath().endsWith(".ovf")) {
+                        ovfFile = input.getFile();
+                    }
                 }
-
+                
                 virtualMachine = new VirtualMachine(ovfFile);
 
                 adaptor = "sshtrilead";
                 resourceURI = new URI("ssh://localhost:"
                         + virtualMachine.getSshPort());
-                
+
                 streaming = true;
-                
+
                 context = createGATContext(node.config(), adaptor);
-                context.addSecurityContext(new PasswordSecurityContext("zorilla", "zorilla"));
+                context.addSecurityContext(new PasswordSecurityContext(
+                        "zorilla", "zorilla"));
                 GAT.setDefaultGATContext(context);
             } else {
                 adaptor = node.config().getProperty(Config.RESOURCE_ADAPTOR);
@@ -581,11 +582,10 @@ public final class Worker implements Runnable {
                 }
 
                 streaming = !(adaptor.equals("sge") || adaptor.equals("globus"));
-                
+
                 context = createGATContext(node.config(), adaptor);
                 GAT.setDefaultGATContext(context);
             }
-
 
             JobDescription jobDescription;
             if (zorillaJob.getDescription().isJava()) {

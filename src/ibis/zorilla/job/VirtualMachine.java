@@ -80,12 +80,18 @@ public class VirtualMachine {
     }
 
     public VirtualMachine(File ovfFile) throws Exception {
+        if (ovfFile == null || !ovfFile.getName().endsWith(".ovf")) {
+            throw new Exception("cannot load VM from file \"" + ovfFile + "\" expecting ovf file");
+        }
+        
         // connect to virtualBox
         IWebsessionManager mgr = new IWebsessionManager(
                 "http://localhost:18083/");
         IVirtualBox vbox = mgr.logon("test", "test");
-
+        
         IAppliance appliance = vbox.createAppliance();
+        
+        logger.info("loading VM from " + ovfFile);
 
         appliance.read(ovfFile.getAbsolutePath());
         appliance.interpret();
@@ -140,13 +146,13 @@ public class VirtualMachine {
 
         // set NAT forwarding for ssh
         mutable.setExtraData(
-                "VBoxInternal/Devices/pcnet/0/LUN#0/Config/guestssh/Protocol",
+                "VBoxInternal/Devices/e1000/0/LUN#0/Config/guestssh/Protocol",
                 "TCP");
         mutable.setExtraData(
-                "VBoxInternal/Devices/pcnet/0/LUN#0/Config/guestssh/GuestPort",
+                "VBoxInternal/Devices/e1000/0/LUN#0/Config/guestssh/GuestPort",
                 "22");
         mutable.setExtraData(
-                "VBoxInternal/Devices/pcnet/0/LUN#0/Config/guestssh/HostPort",
+                "VBoxInternal/Devices/e1000/0/LUN#0/Config/guestssh/HostPort",
                 "" + sshPort);
 
         mutable.setMemorySize(512L);
@@ -260,7 +266,7 @@ public class VirtualMachine {
         } catch (InterruptedException e) {
             // IGNORE
         }
-
+        
         session = mgr.getSessionObject(vbox);
         vbox.openSession(session, machine.getId()); // machine is now locked
         IMachine mutable = session.getMachine(); // obtain mutable machine
