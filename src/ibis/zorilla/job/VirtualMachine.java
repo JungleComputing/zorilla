@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.gridlab.gat.GAT;
 import org.gridlab.gat.GATContext;
-import org.gridlab.gat.URI;
 import org.gridlab.gat.security.PasswordSecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +35,8 @@ public class VirtualMachine {
             .getLogger(VirtualMachine.class);
 
     public static final String serviceAddress = "http://localhost:18083/";
+
+    public static final boolean DELETE_ON_STOP = false;
 
     private static final long TIMEOUT = 60000;
 
@@ -81,16 +82,17 @@ public class VirtualMachine {
 
     public VirtualMachine(File ovfFile) throws Exception {
         if (ovfFile == null || !ovfFile.getName().endsWith(".ovf")) {
-            throw new Exception("cannot load VM from file \"" + ovfFile + "\" expecting ovf file");
+            throw new Exception("cannot load VM from file \"" + ovfFile
+                    + "\" expecting ovf file");
         }
-        
+
         // connect to virtualBox
         IWebsessionManager mgr = new IWebsessionManager(
                 "http://localhost:18083/");
         IVirtualBox vbox = mgr.logon("test", "test");
-        
+
         IAppliance appliance = vbox.createAppliance();
-        
+
         logger.info("loading VM from " + ovfFile);
 
         appliance.read(ovfFile.getAbsolutePath());
@@ -175,7 +177,7 @@ public class VirtualMachine {
         IConsole console = remoteSession.getConsole();
 
         logger.info("VM ssh on port " + sshPort);
-        
+
         logger.info("VM VRDP running on "
                 + console.getRemoteDisplayInfo().getPort());
 
@@ -205,23 +207,21 @@ public class VirtualMachine {
 
         context.addPreference("file.create", "true");
 
-        context.addPreference("resourcebroker.adaptor.name", "sshtilead");
+        // context.addPreference("resourcebroker.adaptor.name", "sshtrilead");
 
-        context.addPreference("file.adaptor.name", "local,sshtrilead");
-        
+        // context.addPreference("file.adaptor.name", "local,sshtrilead");
+
         context.addPreference("sshtrilead.strictHostKeyChecking", "false");
         context.addPreference("sshtrilead.noHostKeyChecking", "true");
 
         context.addPreference("commandlinessh.strictHostKeyChecking", "false");
         context.addPreference("commandlinessh.noHostKeyChecking", "true");
 
-        
         while (System.currentTimeMillis() < deadline) {
 
             try {
-                org.gridlab.gat.io.File randomFile = GAT
-                        .createFile(context, "ssh://localhost:" + getSshPort()
-                                + "/C:/Windows");
+                org.gridlab.gat.io.File randomFile = GAT.createFile(context,
+                        "sftp://localhost:" + getSshPort() + "//C:/Windows");
 
                 // don't care about result, only that it succeeds
                 boolean exists = randomFile.getFileInterface().exists();
@@ -261,43 +261,48 @@ public class VirtualMachine {
 
         logger.info("state of session " + session.getRef() + " now "
                 + session.getState());
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            // IGNORE
-        }
-        
-        session = mgr.getSessionObject(vbox);
-        vbox.openSession(session, machine.getId()); // machine is now locked
-        IMachine mutable = session.getMachine(); // obtain mutable machine
 
-        List<IMediumAttachment> media = mutable.getMediumAttachments();
+        if (DELETE_ON_STOP) {
 
-        logger.info("media size = " + media);
-
-        for (IMediumAttachment medium : media) {
-            if (medium != null) {
-                logger.info("removing " + medium);
-                mutable.detachDevice(medium.getController(), medium.getPort(),
-                        medium.getDevice());
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                // IGNORE
             }
-        }
 
-        mutable.saveSettings();
-        session.close();
+            session = mgr.getSessionObject(vbox);
+            vbox.openSession(session, machine.getId()); // machine is now locked
+            IMachine mutable = session.getMachine(); // obtain mutable machine
 
-        for (IMediumAttachment medium : media) {
-            if (medium != null
-                    && medium.getMedium() != null
-                    && medium.getMedium().getDeviceType() == DeviceType.HARD_DISK) {
-                logger.info("deleting " + medium.getMedium().getName());
-                medium.getMedium().deleteStorage();
+            List<IMediumAttachment> media = mutable.getMediumAttachments();
 
+            logger.info("media size = " + media);
+
+            for (IMediumAttachment medium : media) {
+                if (medium != null) {
+                    logger.info("removing " + medium);
+                    mutable.detachDevice(medium.getController(), medium
+                            .getPort(), medium.getDevice());
+                }
             }
-        }
 
-        vbox.unregisterMachine(machine.getId());
-        machine.deleteSettings();
+            mutable.saveSettings();
+            session.close();
+
+            for (IMediumAttachment medium : media) {
+                if (medium != null
+                        && medium.getMedium() != null
+                        && medium.getMedium().getDeviceType() == DeviceType.HARD_DISK) {
+                    logger.info("deleting " + medium.getMedium().getName());
+                    medium.getMedium().deleteStorage();
+
+                }
+            }
+
+            vbox.unregisterMachine(machine.getId());
+            machine.deleteSettings();
+
+        }
 
         mgr.logoff(vbox);
     }

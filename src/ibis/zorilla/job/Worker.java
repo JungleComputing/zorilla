@@ -166,7 +166,7 @@ public final class Worker implements Runnable {
 
         for (InputFile inputFile : zorillaJob.getPreStageFiles()) {
             if (!inputFile.getSandboxPath().endsWith(".vmdk")) {
-                org.gridlab.gat.io.File src = GAT.createFile(context, "file:"
+                org.gridlab.gat.io.File src = GAT.createFile(context, "file://"
                         + inputFile.getFile().getAbsolutePath());
 
                 org.gridlab.gat.io.File dst = GAT.createFile(context, inputFile
@@ -295,10 +295,10 @@ public final class Worker implements Runnable {
 
         for (InputFile inputFile : zorillaJob.getPreStageFiles()) {
             if (!inputFile.getSandboxPath().endsWith(".vmdk")) {
-                org.gridlab.gat.io.File src = GAT.createFile(context, "file:"
+                org.gridlab.gat.io.File src = GAT.createFile(context, "file://"
                         + inputFile.getFile().getAbsolutePath());
 
-                org.gridlab.gat.io.File dst = GAT.createFile(context, "file:"
+                org.gridlab.gat.io.File dst = GAT.createFile(context, ""
                         + inputFile.getSandboxPath());
 
                 sd.addPreStagedFile(src, dst);
@@ -561,7 +561,7 @@ public final class Worker implements Runnable {
                 
                 virtualMachine = new VirtualMachine(ovfFile);
 
-                adaptor = "sshtrilead";
+                adaptor = "commandlinessh";
                 resourceURI = new URI("ssh://localhost:"
                         + virtualMachine.getSshPort());
 
