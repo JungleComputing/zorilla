@@ -838,13 +838,6 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             return;
         }
         
-        if (!isJava()
-                && !node.config().getBooleanProperty(
-                        Config.NATIVE_JOBS)) {
-            logger.debug("not creating worker, native jobs not allowed");
-            return;
-        }
-        
         while (true) {
             //stop adding local workers if one has finished
             if (!moreLocalWorkersPossible) {

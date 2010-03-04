@@ -76,11 +76,19 @@ public class ZoniService implements Service {
 
         UUID jobID = UUID.fromString(jobIDString);
         ZorillaJob job = node.jobService().getJob(jobID);
+        
+        if (job == null) {
+            throw new Exception("cannot find job" + jobID);
+        }
 
         out.writeInt(ZoniProtocol.STATUS_OK);
         out.writeUTF("OK");
         out.writeUTF(job.getID().toString());
-        out.writeUTF(job.getDescription().getExecutable());
+        String executable = job.getDescription().getExecutable();
+        if (executable == null) {
+            executable = "";
+        }
+        out.writeUTF(executable);
         out.writeObject(job.getAttributes().getStringMap());
         out.writeObject(job.getStats());
         out.writeInt(job.getPhase());

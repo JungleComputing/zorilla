@@ -62,6 +62,9 @@ public final class Worker implements Runnable {
         // null, System.getProperty("user.name"), null);
         //        
         // context.addSecurityContext(securityContext);
+        
+        context.addSecurityContext(new PasswordSecurityContext("zorilla",
+        "zorilla"));
 
         context.addPreference("sshtrilead.stoppable", "true");
 
@@ -75,7 +78,7 @@ public final class Worker implements Runnable {
         context.addPreference("commandlinessh.strictHostKeyChecking", "false");
         context.addPreference("commandlinessh.noHostKeyChecking", "true");
 
-        // context.addPreference("file.adaptor.name", "local,sshtrilead");
+        context.addPreference("file.adaptor.name", "local,sshtrilead,sftptrilead");
 
         return context;
 
