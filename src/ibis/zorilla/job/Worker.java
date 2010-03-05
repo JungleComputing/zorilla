@@ -63,8 +63,8 @@ public final class Worker implements Runnable {
         //        
         // context.addSecurityContext(securityContext);
         
-        context.addSecurityContext(new PasswordSecurityContext("zorilla",
-        "zorilla"));
+//        context.addSecurityContext(new PasswordSecurityContext("zorilla",
+//        "zorilla"));
 
         context.addPreference("sshtrilead.stoppable", "true");
 
@@ -78,7 +78,7 @@ public final class Worker implements Runnable {
         context.addPreference("commandlinessh.strictHostKeyChecking", "false");
         context.addPreference("commandlinessh.noHostKeyChecking", "true");
 
-        context.addPreference("file.adaptor.name", "local,sshtrilead,sftptrilead");
+       // context.addPreference("file.adaptor.name", "local,sshtrilead,sftptrilead");
 
         return context;
 
@@ -169,7 +169,7 @@ public final class Worker implements Runnable {
 
         for (InputFile inputFile : zorillaJob.getPreStageFiles()) {
             if (!inputFile.getSandboxPath().endsWith(".vmdk")) {
-                org.gridlab.gat.io.File src = GAT.createFile(context, "file://"
+                org.gridlab.gat.io.File src = GAT.createFile(context, "file:///"
                         + inputFile.getFile().getAbsolutePath());
 
                 org.gridlab.gat.io.File dst = GAT.createFile(context, inputFile
@@ -298,7 +298,7 @@ public final class Worker implements Runnable {
 
         for (InputFile inputFile : zorillaJob.getPreStageFiles()) {
             if (!inputFile.getSandboxPath().endsWith(".vmdk")) {
-                org.gridlab.gat.io.File src = GAT.createFile(context, "file://"
+                org.gridlab.gat.io.File src = GAT.createFile(context, "file:///"
                         + inputFile.getFile().getAbsolutePath());
 
                 org.gridlab.gat.io.File dst = GAT.createFile(context, ""
@@ -564,8 +564,8 @@ public final class Worker implements Runnable {
                 
                 virtualMachine = new VirtualMachine(ovfFile);
 
-                adaptor = "commandlinessh";
-                resourceURI = new URI("ssh://localhost:"
+                adaptor = "sshtrilead";
+                resourceURI = new URI("any://localhost:"
                         + virtualMachine.getSshPort());
 
                 streaming = true;
@@ -573,6 +573,8 @@ public final class Worker implements Runnable {
                 context = createGATContext(node.config(), adaptor);
                 context.addSecurityContext(new PasswordSecurityContext(
                         "zorilla", "zorilla"));
+                context.addPreference("file.adaptor.name", "local,sshtrilead,sftptrilead");
+                
                 GAT.setDefaultGATContext(context);
             } else {
                 adaptor = node.config().getProperty(Config.RESOURCE_ADAPTOR);

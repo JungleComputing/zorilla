@@ -209,7 +209,7 @@ public class VirtualMachine {
 
          context.addPreference("resourcebroker.adaptor.name", "sshtrilead");
 
-         context.addPreference("file.adaptor.name", "local,sshtrilead");
+         context.addPreference("file.adaptor.name", "local,sshtrilead,sftptrilead");
 
         context.addPreference("sshtrilead.strictHostKeyChecking", "false");
         context.addPreference("sshtrilead.noHostKeyChecking", "true");
