@@ -36,13 +36,15 @@ public class VirtualMachine {
 
     public static final String serviceAddress = "http://localhost:18083/";
 
-    public static final boolean DELETE_ON_STOP = false;
+    public static final boolean DELETE_ON_STOP = true;
 
     private static final long TIMEOUT = 60000;
 
     private final String id;
 
     private final int sshPort;
+    
+    private final String name;
 
     public static boolean vboxIsAvailable() {
         try {
@@ -104,7 +106,7 @@ public class VirtualMachine {
             throw new Exception("No virtual systems found in " + ovfFile);
         }
 
-        String name = getVmName(descriptions.get(0));
+        name = getVmName(descriptions.get(0));
 
         logger.info("name = " + name);
 
@@ -176,7 +178,7 @@ public class VirtualMachine {
 
         IConsole console = remoteSession.getConsole();
 
-        logger.info("VM ssh on port " + sshPort);
+        logger.info("VM" + this + " ssh on port " + sshPort);
 
         logger.info("VM VRDP running on "
                 + console.getRemoteDisplayInfo().getPort());
@@ -225,11 +227,11 @@ public class VirtualMachine {
 
                 // don't care about result, only that it succeeds
                 boolean exists = randomFile.getFileInterface().exists();
-                logger.info("does this file exist?: " + exists);
+                logger.debug("does this file exist?: " + exists);
                 return;
             } catch (Exception e) {
                 exception = e;
-                logger.warn("Error while waiting for VM to start", e);
+                logger.debug("Error while waiting for VM to start", e);
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e1) {
@@ -242,7 +244,7 @@ public class VirtualMachine {
 
     // stop VM (in a rather abrupt manner to save time
     public void stop() {
-        logger.info("stopping machine");
+        logger.info("stopping virtual machine");
 
         IWebsessionManager mgr = new IWebsessionManager(
                 "http://localhost:18083/");
@@ -259,10 +261,12 @@ public class VirtualMachine {
         console.powerDown().waitForCompletion(10000);
         session.close();
 
-        logger.info("state of session " + session.getRef() + " now "
+        logger.debug("state of session " + session.getRef() + " now "
                 + session.getState());
 
         if (DELETE_ON_STOP) {
+            
+            logger.info("deleting virtual machine \"" + this + "\"");
 
             try {
                 Thread.sleep(5000);
@@ -276,11 +280,11 @@ public class VirtualMachine {
 
             List<IMediumAttachment> media = mutable.getMediumAttachments();
 
-            logger.info("media size = " + media);
+            logger.debug("media size = " + media);
 
             for (IMediumAttachment medium : media) {
                 if (medium != null) {
-                    logger.info("removing " + medium);
+                    logger.debug("removing " + medium);
                     mutable.detachDevice(medium.getController(), medium
                             .getPort(), medium.getDevice());
                 }
@@ -293,7 +297,7 @@ public class VirtualMachine {
                 if (medium != null
                         && medium.getMedium() != null
                         && medium.getMedium().getDeviceType() == DeviceType.HARD_DISK) {
-                    logger.info("deleting " + medium.getMedium().getName());
+                    logger.debug("deleting " + medium.getMedium().getName());
                     medium.getMedium().deleteStorage();
 
                 }
@@ -301,7 +305,9 @@ public class VirtualMachine {
 
             vbox.unregisterMachine(machine.getId());
             machine.deleteSettings();
-
+            logger.info("virtual machine \"" + this + "\" deleted");
+        } else {
+            logger.info("virtual machine \"" + this + "\" stopped");
         }
 
         mgr.logoff(vbox);
@@ -314,6 +320,10 @@ public class VirtualMachine {
      */
     public int getSshPort() {
         return sshPort;
+    }
+    
+    public String toString() {
+        return name;
     }
 
 }
