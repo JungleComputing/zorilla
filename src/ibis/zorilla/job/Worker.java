@@ -1,7 +1,6 @@
 package ibis.zorilla.job;
 
 import ibis.ipl.IbisProperties;
-import ibis.util.RunProcess;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
@@ -62,9 +61,9 @@ public final class Worker implements Runnable {
         // null, System.getProperty("user.name"), null);
         //        
         // context.addSecurityContext(securityContext);
-        
-//        context.addSecurityContext(new PasswordSecurityContext("zorilla",
-//        "zorilla"));
+
+        // context.addSecurityContext(new PasswordSecurityContext("zorilla",
+        // "zorilla"));
 
         context.addPreference("sshtrilead.stoppable", "true");
 
@@ -78,7 +77,10 @@ public final class Worker implements Runnable {
         context.addPreference("commandlinessh.strictHostKeyChecking", "false");
         context.addPreference("commandlinessh.noHostKeyChecking", "true");
 
-       // context.addPreference("file.adaptor.name", "local,sshtrilead,sftptrilead");
+        context.addPreference("globus.exitvalue.enable", "true");
+
+        // context.addPreference("file.adaptor.name",
+        // "local,sshtrilead,sftptrilead");
 
         return context;
 
@@ -169,8 +171,8 @@ public final class Worker implements Runnable {
 
         for (InputFile inputFile : zorillaJob.getPreStageFiles()) {
             if (!inputFile.getSandboxPath().endsWith(".vmdk")) {
-                org.gridlab.gat.io.File src = GAT.createFile(context, "file:///"
-                        + inputFile.getFile().getAbsolutePath());
+                org.gridlab.gat.io.File src = GAT.createFile(context,
+                        "file:///" + inputFile.getFile().getAbsolutePath());
 
                 org.gridlab.gat.io.File dst = GAT.createFile(context, inputFile
                         .getSandboxPath());
@@ -198,6 +200,8 @@ public final class Worker implements Runnable {
             sd.setStderr(GAT.createFile(id.toString() + ".err"));
             sd.setStdout(GAT.createFile(id.toString() + ".out"));
         }
+
+        sd.addAttribute("globus.exitvalue.enable", "true");
 
         return sd;
     }
@@ -298,8 +302,8 @@ public final class Worker implements Runnable {
 
         for (InputFile inputFile : zorillaJob.getPreStageFiles()) {
             if (!inputFile.getSandboxPath().endsWith(".vmdk")) {
-                org.gridlab.gat.io.File src = GAT.createFile(context, "file:///"
-                        + inputFile.getFile().getAbsolutePath());
+                org.gridlab.gat.io.File src = GAT.createFile(context,
+                        "file:///" + inputFile.getFile().getAbsolutePath());
 
                 org.gridlab.gat.io.File dst = GAT.createFile(context, ""
                         + inputFile.getSandboxPath());
@@ -325,6 +329,8 @@ public final class Worker implements Runnable {
             sd.setStderr(GAT.createFile(id.toString() + ".err"));
             sd.setStdout(GAT.createFile(id.toString() + ".out"));
         }
+        
+        sd.addAttribute("globus.exitvalue.enable", "true");
 
         return sd;
     }
@@ -561,7 +567,7 @@ public final class Worker implements Runnable {
                         ovfFile = input.getFile();
                     }
                 }
-                
+
                 virtualMachine = new VirtualMachine(ovfFile);
 
                 adaptor = "sshtrilead";
@@ -573,8 +579,9 @@ public final class Worker implements Runnable {
                 context = createGATContext(node.config(), adaptor);
                 context.addSecurityContext(new PasswordSecurityContext(
                         "zorilla", "zorilla"));
-                context.addPreference("file.adaptor.name", "local,sshtrilead,sftptrilead");
-                
+                context.addPreference("file.adaptor.name",
+                        "local,sshtrilead,sftptrilead");
+
                 GAT.setDefaultGATContext(context);
             } else {
                 adaptor = node.config().getProperty(Config.RESOURCE_ADAPTOR);
@@ -635,6 +642,7 @@ public final class Worker implements Runnable {
 
             // wait for the process to finish or the deadline to pass
             // check every 1 second
+            boolean kill = false;
             while (status().equals(Status.RUNNING)) {
 
                 JobState gatState = gatJob.getState();
@@ -678,22 +686,23 @@ public final class Worker implements Runnable {
                             + ") exited with code " + exitStatus);
                 } else {
                     // process not yet done...
-                    boolean kill = false;
-                    synchronized (this) {
-                        long currentTime = System.currentTimeMillis();
-                        if (currentTime >= deadline) {
-                            logger.info("killing worker process");
-                            kill = true;
-                        } else if (currentTime >= failureDate) {
-                            logger.info("making worker process fail");
-                            kill = true;
-                        } else {
-                            try {
-                                long timeout = Math.min(deadline - currentTime,
-                                        POLL_INTERVAL);
-                                wait(timeout);
-                            } catch (InterruptedException e2) {
-                                // IGNORE
+                    if (!kill) {
+                        synchronized (this) {
+                            long currentTime = System.currentTimeMillis();
+                            if (currentTime >= deadline) {
+                                logger.info("killing worker process");
+                                kill = true;
+                            } else if (currentTime >= failureDate) {
+                                logger.info("making worker process fail");
+                                kill = true;
+                            } else {
+                                try {
+                                    long timeout = Math.min(deadline
+                                            - currentTime, POLL_INTERVAL);
+                                    wait(timeout);
+                                } catch (InterruptedException e2) {
+                                    // IGNORE
+                                }
                             }
                         }
                     }

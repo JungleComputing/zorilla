@@ -755,7 +755,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         }
     }
 
-    private void removeFinishedLocalWorkers() throws IOException, Exception {
+    private boolean removeFinishedLocalWorkers() throws IOException, Exception {
         Worker[] workers;
 
         synchronized (this) {
@@ -781,8 +781,11 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
                 readDynamicState(call);
                 call.finish();
+                
+                return true;
             }
         }
+        return false;
     }
 
     private synchronized void killWorkers() {
@@ -848,10 +851,14 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                 next.download();
             }
 
+            boolean workersFinished = false;
+            
             while (true) {
-                removeFinishedLocalWorkers();
+                if (removeFinishedLocalWorkers()) {
+                    workersFinished = true;
+                }
 
-                if (moreWorkersNeeded()) {
+                if (!workersFinished && moreWorkersNeeded()) {
                     createNewLocalWorkers();
                 }
 
