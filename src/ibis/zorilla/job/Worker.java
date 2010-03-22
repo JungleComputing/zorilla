@@ -446,6 +446,12 @@ public final class Worker implements Runnable {
     }
 
     private synchronized void setStatus(Status status) {
+        if (status.ordinal() < this.status.ordinal()) {
+            logger.error("Cannot set state backwards from " + this.status + " to " + status);
+            notifyAll();
+            return;
+        }
+        
         logger.info("worker status now: " + status);
         this.status = status;
         notifyAll();
