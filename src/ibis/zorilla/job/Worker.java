@@ -329,8 +329,17 @@ public final class Worker implements Runnable {
             sd.setStderr(GAT.createFile(id.toString() + ".err"));
             sd.setStdout(GAT.createFile(id.toString() + ".out"));
         }
-        
+
         sd.addAttribute("globus.exitvalue.enable", "true");
+
+        int time = zorillaJob.getAttributes().getIntProperty(
+                JobAttributes.WALLTIME_MAX, 0);
+
+        if (time != 0) {
+            sd.addAttribute("walltime.max",  String.valueOf(time));
+            sd.addAttribute("time.max",   String.valueOf(time));
+            sd.addAttribute("cputime.max", String.valueOf(time));
+        }
 
         return sd;
     }
@@ -447,11 +456,12 @@ public final class Worker implements Runnable {
 
     private synchronized void setStatus(Status status) {
         if (status.ordinal() < this.status.ordinal()) {
-            logger.error("Cannot set state backwards from " + this.status + " to " + status);
+            logger.error("Cannot set state backwards from " + this.status
+                    + " to " + status);
             notifyAll();
             return;
         }
-        
+
         logger.info("worker status now: " + status);
         this.status = status;
         notifyAll();

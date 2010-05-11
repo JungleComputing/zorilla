@@ -127,6 +127,8 @@ public final class Node {
             serverProperties.setProperty(ServerProperties.START_HUB, "true");
         } else {
             serverProperties.setProperty(ServerProperties.START_HUB, "false");
+            logger.info("sleeping to give hub a chance to appear");
+            Thread.sleep(60000);
         }
 
         // copy-paste hub addresses property to server

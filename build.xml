@@ -96,7 +96,7 @@
 
     <target name="lib" depends="build" description="create a distribution of the zorilla jars">
         <zip destfile="zorilla-lib.zip">
-            <zipfileset dir="lib" />
+	    <zipfileset dir="lib" includes="*.jar,adaptors/GenericAdaptor/*,adaptors/LocalAdaptor/*,adaptors/shared/*" />
             <zipfileset dir="." includes="log4j.properties" />
             <zipfileset dir="." includes="zorilla.starter.properties" fullpath="zorilla.properties" />
         </zip>

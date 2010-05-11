@@ -35,8 +35,9 @@ public class Factory {
         properties.setProperty(IbisProperties.REGISTRY_IMPLEMENTATION, "null");
         properties.setProperty(IbisProperties.IMPLEMENTATION, "smartsockets");
 
-        properties.setProperty(IbisProperties.LOCATION_COLOR, ""
-                + Color.BLACK.getRGB());
+//        properties.setProperty(IbisProperties.LOCATION_COLOR, ""
+//                + Color.BLACK.getRGB());
+        properties.setProperty(IbisProperties.LOCATION_COLOR, "invisible");
 
         DirectSocketAddress hubAddress = node.network().getAddress().hub();
         if (hubAddress != null) {
