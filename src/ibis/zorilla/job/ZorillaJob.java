@@ -2,7 +2,6 @@ package ibis.zorilla.job;
 
 import ibis.ipl.IbisIdentifier;
 import ibis.zorilla.Node;
-import ibis.zorilla.NodeInfo;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Receiver;

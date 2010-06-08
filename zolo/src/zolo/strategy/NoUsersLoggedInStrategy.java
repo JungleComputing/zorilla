@@ -1,11 +1,15 @@
 package zolo.strategy;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.*;
-import java.io.*;
-import zolo.*;
-import zolo.starter.*;
 
 
 public class NoUsersLoggedInStrategy extends Strategy implements StrategyInterface {
@@ -40,7 +44,6 @@ public class NoUsersLoggedInStrategy extends Strategy implements StrategyInterfa
 
             final Process p = pb.start();
             new Thread() {
-                @SuppressWarnings( { "EmptyCatchBlock" } )
                 public void run() {
                     final InputStream is = p.getInputStream();
                     final InputStreamReader isr = new InputStreamReader(is);

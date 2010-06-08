@@ -1,17 +1,17 @@
 package zolo;
 
-import zolo.strategy.*;
-import zolo.starter.*;
-
-import org.apache.commons.configuration.*;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.awt.*;
-import java.net.URL;
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Iterator;
+
+import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.commons.configuration.XMLConfiguration;
+
+import zolo.starter.Starter;
+import zolo.strategy.Strategy;
+import zolo.strategy.StrategyState;
 
 
 public class StrategyManager {
@@ -66,7 +66,7 @@ public class StrategyManager {
 
         try {
             // Dynamically load strategy
-            Class c = Class.forName("zolo.strategy." + strategyClassName);
+            Class<?> c = Class.forName("zolo.strategy." + strategyClassName);
             Strategy strategy = (Strategy) c.newInstance();
 
             // Strategy default status => NO_GO
@@ -97,10 +97,10 @@ public class StrategyManager {
      */
     public void run() {
         // Start strategies
-        Iterator it = strategyState.keySet().iterator();
+        Iterator<Strategy> it = strategyState.keySet().iterator();
         while (it.hasNext()) {
             try {
-                ((Strategy) it.next()).run();
+                it.next().run();
             } catch (ZoloException ze) {
                 out.error(ze, true);
             }

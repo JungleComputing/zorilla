@@ -110,9 +110,6 @@ public final class Worker implements Runnable {
     /**
      * creates a new child for a given ZorillaJobDescription.
      * 
-     * @throws Exception
-     *             if creating the worker failed
-     * 
      */
     public Worker(ZorillaJob job, UUID id, Node node, long deadline) {
         this.zorillaJob = job;

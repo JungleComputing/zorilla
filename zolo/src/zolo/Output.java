@@ -21,7 +21,7 @@ public class Output {
      * @param   verboseOutput   Do we want verbose output?
      */
     public void setVerbosity(boolean verboseOutput) {
-        this.verboseOutput = verboseOutput;
+        Output.verboseOutput = verboseOutput;
     }
 
     /*

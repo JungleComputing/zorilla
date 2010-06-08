@@ -1,6 +1,5 @@
 package ibis.zorilla;
 
-import ibis.util.ThreadPool;
 import ibis.util.TypedProperties;
 
 import java.io.IOException;

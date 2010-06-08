@@ -26,7 +26,7 @@ public class Controller implements WrapperListener {
      */
     public Integer start(String[] args) {
         zolo = new Zolo();
-        zolo.start(args);
+        Zolo.start(args);
 
         return null;
     }
@@ -48,7 +48,7 @@ public class Controller implements WrapperListener {
      *         during shutdown.
      */
     public int stop( int exitCode ) {
-        zolo.stop();
+        Zolo.stop();
 
         return exitCode;
     }

@@ -1,14 +1,13 @@
 package zolo.strategy;
 
-import zolo.*;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import com.sun.jna.*;
-import com.sun.jna.win32.*;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import zolo.ZoloException;
+
+import com.sun.jna.Native;
+import com.sun.jna.Structure;
+import com.sun.jna.win32.StdCallLibrary;
 
 
 public class NoUserActivityStrategy extends Strategy implements StrategyInterface {

@@ -1,12 +1,12 @@
 package zolo.strategy;
 
-import org.apache.commons.configuration.*;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import org.apache.commons.configuration.HierarchicalConfiguration;
 
 
 public class TimeIntervalStrategy extends Strategy implements StrategyInterface {
@@ -30,14 +30,14 @@ public class TimeIntervalStrategy extends Strategy implements StrategyInterface 
      */
     public void check() {
         // Get all time intervals
-        List intervals = config.configurationsAt("intervals.interval");
+        List<?> intervals = config.configurationsAt("intervals.interval");
 
         // Get current time in milliseconds
         Calendar today = Calendar.getInstance();
         Long currentTimeMillis = today.getTimeInMillis();
 
         // Check all intervals
-        for (Iterator it = intervals.iterator(); it.hasNext();) {
+        for (Iterator<?> it = intervals.iterator(); it.hasNext();) {
             HierarchicalConfiguration interval = (HierarchicalConfiguration) it.next();
 
             // Create interval start time in millis

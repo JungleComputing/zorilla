@@ -8,7 +8,6 @@ import ibis.ipl.PortType;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.zorilla.Node;
 
-import java.awt.Color;
 import java.util.Properties;
 
 public class Factory {

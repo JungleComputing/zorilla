@@ -199,7 +199,7 @@ public final class JobService implements Service, Runnable {
     public void handleJobAdvert(Advert advert) {
         try {
             ZorillaJob job;
-            UUID jobID = (UUID) advert.getJobID();
+            UUID jobID = advert.getJobID();
             synchronized (this) {
                 job = jobs.get(jobID);
 

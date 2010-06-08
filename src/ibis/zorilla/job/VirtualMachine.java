@@ -314,9 +314,9 @@ public class VirtualMachine {
     }
 
     /**
-     * Port where ssh daemon is reachable on (NAT forwared)
+     * Port where ssh daemon is reachable on (NAT forwarded).
      * 
-     * @return
+     * @return the port.
      */
     public int getSshPort() {
         return sshPort;

@@ -126,8 +126,8 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
         cluster = node.config().getProperty(Config.CLUSTER_NAME);
 
-        jobID = (UUID) ad.getJobID();
-        primary = (ReceivePortIdentifier) ad.getPrimaryReceivePort();
+        jobID = ad.getJobID();
+        primary = ad.getPrimaryReceivePort();
 
         localWorkers = new HashMap<UUID, Worker>();
 

@@ -112,8 +112,8 @@ public class Zolo {
                 out.verbose("Adding strategies...", true);
 
                 // Loop through all strategies defined in configuration file
-                List strategies = config.configurationsAt(strategiesXMLPath);
-                for (Iterator it = strategies.iterator(); it.hasNext();) {
+                List<?> strategies = config.configurationsAt(strategiesXMLPath);
+                for (Iterator<?> it = strategies.iterator(); it.hasNext();) {
                     HierarchicalConfiguration strategyConfiguration = (HierarchicalConfiguration) it.next();
                     String strategyName = strategyConfiguration.getString("name");
                     out.verbose("-> Strategy " + strategyName + "... ", false);
