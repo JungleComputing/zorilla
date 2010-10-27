@@ -460,8 +460,6 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                 break; // might get more resources later
             }
 
-            worker.setHostname(hostname);
-
             synchronized (this) {
                 // claim resources, do not start worker yet.
                 localWorkers.put(workerID, worker);
@@ -720,8 +718,6 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                     log("cannot claim resources");
                     return true; // might get more resources later
                 }
-
-                worker.setHostname(hostname);
 
                 // claim resources, do not start worker yet.
                 localWorkers.put(workerID, worker);

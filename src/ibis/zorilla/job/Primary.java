@@ -870,8 +870,6 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                 return ; // might get more resources later
             }
             
-            worker.setHostname(hostname);
-
             // claim resources, do not start worker yet.
             localWorkers.put(workerID, worker);
 
@@ -1167,8 +1165,6 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                 break; // might get more resources later
             }
             
-            worker.setHostname(hostname);
-
             synchronized (this) {
                 // claim resources, do not start worker yet.
                 localWorkers.put(workerID, worker);

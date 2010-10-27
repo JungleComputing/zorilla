@@ -10,7 +10,6 @@ import ibis.zorilla.net.FloodService;
 import ibis.zorilla.net.Network;
 import ibis.zorilla.net.UdpDiscoveryService;
 import ibis.zorilla.net.ZoniService;
-import ibis.zorilla.slave.SlaveService;
 import ibis.zorilla.www.WebService;
 
 import java.io.File;
@@ -25,7 +24,6 @@ import java.util.UUID;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import org.gridlab.gat.GAT;
 
 /**
  * General peer-to-peer node. Implements a communication structure for "modules"
@@ -74,8 +72,6 @@ public final class Node {
     private final WebService webService;
 
     private final ZoniService zoniService;
-
-    private final SlaveService slaveService;
 
     private final long startTime;
 
@@ -198,8 +194,6 @@ public final class Node {
 
         zoniService = new ZoniService(this);
 
-        slaveService = new SlaveService(this);
-
         discoveryService.start();
         udpDiscoveryService.start();
         gossipService.start();
@@ -207,7 +201,6 @@ public final class Node {
         clusterService.start();
         floodService.start();
         jobService.start();
-        slaveService.start();
 
         // start accepting connections
         network.start();
@@ -285,16 +278,11 @@ public final class Node {
         return zoniService;
     }
 
-    public SlaveService getSlaveService() {
-        return slaveService;
-    }
-    
     public ibis.ipl.server.Server getIPLServer() {
         return iplServer;
     }
 
     public synchronized void end() {
-        slaveService.end();
         
         logger.debug("killing al jobs");
 
@@ -302,14 +290,10 @@ public final class Node {
 
         logger.info("stopping zorilla node");
         
-        GAT.end();
-
-        slaveService.end();
         network.end();
         
         logger.info("node done");
 
-//        machine.stop();
     }
 
     public Map<String, String> getStats() {

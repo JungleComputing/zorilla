@@ -4,9 +4,6 @@ import java.io.File;
 import java.net.ServerSocket;
 import java.util.List;
 
-import org.gridlab.gat.GAT;
-import org.gridlab.gat.GATContext;
-import org.gridlab.gat.security.PasswordSecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.virtualbox_3_1.DeviceType;
@@ -197,49 +194,50 @@ public class VirtualMachine {
     }
 
     private void waitUntilUp() throws Exception {
-        Exception exception = null;
-        long deadline = System.currentTimeMillis() + TIMEOUT;
-
-        GATContext context = new GATContext();
-
-        context.addSecurityContext(new PasswordSecurityContext("zorilla",
-                "zorilla"));
-
-        context.addPreference("sshtrilead.stoppable", "true");
-
-        context.addPreference("file.create", "true");
-
-         context.addPreference("resourcebroker.adaptor.name", "sshtrilead");
-
-         context.addPreference("file.adaptor.name", "local,sshtrilead,sftptrilead");
-
-        context.addPreference("sshtrilead.strictHostKeyChecking", "false");
-        context.addPreference("sshtrilead.noHostKeyChecking", "true");
-
-        context.addPreference("commandlinessh.strictHostKeyChecking", "false");
-        context.addPreference("commandlinessh.noHostKeyChecking", "true");
-
-        while (System.currentTimeMillis() < deadline) {
-
-            try {
-                org.gridlab.gat.io.File randomFile = GAT.createFile(context,
-                        "sftp://localhost:" + getSshPort() + "//C:/Windows");
-
-                // don't care about result, only that it succeeds
-                boolean exists = randomFile.getFileInterface().exists();
-                logger.debug("does this file exist?: " + exists);
-                return;
-            } catch (Exception e) {
-                exception = e;
-                logger.debug("Error while waiting for VM to start", e);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e1) {
-                    // IGNORE
-                }
-            }
-        }
-        throw new Exception("VM failed to come up", exception);
+//        Exception exception = null;
+//        long deadline = System.currentTimeMillis() + TIMEOUT;
+//
+//        GATContext context = new GATContext();
+//
+//        context.addSecurityContext(new PasswordSecurityContext("zorilla",
+//                "zorilla"));
+//
+//        context.addPreference("sshtrilead.stoppable", "true");
+//
+//        context.addPreference("file.create", "true");
+//
+//         context.addPreference("resourcebroker.adaptor.name", "sshtrilead");
+//
+//         context.addPreference("file.adaptor.name", "local,sshtrilead,sftptrilead");
+//
+//        context.addPreference("sshtrilead.strictHostKeyChecking", "false");
+//        context.addPreference("sshtrilead.noHostKeyChecking", "true");
+//
+//        context.addPreference("commandlinessh.strictHostKeyChecking", "false");
+//        context.addPreference("commandlinessh.noHostKeyChecking", "true");
+//
+//        while (System.currentTimeMillis() < deadline) {
+//
+//            try {
+//                org.gridlab.gat.io.File randomFile = GAT.createFile(context,
+//                        "sftp://localhost:" + getSshPort() + "//C:/Windows");
+//
+//                // don't care about result, only that it succeeds
+//                boolean exists = randomFile.getFileInterface().exists();
+//                logger.debug("does this file exist?: " + exists);
+//                return;
+//            } catch (Exception e) {
+//                exception = e;
+//                logger.debug("Error while waiting for VM to start", e);
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e1) {
+//                    // IGNORE
+//                }
+//            }
+//        }
+//        throw new Exception("VM failed to come up", exception);
+    	throw new Exception("VM failed to come up");
     }
 
     // stop VM (in a rather abrupt manner to save time
