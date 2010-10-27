@@ -7,7 +7,6 @@ import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
-import ibis.zorilla.zoni.ZoniProtocol;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -29,6 +28,8 @@ public class DiscoveryService implements Service, Runnable {
     public static final int DISCOVERY_INTERVAL = 5 * 60 * 1000;
 
     public static final int MAX_TRIES = 5;
+    
+    public static final int VIRTUAL_PORT = 405;
 
     private static final Logger logger = Logger
             .getLogger(DiscoveryService.class);
@@ -58,7 +59,7 @@ public class DiscoveryService implements Service, Runnable {
                 socketAddress = new VirtualSocketAddress(address);
             } catch (Exception e) {
                 socketAddress = new VirtualSocketAddress(address,
-                        ZoniProtocol.VIRTUAL_PORT);
+                        VIRTUAL_PORT);
             }
         } catch (Exception e) {
             logger.warn("invalid peer address: " + address, e);

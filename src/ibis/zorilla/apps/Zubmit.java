@@ -1,13 +1,11 @@
 package ibis.zorilla.apps;
 
 import ibis.smartsockets.virtual.VirtualSocketFactory;
+import ibis.zorilla.JobInfo;
+import ibis.zorilla.ZoniFileInfo;
+import ibis.zorilla.ZoniInputFile;
+import ibis.zorilla.ZorillaJobDescription;
 import ibis.zorilla.util.StreamWriter;
-import ibis.zorilla.zoni.ZorillaJobDescription;
-import ibis.zorilla.zoni.ZoniInputFile;
-import ibis.zorilla.zoni.JobInfo;
-import ibis.zorilla.zoni.ZoniFileInfo;
-import ibis.zorilla.zoni.ZoniConnection;
-import ibis.zorilla.zoni.ZoniProtocol;
 
 import java.io.File;
 import java.io.FileOutputStream;

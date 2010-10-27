@@ -1,9 +1,7 @@
 package ibis.zorilla.apps;
 
 import ibis.smartsockets.virtual.VirtualSocketFactory;
-import ibis.zorilla.zoni.JobInfo;
-import ibis.zorilla.zoni.ZoniConnection;
-import ibis.zorilla.zoni.ZoniProtocol;
+import ibis.zorilla.JobInfo;
 
 import java.util.Map;
 

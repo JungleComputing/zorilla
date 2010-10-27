@@ -7,6 +7,8 @@ import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
+import ibis.zorilla.ZoniFileInfo;
+import ibis.zorilla.ZorillaJobDescription;
 import ibis.zorilla.io.ObjectInput;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.Call;
@@ -14,8 +16,6 @@ import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Factory;
 import ibis.zorilla.job.net.Invocation;
 import ibis.zorilla.job.net.Receiver;
-import ibis.zorilla.zoni.ZoniFileInfo;
-import ibis.zorilla.zoni.ZorillaJobDescription;
 
 import java.io.File;
 import java.io.IOException;

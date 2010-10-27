@@ -1,7 +1,6 @@
 package ibis.zorilla.apps;
 
 import ibis.smartsockets.virtual.VirtualSocketFactory;
-import ibis.zorilla.zoni.ZoniConnection;
 import org.apache.log4j.Logger;
 
 public final class Zap {

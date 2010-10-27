@@ -1,7 +1,6 @@
 package ibis.zorilla.apps;
 
 import ibis.smartsockets.virtual.VirtualSocketFactory;
-import ibis.zorilla.zoni.ZoniConnection;
 import java.util.HashMap;
 import java.util.Map;
 

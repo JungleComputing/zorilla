@@ -1,4 +1,7 @@
-package ibis.zorilla.zoni;
+package ibis.zorilla;
+
+
+import ibis.zorilla.job.ZorillaJob;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +55,7 @@ public final class JobInfo {
     }
     
     public String toString() {
-        return jobID + "-" + ZoniProtocol.PHASES[phase];
+        return jobID + "-" + ZorillaJob.PHASES[phase];
     }
 
 }

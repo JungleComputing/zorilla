@@ -1,4 +1,5 @@
-package ibis.zorilla.zoni;
+package ibis.zorilla;
+
 
 import java.io.File;
 import java.io.IOException;

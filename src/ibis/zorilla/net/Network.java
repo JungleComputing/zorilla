@@ -233,9 +233,6 @@ public class Network implements Runnable {
             case WEB_SERVICE:
                 node.webService().handleConnection(socket);
                 break;
-            case ZONI_SERVICE:
-                node.zoniService().handleConnection(socket);
-                break;
             case -1:
                 // the connection was closed
                 break;

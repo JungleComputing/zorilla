@@ -9,7 +9,6 @@ import ibis.zorilla.net.DiscoveryService;
 import ibis.zorilla.net.FloodService;
 import ibis.zorilla.net.Network;
 import ibis.zorilla.net.UdpDiscoveryService;
-import ibis.zorilla.net.ZoniService;
 import ibis.zorilla.www.WebService;
 
 import java.io.File;
@@ -70,8 +69,6 @@ public final class Node {
     private final JobService jobService;
 
     private final WebService webService;
-
-    private final ZoniService zoniService;
 
     private final long startTime;
 
@@ -192,8 +189,6 @@ public final class Node {
 
         jobService = new JobService(this);
 
-        zoniService = new ZoniService(this);
-
         discoveryService.start();
         udpDiscoveryService.start();
         gossipService.start();
@@ -204,7 +199,6 @@ public final class Node {
 
         // start accepting connections
         network.start();
-        zoniService.start();
         webService.start();
 
         logger.info("Read configuration from " + config.getConfigDir());
@@ -272,10 +266,6 @@ public final class Node {
 
     public WebService webService() {
         return webService;
-    }
-
-    public ZoniService zoniService() {
-        return zoniService;
     }
 
     public ibis.ipl.server.Server getIPLServer() {

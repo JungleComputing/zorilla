@@ -2,12 +2,12 @@ package ibis.zorilla.job;
 
 import ibis.ipl.IbisIdentifier;
 import ibis.zorilla.Node;
+import ibis.zorilla.ZoniFileInfo;
+import ibis.zorilla.ZorillaJobDescription;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Receiver;
 import ibis.zorilla.util.PropertyUndefinedException;
-import ibis.zorilla.zoni.ZoniFileInfo;
-import ibis.zorilla.zoni.ZorillaJobDescription;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,226 +24,230 @@ import java.util.UUID;
  */
 public abstract class ZorillaJob {
 
-    // Status of jobs
+	// Status of jobs
 
-    public static final int UNKNOWN = 0;
+	public static final int UNKNOWN = 0;
 
-    public static final int INITIAL = 1;
+	public static final int INITIAL = 1;
 
-    public static final int PRE_STAGE = 2;
+	public static final int PRE_STAGE = 2;
 
-    public static final int SCHEDULING = 3;
+	public static final int SCHEDULING = 3;
 
-    public static final int RUNNING = 4;
+	public static final int RUNNING = 4;
 
-    public static final int CLOSED = 5;
+	public static final int CLOSED = 5;
 
-    public static final int POST_STAGE = 6;
+	public static final int POST_STAGE = 6;
 
-    public static final int COMPLETED = 7;
+	public static final int COMPLETED = 7;
 
-    public static final int CANCELLED = 8;
+	public static final int CANCELLED = 8;
 
-    public static final int USER_ERROR = 9;
+	public static final int USER_ERROR = 9;
 
-    public static final int ERROR = 10;
+	public static final int ERROR = 10;
 
-    /**
-     * create a constituent of the jobstate
-     * 
-     * @throws Exception
-     * @throws IOException
-     */
-    public static ZorillaJob createConstituent(Advert advert, Node node)
-            throws Exception, IOException {
-        String type = advert.getJobImplementationType();
+	public static final String[] PHASES = { "UNKNOWN", "INITIAL", "PRE_STAGE",
+			"SCHEDULING", "RUNNING", "CLOSED", "POST_STAGING", "COMPLETED",
+			"CANCELLED", "USER_ERROR", "ERROR" };
 
-        if (type.equalsIgnoreCase("primaryCopy")) {
-            return new ibis.zorilla.job.Copy(advert, node);
-        } else {
-            throw new Exception("unknown state type");
-        }
-    }
+	/**
+	 * create a constituent of the jobstate
+	 * 
+	 * @throws Exception
+	 * @throws IOException
+	 */
+	public static ZorillaJob createConstituent(Advert advert, Node node)
+			throws Exception, IOException {
+		String type = advert.getJobImplementationType();
 
-    public String phaseString() {
-        int phase = getPhase();
+		if (type.equalsIgnoreCase("primaryCopy")) {
+			return new ibis.zorilla.job.Copy(advert, node);
+		} else {
+			throw new Exception("unknown state type");
+		}
+	}
 
-        if (phase == 0) {
-            return "UNKNOWN";
-        } else if (phase == 1) {
-            return "INITIAL";
-        } else if (phase == 2) {
-            return "PRE_STAGE";
-        } else if (phase == 3) {
-            return "SCHEDULING";
-        } else if (phase == 4) {
-            return "RUNNING";
-        } else if (phase == 5) {
-            return "CLOSED";
-        } else if (phase == 6) {
-            return "POST_STAGE";
-        } else if (phase == 7) {
-            return "COMPLETED";
-        } else if (phase == 8) {
-            return "CANCELLED";
-        } else if (phase == 9) {
-            return "USER_ERROR";
-        } else if (phase == 10) {
-            return "ERROR";
-        } else {
-            return "ILLEGAL_PHASE";
-        }
-    }
+	public String phaseString() {
+		int phase = getPhase();
 
-    public abstract UUID getID();
+		if (phase == 0) {
+			return "UNKNOWN";
+		} else if (phase == 1) {
+			return "INITIAL";
+		} else if (phase == 2) {
+			return "PRE_STAGE";
+		} else if (phase == 3) {
+			return "SCHEDULING";
+		} else if (phase == 4) {
+			return "RUNNING";
+		} else if (phase == 5) {
+			return "CLOSED";
+		} else if (phase == 6) {
+			return "POST_STAGE";
+		} else if (phase == 7) {
+			return "COMPLETED";
+		} else if (phase == 8) {
+			return "CANCELLED";
+		} else if (phase == 9) {
+			return "USER_ERROR";
+		} else if (phase == 10) {
+			return "ERROR";
+		} else {
+			return "ILLEGAL_PHASE";
+		}
+	}
 
-    public abstract boolean isJava();
-    
-    public abstract boolean isVirtual();
+	public abstract UUID getID();
 
-    public abstract void updateAttributes(Map<String, String> attributes)
-            throws Exception;
+	public abstract boolean isJava();
 
-    public abstract void cancel() throws Exception;
+	public abstract boolean isVirtual();
 
-    public abstract void end(long deadline);
+	public abstract void updateAttributes(Map<String, String> attributes)
+			throws Exception;
 
-    /**
-     * this job is dead and can be removed from any administration now. Calling
-     * functions of this job might have unexpected results.
-     */
-    public abstract boolean zombie();
+	public abstract void cancel() throws Exception;
 
-    /**
-     * Returns some (implementation specific) information on the status of this
-     * job. Not to be used for further processing.
-     */
-    public abstract Map<String, String> getStats();
+	public abstract void end(long deadline);
 
-    /**
-     * Returns the input files in the virtual file system.
-     */
-    protected abstract InputFile[] getPreStageFiles() throws Exception;
+	/**
+	 * this job is dead and can be removed from any administration now. Calling
+	 * functions of this job might have unexpected results.
+	 */
+	public abstract boolean zombie();
 
-    /**
-     * Returns the output files in virtual file system.
-     */
-    protected abstract String[] getPostStageFiles() throws Exception;
+	/**
+	 * Returns some (implementation specific) information on the status of this
+	 * job. Not to be used for further processing.
+	 */
+	public abstract Map<String, String> getStats();
 
-    public abstract ZoniFileInfo getFileInfo(String sandboxPath)
-            throws Exception;
+	/**
+	 * Returns the input files in the virtual file system.
+	 */
+	protected abstract InputFile[] getPreStageFiles() throws Exception;
 
-    /**
-     * Returns a stream suitable to write standard out to. Do not close stream
-     * when done writing. May return null.
-     */
-    protected abstract OutputStream getStdout() throws Exception;
+	/**
+	 * Returns the output files in virtual file system.
+	 */
+	protected abstract String[] getPostStageFiles() throws Exception;
 
-    /**
-     * Write standard out to the given output stream. Blocks until this job has
-     * finished
-     */
-    public abstract void readStdout(OutputStream out) throws Exception;
+	public abstract ZoniFileInfo getFileInfo(String sandboxPath)
+			throws Exception;
 
-    /**
-     * Write standard err to the given output stream. Blocks until this job has
-     * finished.
-     */
-    public abstract void readStderr(OutputStream out) throws Exception;
+	/**
+	 * Returns a stream suitable to write standard out to. Do not close stream
+	 * when done writing. May return null.
+	 */
+	protected abstract OutputStream getStdout() throws Exception;
 
-    /**
-     * Write the given file to the given output stream. Blocks until this job
-     * has finished
-     */
-    public abstract void readOutputFile(String sandboxPath,
-            ObjectOutputStream out) throws Exception;
+	/**
+	 * Write standard out to the given output stream. Blocks until this job has
+	 * finished
+	 */
+	public abstract void readStdout(OutputStream out) throws Exception;
 
-    /**
-     * Read data from the given stream and hand it to the stdin of all workers.
-     * Blocks until the job is done.
-     */
-    public abstract void writeStdin(InputStream in) throws Exception;
+	/**
+	 * Write standard err to the given output stream. Blocks until this job has
+	 * finished.
+	 */
+	public abstract void readStderr(OutputStream out) throws Exception;
 
-    /**
-     * Returns the standard in file.
-     */
-    protected abstract InputFile getStdin() throws Exception;
+	/**
+	 * Write the given file to the given output stream. Blocks until this job
+	 * has finished
+	 */
+	public abstract void readOutputFile(String sandboxPath,
+			ObjectOutputStream out) throws Exception;
 
-    /**
-     * Returns a stream suitable to write standard error to Do not close stream
-     * when done writing. May return null.
-     */
-    protected abstract OutputStream getStderr() throws Exception;
+	/**
+	 * Read data from the given stream and hand it to the stdin of all workers.
+	 * Blocks until the job is done.
+	 */
+	public abstract void writeStdin(InputStream in) throws Exception;
 
-    /**
-     * Creates an output stream to write to the given virtual file
-     */
-    protected abstract OutputStream getOutputFile(String sandboxPath)
-            throws Exception, IOException;
+	/**
+	 * Returns the standard in file.
+	 */
+	protected abstract InputFile getStdin() throws Exception;
 
-    /**
-     * Creates an output stream and writes to the given virtual file. This
-     * function is here mostly for efficiency reasons.
-     */
-    protected abstract void writeOutputFile(String virtualFilePath,
-            InputStream data) throws Exception, IOException;
+	/**
+	 * Returns a stream suitable to write standard error to Do not close stream
+	 * when done writing. May return null.
+	 */
+	protected abstract OutputStream getStderr() throws Exception;
 
-    protected abstract ZorillaPrintStream createLogFile(String fileName)
-            throws Exception, IOException;
+	/**
+	 * Creates an output stream to write to the given virtual file
+	 */
+	protected abstract OutputStream getOutputFile(String sandboxPath)
+			throws Exception, IOException;
 
-    public abstract ZorillaJobDescription getDescription();
+	/**
+	 * Creates an output stream and writes to the given virtual file. This
+	 * function is here mostly for efficiency reasons.
+	 */
+	protected abstract void writeOutputFile(String virtualFilePath,
+			InputStream data) throws Exception, IOException;
 
-    /**
-     * Returns the cluster this node is in in this job.
-     */
-    protected abstract String cluster() throws Exception;
+	protected abstract ZorillaPrintStream createLogFile(String fileName)
+			throws Exception, IOException;
 
-    /**
-     * Hint that this might be a good time to flush any changes to the state.
-     */
-    protected abstract void flush() throws IOException, Exception;
+	public abstract ZorillaJobDescription getDescription();
 
-    public abstract int getPhase();
+	/**
+	 * Returns the cluster this node is in in this job.
+	 */
+	protected abstract String cluster() throws Exception;
 
-    protected abstract boolean getBooleanAttribute(String name)
-            throws PropertyUndefinedException;
+	/**
+	 * Hint that this might be a good time to flush any changes to the state.
+	 */
+	protected abstract void flush() throws IOException, Exception;
 
-    protected abstract String getStringAttribute(String name)
-            throws PropertyUndefinedException;
+	public abstract int getPhase();
 
-    protected abstract int getIntegerAttribute(String name)
-            throws PropertyUndefinedException;
+	protected abstract boolean getBooleanAttribute(String name)
+			throws PropertyUndefinedException;
 
-    protected abstract long getSizeAttribute(String name)
-            throws PropertyUndefinedException;
+	protected abstract String getStringAttribute(String name)
+			throws PropertyUndefinedException;
 
-    public abstract int getExitStatus();
+	protected abstract int getIntegerAttribute(String name)
+			throws PropertyUndefinedException;
 
-    final static String fileName(File file) throws IOException {
-        String[] pathElements = file.getPath().split("/");
+	protected abstract long getSizeAttribute(String name)
+			throws PropertyUndefinedException;
 
-        if (pathElements.length == 0) {
-            throw new IOException("could not find filename in given file"
-                    + " path: " + file.getPath());
-        }
+	public abstract int getExitStatus();
 
-        return pathElements[pathElements.length - 1];
-    }
+	final static String fileName(File file) throws IOException {
+		String[] pathElements = file.getPath().split("/");
 
-    public final String toString() {
-        return getID().toString().substring(0, 7);
-    }
+		if (pathElements.length == 0) {
+			throw new IOException("could not find filename in given file"
+					+ " path: " + file.getPath());
+		}
 
-    abstract void log(String message);
+		return pathElements[pathElements.length - 1];
+	}
 
-    abstract void log(String message, Exception exception);
+	public final String toString() {
+		return getID().toString().substring(0, 7);
+	}
 
-    abstract EndPoint newEndPoint(String name, Receiver receiver)
-            throws IOException, Exception;
+	abstract void log(String message);
 
-    abstract IbisIdentifier getRandomConstituent();
+	abstract void log(String message, Exception exception);
 
-    public abstract JobAttributes getAttributes();
+	abstract EndPoint newEndPoint(String name, Receiver receiver)
+			throws IOException, Exception;
 
-    public abstract Constituent[] getConstituents();
+	abstract IbisIdentifier getRandomConstituent();
+
+	public abstract JobAttributes getAttributes();
+
+	public abstract Constituent[] getConstituents();
 }
