@@ -6,6 +6,7 @@ import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
+import ibis.zorilla.JobPhase;
 import ibis.zorilla.Node;
 import ibis.zorilla.ZoniFileInfo;
 import ibis.zorilla.ZorillaJobDescription;
@@ -76,7 +77,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
     private JobAttributes attributes;
 
-    private int phase;
+    private JobPhase phase;
 
     private Map<UUID, Constituent> constituents;
 
@@ -148,7 +149,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         status = new HashMap<String, String>();
         status.put("initialized", "false");
         attributes = new JobAttributes();
-        phase = UNKNOWN;
+        phase = JobPhase.UNKNOWN;
         constituents = new HashMap<UUID, Constituent>();
         deadline = Integer.MAX_VALUE;
         moreWorkersNeeded = false;
@@ -188,7 +189,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         try {
             status = (Map<String, String>) in.readObject();
             attributes = (JobAttributes) in.readObject();
-            phase = in.readInt();
+            phase = (JobPhase) in.readObject();
             constituents = (Map<UUID, Constituent>) in.readObject();
             moreWorkersNeeded = in.readBoolean();
 
@@ -209,7 +210,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         try {
             status = (Map<String, String>) in.readObject();
             attributes = (JobAttributes) in.readObject();
-            phase = in.readInt();
+            phase = (JobPhase) in.readObject();
             constituents = (Map<UUID, Constituent>) in.readObject();
             moreWorkersNeeded = in.readBoolean();
 
@@ -270,7 +271,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
             result.put("primary", "no");
             result.put("total.workers", "unknown");
             result.put("local.workers", String.valueOf(localWorkers.size()));
-            result.put("phase", phaseString());
+            result.put("phase", phase.toString());
             if (isJava()) {
                 result.put("java", "yes");
             } else {
@@ -366,7 +367,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
     }
 
     @Override
-    public synchronized int getPhase() {
+    public synchronized JobPhase getPhase() {
         return phase;
     }
 
@@ -693,7 +694,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
             UUID workerID;
             Worker worker;
 
-            if (getPhase() > RUNNING) {
+            if (getPhase().isAfter(JobPhase.RUNNING)) {
                 log("cannot create new worker, phase > RUNNING");
                 return false;
             }
@@ -858,7 +859,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                 }
 
                 if (!getBooleanAttribute("malleable")
-                        && getPhase() <= SCHEDULING) {
+                        && getPhase().atMost(JobPhase.SCHEDULING)) {
                     // primary needs nr of workers we can start
                     sendMaxNrOfWorkers();
                 }
@@ -871,11 +872,11 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                         end(deadline);
                     }
 
-                    if (phase >= COMPLETED) {
+                    if (phase.atLeast(JobPhase.COMPLETED)) {
                         killWorkers();
                     }
 
-                    if (phase > RUNNING && localWorkers.size() == 0) {
+                    if (phase.isAfter(JobPhase.RUNNING) && localWorkers.size() == 0) {
                         finish();
                         return;
                     }

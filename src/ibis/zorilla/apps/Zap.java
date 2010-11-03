@@ -1,12 +1,23 @@
 package ibis.zorilla.apps;
 
+import ibis.ipl.Ibis;
+import ibis.ipl.IbisCapabilities;
+import ibis.ipl.IbisFactory;
+import ibis.ipl.IbisIdentifier;
+import ibis.ipl.util.rpc.RPC;
+import ibis.ipl.util.rpc.Example.ExampleInterface;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
+import ibis.zorilla.NodeInterface;
+
 import org.apache.log4j.Logger;
 
 public final class Zap {
 
     private static final Logger logger = Logger.getLogger(Zap.class);
 
+    public static IbisCapabilities ibisCapabilities = new IbisCapabilities(
+            IbisCapabilities.ELECTIONS_STRICT);
+    
     private static void usage() {
         System.out
                 .println("zap: Kills running Zorilla jobs(default) or nodes\n"
@@ -25,21 +36,22 @@ public final class Zap {
         boolean killNetwork = false;
         String hub = null;
 
+        
+        
         try {
-            String nodeSocketAddress = "localhost";
+            String nodeAddress = "localhost";
 
             for (int i = 0; i < command.length; i++) {
                 if (command[i].equals("-na")
                         || command[i].equals("--node_address")) {
                     i++;
-                    nodeSocketAddress = command[i];
+                    nodeAddress = command[i];
                 } else if (command[i].equals("-h")) {
                     i++;
                     hub = command[i];
                 } else if (command[i].equals("-k")) {
                     killNode = true;
                 } else if (command[i].equals("-K")) {
-                    killNode = true;
                     killNetwork = true;
                 } else if (command[i].equals("--help")) {
                     usage();
@@ -58,44 +70,56 @@ public final class Zap {
                 }
             }
 
-            VirtualSocketFactory factory = ZoniConnection.getFactory(hub);
-            ZoniConnection connection = new ZoniConnection(nodeSocketAddress,
-                    factory, null);
+            Ibis ibis = IbisFactory.createIbis(ibisCapabilities, null,
+                    RPC.rpcPortTypes);
 
+            IbisIdentifier server = ibis.registry().getElectionResult("zorilla");
+            
+            NodeInterface node = RPC.createProxy(
+                    NodeInterface.class, server, "zorilla node", ibis);
+            
             if (killNode) {
-                System.out.println("killing node (kill network = "
-                        + killNetwork + ")");
+                System.out.println("killing node");
 
-                connection.kill(killNetwork);
+                node.end();
+                
+                ibis.end();
+                return;
+            } else if (killNetwork) {
+                System.out.println("killing network");
+
+                node.killNetwork();
+                
+                ibis.end();
                 return;
             }
 
-            logger.debug("getting job list");
-
-            String[] jobIDs = connection.getJobList();
-
-            if (jobIDs.length == 0) {
-                System.out.println("no jobs");
-            } else if (jobIndex == -1) {
-                for (int i = 0; i < jobIDs.length; i++) {
-                    System.out.println("killing job " + jobIDs[i]);
-                    connection.cancelJob(jobIDs[i]);
-                }
-            } else {
-                for (int i = jobIndex; i < command.length; i++) {
-                    for (int j = 0; j < jobIDs.length; j++) {
-                        if (jobIDs[j].toString().toLowerCase().startsWith(
-                                command[i].toLowerCase())) {
-                            System.out.println("killing job " + jobIDs[i]);
-                            connection.cancelJob(jobIDs[i]);
-                        }
-                    }
-                }
-            }
+//            logger.debug("getting job list");
+//
+//            String[] jobIDs = connection.getJobList();
+//
+//            if (jobIDs.length == 0) {
+//                System.out.println("no jobs");
+//            } else if (jobIndex == -1) {
+//                for (int i = 0; i < jobIDs.length; i++) {
+//                    System.out.println("killing job " + jobIDs[i]);
+//                    connection.cancelJob(jobIDs[i]);
+//                }
+//            } else {
+//                for (int i = jobIndex; i < command.length; i++) {
+//                    for (int j = 0; j < jobIDs.length; j++) {
+//                        if (jobIDs[j].toString().toLowerCase().startsWith(
+//                                command[i].toLowerCase())) {
+//                            System.out.println("killing job " + jobIDs[i]);
+//                            connection.cancelJob(jobIDs[i]);
+//                        }
+//                    }
+//                }
+//            }
 
             // close connection
-            connection.close();
-            factory.end();
+            ibis.end();
+            
         } catch (Exception e) {
             System.err.println("exception on handling request: " + e);
             e.printStackTrace(System.err);

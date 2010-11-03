@@ -2,6 +2,25 @@
 
 #run this script from the directory zorilla is installed in
 
+NORMAL=
+SPECIAL=
+
+while [ $# -gt 0 ]
+do
+
+        HEADER=`echo $1 | sed 's/\(..\).*/\1/'`
+
+        case "$HEADER" in
+        -D)
+                SPECIAL="$SPECIAL $1"
+                ;;
+        *)
+                NORMAL="$NORMAL $1"
+                ;;
+        esac
+        shift
+done
+
 #classpath includes cwd for log4j.properties
-java -cp log4j.properties:.:lib/* -Dgat.adaptor.path=lib/adaptors ibis.zorilla.Main $@
+java -cp log4j.properties:.:lib/* $SPECIAL ibis.zorilla.Main $NORMAL
 

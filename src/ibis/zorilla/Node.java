@@ -1,6 +1,12 @@
 package ibis.zorilla;
 
+import ibis.ipl.Ibis;
+import ibis.ipl.IbisCapabilities;
+import ibis.ipl.IbisFactory;
 import ibis.ipl.server.ServerProperties;
+import ibis.ipl.util.rpc.RPC;
+import ibis.ipl.util.rpc.RemoteException;
+import ibis.ipl.util.rpc.RemoteObject;
 import ibis.zorilla.cluster.ClusterService;
 import ibis.zorilla.cluster.VivaldiService;
 import ibis.zorilla.gossip.GossipService;
@@ -12,6 +18,7 @@ import ibis.zorilla.net.UdpDiscoveryService;
 import ibis.zorilla.www.WebService;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -28,7 +35,10 @@ import org.apache.log4j.PatternLayout;
  * General peer-to-peer node. Implements a communication structure for "modules"
  * 
  */
-public final class Node {
+public final class Node implements NodeInterface {
+
+    IbisCapabilities ibisCapabilities = new IbisCapabilities(
+            IbisCapabilities.ELECTIONS_STRICT);
 
     // logger
     private static Logger logger = Logger.getLogger(Node.class);
@@ -48,9 +58,13 @@ public final class Node {
 
     private final Config config;
 
+    private final Ibis ibis;
+
     private final ibis.ipl.server.Server iplServer;
 
     private final Network network;
+
+    private final RemoteObject<NodeInterface> remoteObject;
 
     // ***** Services *****\\
 
@@ -75,8 +89,10 @@ public final class Node {
     private final String name;
 
     private final UUID id;
+    
+    private boolean ended = false;
 
-//    private final VirtualMachine machine; 
+    // private final VirtualMachine machine;
 
     public static int randomTimeout(int mean) {
         double variance = mean / 10;
@@ -111,8 +127,8 @@ public final class Node {
 
         // start the IPL server first, we use its socket factory...
         Properties serverProperties = new Properties();
-        serverProperties.setProperty(ServerProperties.PORT, ""
-                + config.getPort());
+        serverProperties.setProperty(ServerProperties.PORT,
+                "" + config.getPort());
 
         // copy-paste start hub property to server
         if (config.isHub()) {
@@ -125,26 +141,29 @@ public final class Node {
 
         // copy-paste hub addresses property to server
         if (config.getProperty(Config.HUB_ADDRESSES) != null) {
-            serverProperties.setProperty(ServerProperties.HUB_ADDRESSES, config
-                    .getProperty(Config.HUB_ADDRESSES));
+            serverProperties.setProperty(ServerProperties.HUB_ADDRESSES,
+                    config.getProperty(Config.HUB_ADDRESSES));
         }
-        
+
         if (config.getProperty(Config.VIZ_INFO) != null) {
-            serverProperties.setProperty(ServerProperties.VIZ_INFO, config
-                    .getProperty(Config.VIZ_INFO));
+            serverProperties.setProperty(ServerProperties.VIZ_INFO,
+                    config.getProperty(Config.VIZ_INFO));
         }
-        
+
         if (config.getBooleanProperty(Config.VERBOSE)) {
             serverProperties.put(ServerProperties.PRINT_EVENTS, "true");
             serverProperties.put(ServerProperties.PRINT_STATS, "true");
-            
-            
+
         }
-        
-        //start ipl server
+
+        // start ipl server
         iplServer = new ibis.ipl.server.Server(serverProperties);
-        
+
         network = new Network(this, config, iplServer.getSocketFactory());
+
+        //create ibis, set "zorilla" as a tag
+        ibis = IbisFactory.createIbis(ibisCapabilities, null, true, null, null,
+                "zorilla", RPC.rpcPortTypes);
 
         // give this node a (user friendly) name
         if (config.getProperty(Config.NODE_NAME) != null) {
@@ -166,8 +185,8 @@ public final class Node {
         // start logging node logs
         File log4jFile = new File(config.getLogDir(), name + ".log");
         FileAppender appender = new FileAppender(new PatternLayout(
-                "%d{HH:mm:ss} %-5p [%t] %c - %m%n"), log4jFile
-                .getAbsolutePath());
+                "%d{HH:mm:ss} %-5p [%t] %c - %m%n"),
+                log4jFile.getAbsolutePath());
         Logger.getRootLogger().addAppender(appender);
 
         // INIT SERVICES
@@ -205,9 +224,15 @@ public final class Node {
         logger.info("Saving statistics and logs to " + config.getLogDir());
         logger.info("Saving temporary files to " + config.getTmpDir());
         logger.info("Node " + name + " started");
-        
-//        machine = new VirtualMachine(new File("/home/ndrost/vm/windowsssh.ovf"), new File("/home/ndrost/tmp/sandbox"));
-//        logger.info("vm port = " + machine.getSshPort());
+
+        ibis.registry().elect("zorilla");
+        remoteObject = RPC.exportObject(NodeInterface.class, this,
+                "zorilla node", ibis);
+
+        // machine = new VirtualMachine(new
+        // File("/home/ndrost/vm/windowsssh.ovf"), new
+        // File("/home/ndrost/tmp/sandbox"));
+        // logger.info("vm port = " + machine.getSshPort());
     }
 
     public synchronized Config config() {
@@ -223,9 +248,9 @@ public final class Node {
     }
 
     public NodeInfo getInfo() {
-        return new NodeInfo(id, name, config
-                .getProperty(Config.CLUSTER_NAME), vivaldiService
-                .getCoordinates(), network.getAddress(), version, config.isHub());
+        return new NodeInfo(id, name, config.getProperty(Config.CLUSTER_NAME),
+                vivaldiService.getCoordinates(), network.getAddress(), version,
+                config.isHub());
     }
 
     public long getStartTime() {
@@ -273,17 +298,30 @@ public final class Node {
     }
 
     public synchronized void end() {
-        
+        if (ended) {
+            //already ended
+            notifyAll();
+            return;
+        }
+
         logger.debug("killing al jobs");
 
         jobService.killAllJobs();
 
         logger.info("stopping zorilla node");
-        
+
         network.end();
+        
+        try {
+        ibis.end();
+        } catch (IOException e) {
+            logger.warn("could not end Ibis properly", e);
+        }
         
         logger.info("node done");
 
+        ended = true;
+        notifyAll();
     }
 
     public Map<String, String> getStats() {
@@ -305,5 +343,24 @@ public final class Node {
 
     public String toString() {
         return "Zorilla node " + name;
+    }
+
+    @Override
+    public void killNetwork() throws Exception, RemoteException {
+        floodService().killNetwork();
+    }
+    
+    public synchronized boolean hasEnded() {
+        return ended;
+    }
+    
+    public synchronized void waitUntilEnded() {
+        while(!ended) {
+            try {
+                wait(1000);
+            } catch (InterruptedException e) {
+                //IGNORE
+            }
+        }
     }
 }

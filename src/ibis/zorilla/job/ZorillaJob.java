@@ -1,6 +1,7 @@
 package ibis.zorilla.job;
 
 import ibis.ipl.IbisIdentifier;
+import ibis.zorilla.JobPhase;
 import ibis.zorilla.Node;
 import ibis.zorilla.ZoniFileInfo;
 import ibis.zorilla.ZorillaJobDescription;
@@ -24,34 +25,7 @@ import java.util.UUID;
  */
 public abstract class ZorillaJob {
 
-	// Status of jobs
-
-	public static final int UNKNOWN = 0;
-
-	public static final int INITIAL = 1;
-
-	public static final int PRE_STAGE = 2;
-
-	public static final int SCHEDULING = 3;
-
-	public static final int RUNNING = 4;
-
-	public static final int CLOSED = 5;
-
-	public static final int POST_STAGE = 6;
-
-	public static final int COMPLETED = 7;
-
-	public static final int CANCELLED = 8;
-
-	public static final int USER_ERROR = 9;
-
-	public static final int ERROR = 10;
-
-	public static final String[] PHASES = { "UNKNOWN", "INITIAL", "PRE_STAGE",
-			"SCHEDULING", "RUNNING", "CLOSED", "POST_STAGING", "COMPLETED",
-			"CANCELLED", "USER_ERROR", "ERROR" };
-
+	
 	/**
 	 * create a constituent of the jobstate
 	 * 
@@ -69,35 +43,7 @@ public abstract class ZorillaJob {
 		}
 	}
 
-	public String phaseString() {
-		int phase = getPhase();
-
-		if (phase == 0) {
-			return "UNKNOWN";
-		} else if (phase == 1) {
-			return "INITIAL";
-		} else if (phase == 2) {
-			return "PRE_STAGE";
-		} else if (phase == 3) {
-			return "SCHEDULING";
-		} else if (phase == 4) {
-			return "RUNNING";
-		} else if (phase == 5) {
-			return "CLOSED";
-		} else if (phase == 6) {
-			return "POST_STAGE";
-		} else if (phase == 7) {
-			return "COMPLETED";
-		} else if (phase == 8) {
-			return "CANCELLED";
-		} else if (phase == 9) {
-			return "USER_ERROR";
-		} else if (phase == 10) {
-			return "ERROR";
-		} else {
-			return "ILLEGAL_PHASE";
-		}
-	}
+	
 
 	public abstract UUID getID();
 
@@ -207,7 +153,7 @@ public abstract class ZorillaJob {
 	 */
 	protected abstract void flush() throws IOException, Exception;
 
-	public abstract int getPhase();
+	public abstract JobPhase getPhase();
 
 	protected abstract boolean getBooleanAttribute(String name)
 			throws PropertyUndefinedException;

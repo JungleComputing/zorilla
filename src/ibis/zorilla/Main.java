@@ -31,6 +31,35 @@ public final class Main {
         }
     }
 
+    private static class StdinWatcher extends Thread {
+        private final Node node;
+
+        StdinWatcher(Node node) {
+            this.node = node;
+
+            setDaemon(true);
+            start();
+        }
+
+        public void run() {
+            try {
+                int read = 0;
+
+                while (read != -1) {
+                    read = System.in.read();
+                }
+            } catch (IOException e) {
+                // IGNORE
+            }
+
+            System.err.println("Zorilla: Standard in closed,"
+                    + " stopping Zorilla node");
+            node.end();
+
+        }
+
+    }
+
     private static void printUsage(PrintStream out) {
         Map<String, String> properties = Config.getDescriptions();
 
@@ -62,8 +91,7 @@ public final class Main {
         // out.println("\t" + properties.get(Config.DISCOVERY_PORT));
 
         out.println("--no-native-jobs");
-        out
-                .println("\tdeny running native applications on this node (DEFAULT)");
+        out.println("\tdeny running native applications on this node (DEFAULT)");
 
         out.println("--native-jobs");
         out.println("\tenable the running of native applications by this node");
@@ -94,10 +122,8 @@ public final class Main {
         // .println("\t make this node a worker node (does not accept job submissions)");
 
         out.println("--remote");
-        out
-                .println("\t Print the address of this node, end node if stdin is closed.");
-        out
-                .println("\t Designed to be used together with the ibis.zorilla.util.Remote class");
+        out.println("\t Print the address of this node, end node if stdin is closed.");
+        out.println("\t Designed to be used together with the ibis.zorilla.util.Remote class");
 
         out.println("--start-hub");
         out.println("\t start a SmartSocket hub (default)");
@@ -113,25 +139,11 @@ public final class Main {
         out.println();
 
         out.println("--config-properties");
-        out
-                .println("\tprint a list of all valid configuration properties of Zorilla");
-        out
-                .println("\tthat can be used in the config file, or set as a system property");
+        out.println("\tprint a list of all valid configuration properties of Zorilla");
+        out.println("\tthat can be used in the config file, or set as a system property");
 
         out.println("-? | -h | -help | --help");
         out.println("\tprint this message");
-    }
-
-    private static void waitUntilFinished() {
-        try {
-            int read = 0;
-
-            while (read != -1) {
-                read = System.in.read();
-            }
-        } catch (IOException e) {
-            // IGNORE
-        }
     }
 
     // MAIN FUNCTION
@@ -262,21 +274,10 @@ public final class Main {
             System.out.println(ADDRESS_LINE_PREFIX
                     + node.getIPLServer().getAddress() + ADDRESS_LINE_POSTFIX);
             System.out.flush();
-            waitUntilFinished();
-            System.err
-                    .println("Zorilla SLAVE: Standard in closed, stopping Zorilla node");
-            node.end();
-        } else {
-            //keep thread alive so node doesn't end
-            while(true) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    //IGNORE
-                }
-            }
-        }
 
+            //will kill node if stdin is closed.
+            new StdinWatcher(node);
+        } 
+        node.waitUntilEnded();
     }
-
 }

@@ -9,7 +9,6 @@
     <!-- locations of external libraries. Defaults to included versions,
          override to use custom versions -->
     <property name="ipl" value="external/ipl" />
-    <property name="javagat" value="external/javagat" />
 
     <!-- set a timestamp -->
     <tstamp>
@@ -25,15 +24,11 @@
         <pathelement path="tmp" />
     </path>
 
-    <target name="zoni" description="build zoni sub project">
-        <ant dir="zoni" />
-    </target>
-
-    <target name="starter" description="build zoni sub project">
+    <target name="starter" description="build starter sub project">
         <ant dir="starter" />
     </target>
 
-    <target name="build" description="build jar file" depends="clean,copy,zoni,starter,compile" />
+    <target name="build" description="build jar file" depends="clean,copy,starter,compile" />
 
     <target name="copy">
         <!-- add external stuff to lib -->
@@ -42,18 +37,14 @@
             <fileset dir="${ipl}" />
         </copy>
 
-        <echo message="using JavaGAT from ${javagat}" />
-        <copy todir="lib" includeEmptyDirs="false">
-            <fileset dir="${javagat}" />
-        </copy>
-
+    
         <copy todir="lib">
             <fileset dir="external" includes="*.jar" />
         </copy>
     </target>
 
 
-    <target name="compile" description="build jar file" depends="clean,zoni">
+    <target name="compile" description="build jar file" depends="clean">
         <mkdir dir="tmp" />
         <mkdir dir="lib" />
 
@@ -82,17 +73,11 @@
     </target>
 
     <target name="clean" description="clean everything">
-        <ant dir="zoni" target="clean" />
         <ant dir="starter" target="clean" />
 
         <delete dir="dist" />
         <delete dir="lib" />
     </target>
-
-    <target name="javadoc" description="create javadoc documentation">
-        <ant dir="zoni" target="javadoc" />
-    </target>
-
 
     <target name="lib" depends="build" description="create a distribution of the zorilla jars">
         <zip destfile="zorilla-lib.zip">
@@ -124,10 +109,9 @@
     </target>
 
 
-    <target name="dist" depends="build, javadoc" description="create a binary distribution of zorilla">
+    <target name="dist" depends="build" description="create a binary distribution of zorilla">
 
         <zip destfile="zorilla-src.zip">
-            <zipfileset dir="zoni/src" prefix="zorilla-src/" />
             <zipfileset dir="src" prefix="zorilla-src/" />
         </zip>
 
@@ -135,7 +119,7 @@
         <mkdir dir="dist" />
 
         <zip destfile="dist/zorilla${version}.zip">
-            <zipfileset dir="." prefix="zorilla${version}" includes="zorilla-src.zip, README, lib/**, zoni/lib/*, javadoc/**, zoni/javadoc/**, log4j.properties, LICENSE" />
+            <zipfileset dir="." prefix="zorilla${version}" includes="zorilla-src.zip, README, lib/**, javadoc/**, log4j.properties, LICENSE" />
             <zipfileset dir="." prefix="zorilla${version}" filemode="755" includes="bin/**" excludes="bin/zorilla-starter, bin/zorilla-daemon" />
         </zip>
 

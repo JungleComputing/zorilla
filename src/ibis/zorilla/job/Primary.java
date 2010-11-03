@@ -6,6 +6,7 @@ import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
+import ibis.zorilla.JobPhase;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
 import ibis.zorilla.ZoniFileInfo;
@@ -89,7 +90,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
     private JobAttributes attributes;
 
-    private int phase;
+    private JobPhase phase;
 
     private int exitStatus;
 
@@ -258,7 +259,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             log("Primary created for " + id);
             logger.info("new job " + id.toString().substring(0, 7)
                     + " created");
-            setPhase(INITIAL);
+            setPhase(JobPhase.INITIAL);
 
             ThreadPool.createNew(this, "Primary of " + this);
 
@@ -313,7 +314,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             return attributes.getProcessCount();
         } catch (NumberFormatException e) {
             log("could not find nr of workers", e);
-            setPhase(ERROR);
+            setPhase(JobPhase.ERROR);
             return 0;
         }
     }
@@ -353,8 +354,8 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
     @Override
     public synchronized void cancel() {
-        if (phase < COMPLETED) {
-            setPhase(CANCELLED);
+        if (phase.isBefore(JobPhase.COMPLETED)) {
+            setPhase(JobPhase.CANCELLED);
         }
     }
 
@@ -379,7 +380,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         result.put("primary", "yes");
         result.put("total.workers", String.valueOf(getNrOfWorkers()));
         result.put("local.workers", String.valueOf(localWorkers.size()));
-        result.put("phase", phaseString());
+        result.put("phase", phase.toString());
         result.put("deadline", new Date(deadline).toString());
         result.put("submission.time", new Date(submissiontime).toString());
         result.put("start.time", new Date(starttime).toString());
@@ -479,7 +480,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     }
 
     @Override
-    public synchronized int getPhase() {
+    public synchronized JobPhase getPhase() {
         return phase;
     }
 
@@ -531,7 +532,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             return false;
         }
 
-        if (!(phase == SCHEDULING || phase == RUNNING)) {
+        if (!(phase == JobPhase.SCHEDULING || phase == JobPhase.RUNNING)) {
             return false;
         }
         
@@ -551,17 +552,17 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             return false;
         }
 
-        if (!(phase == SCHEDULING || phase == RUNNING)) {
+        if (!(phase == JobPhase.SCHEDULING || phase == JobPhase.RUNNING)) {
             return false;
         }
-        setPhase(RUNNING);
+        setPhase(JobPhase.RUNNING);
 
         // phase == RUNNING
 
         constituent.addWorker(workerID);
 
         if (closedWorld() && getNrOfWorkers() == maxNrOfWorkers()) {
-            setPhase(CLOSED);
+            setPhase(JobPhase.CLOSED);
         }
 
         log("added new worker " + workerID + " on " + constituent + " now "
@@ -598,14 +599,14 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         // update exit status
         setExitStatus(exitStatus);
 
-        if (phase == RUNNING) {
+        if (phase == JobPhase.RUNNING) {
             if ((status == Status.DONE && getStringAttribute(
                     JobAttributes.ON_USER_EXIT).equalsIgnoreCase("close.world"))
                     || (status == Status.USER_ERROR && getStringAttribute(
                             JobAttributes.ON_USER_ERROR).equalsIgnoreCase(
                             "close.world"))) {
 
-                setPhase(CLOSED);
+                setPhase(JobPhase.CLOSED);
             }
 
             if ((status == Status.DONE && getStringAttribute(
@@ -614,7 +615,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                             JobAttributes.ON_USER_ERROR).equalsIgnoreCase(
                             "cancel.job"))) {
 
-                setPhase(CANCELLED);
+                setPhase(JobPhase.CANCELLED);
             }
 
             if ((status == Status.DONE && getStringAttribute(
@@ -623,19 +624,19 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                             JobAttributes.ON_USER_ERROR).equalsIgnoreCase(
                             "job.error"))) {
 
-                setPhase(USER_ERROR);
+                setPhase(JobPhase.USER_ERROR);
             }
 
         }
 
-        if (phase == CLOSED) {
+        if (phase == JobPhase.CLOSED) {
             if ((status == Status.DONE && getStringAttribute(
                     JobAttributes.ON_USER_EXIT).equalsIgnoreCase("cancel.job"))
                     || (status == Status.USER_ERROR && getStringAttribute(
                             JobAttributes.ON_USER_ERROR).equalsIgnoreCase(
                             "cancel.job"))) {
 
-                setPhase(CANCELLED);
+                setPhase(JobPhase.CANCELLED);
             }
 
             if ((status == Status.DONE && getStringAttribute(
@@ -644,12 +645,12 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                             JobAttributes.ON_USER_ERROR).equalsIgnoreCase(
                             "job.error"))) {
 
-                setPhase(USER_ERROR);
+                setPhase(JobPhase.USER_ERROR);
             }
         }
 
-        if (phase == RUNNING && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
-            setPhase(CLOSED);
+        if (phase == JobPhase.RUNNING && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
+            setPhase(JobPhase.CLOSED);
         }
 
         log("now " + getNrOfWorkers() + " workers");
@@ -681,7 +682,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             }
         }
 
-        if (localWorkers.size() == 0 && phase > RUNNING) {
+        if (localWorkers.size() == 0 && phase.isAfter(JobPhase.RUNNING)) {
             if (constituents.remove(id) != null) {
                 log("unregisterred outselves, now " + constituents.size() + " constituents");
                 for (UUID id : constituents.keySet()) {
@@ -762,7 +763,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                 return;
             }
 
-            if (phase >= CLOSED) {
+            if (phase.atLeast(JobPhase.CLOSED)) {
                 logger.debug("not advertising, no more nodes needed");
                 return;
             }
@@ -798,30 +799,31 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
         } catch (Exception e) {
             log("could not send advertizement", e);
-            setPhase(ERROR);
+            setPhase(JobPhase.ERROR);
         }
 
     }
 
-    private synchronized void setPhase(int newPhase) {
+    private synchronized void setPhase(JobPhase newPhase) {
         if (newPhase == phase) {
             return;
-        } else if (newPhase < phase) {
+        } else if (newPhase.ordinal() < phase.ordinal()) {
             Exception e = new Exception("tried to revert phase!");
             log("error on setting phase", e);
-            phase = ERROR;
+            phase = JobPhase.ERROR;
         } else {
             phase = newPhase;
         }
-        log("phase now " + phaseString());
-        logger.info("phase for job " + this + " now " + phaseString());
+        log("phase now " + phase);
+        logger.info("phase for job " + this + " now " + phase);
         dirty = true;
         notifyAll();
 
-        if (phase >= ZorillaJob.RUNNING && starttime == 0) {
+       
+       if (phase.atLeast(JobPhase.RUNNING) && starttime == 0) {
             starttime = System.currentTimeMillis();
         }
-        if (phase >= ZorillaJob.COMPLETED && stoptime == 0) {
+        if (phase.atLeast(JobPhase.COMPLETED) && stoptime == 0) {
             stoptime = System.currentTimeMillis();
         }
     }
@@ -849,7 +851,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                 return;
             }
 
-            if (!(phase == SCHEDULING || phase == RUNNING)) {
+            if (!(phase == JobPhase.SCHEDULING || phase == JobPhase.RUNNING)) {
                 logger.debug("cannot create new worker, wrong phase");
                 return;
             }
@@ -938,7 +940,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                 nodeInfo);
 
         synchronized (this) {
-            if (phase > RUNNING) {
+            if (phase.isAfter(JobPhase.RUNNING)) {
                 invocation.writeBoolean(false);
                 return;
             }
@@ -1062,7 +1064,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             throws IOException {
         output.writeObject(getStats());
         output.writeObject(attributes);
-        output.writeInt(phase);
+        output.writeObject(phase);
         output.writeObject(constituents);
         output.writeBoolean(moreWorkersNeeded());
         output.writeLong(deadline - System.currentTimeMillis());
@@ -1186,7 +1188,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
             if (constituent == null) {
                 log("could not find ourselves in constituents");
-                setPhase(ERROR);
+                setPhase(JobPhase.ERROR);
                 return;
             }
 
@@ -1207,7 +1209,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     private void claimNodes() {
         if (getBooleanAttribute(JobAttributes.MALLEABLE)) {
             log("ERROR: claiming nodes for a malleable job", new Exception());
-            setPhase(ERROR);
+            setPhase(JobPhase.ERROR);
             return;
         }
 
@@ -1300,7 +1302,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                 }
 
                 log("succes in claiming nodes");
-                setPhase(CLOSED);
+                setPhase(JobPhase.CLOSED);
                 return;
             }
 
@@ -1343,10 +1345,10 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     public void run() {
         boolean done = false;
 
-        setPhase(PRE_STAGE);
+        setPhase(JobPhase.PRE_STAGE);
         // no work needed for pre-stage
 
-        setPhase(SCHEDULING);
+        setPhase(JobPhase.SCHEDULING);
 
         while (!done) {
             purgeExpiredConstituents();
@@ -1355,7 +1357,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             advertise();
             sendStateUpdate();
 
-            if (getPhase() == SCHEDULING
+            if (getPhase() == JobPhase.SCHEDULING
                     && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
                 updateLocalMaxWorkers();
                 claimNodes();
@@ -1364,16 +1366,16 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             synchronized (this) {
                 if (System.currentTimeMillis() > deadline) {
                     // auto cancel job
-                    setPhase(CANCELLED);
+                    setPhase(JobPhase.CANCELLED);
                 }
 
                 // update state if needed when all constituents exit
-                if (phase == CLOSED && constituents.size() == 0) {
-                    setPhase(POST_STAGE);
-                    setPhase(COMPLETED);
+                if (phase == JobPhase.CLOSED && constituents.size() == 0) {
+                    setPhase(JobPhase.POST_STAGING);
+                    setPhase(JobPhase.COMPLETED);
                 }
 
-                if (phase >= COMPLETED) {
+                if (phase.atLeast(JobPhase.COMPLETED)) {
                     killWorkers();
 
                     if (constituents.size() == 0) {
