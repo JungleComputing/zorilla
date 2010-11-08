@@ -1,6 +1,6 @@
 package ibis.zorilla;
 
-import ibis.ipl.util.rpc.RemoteException;
+import ibis.zorilla.rpc.RemoteException;
 
 public interface NodeInterface {
     

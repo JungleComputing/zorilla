@@ -1,13 +1,8 @@
 package ibis.zorilla.apps;
 
-import ibis.ipl.Ibis;
-import ibis.ipl.IbisCapabilities;
-import ibis.ipl.IbisFactory;
-import ibis.ipl.IbisIdentifier;
-import ibis.ipl.util.rpc.RPC;
-import ibis.ipl.util.rpc.Example.ExampleInterface;
-import ibis.smartsockets.virtual.VirtualSocketFactory;
+import ibis.zorilla.Config;
 import ibis.zorilla.NodeInterface;
+import ibis.zorilla.rpc.LocalSocketRPC;
 
 import org.apache.log4j.Logger;
 
@@ -15,14 +10,11 @@ public final class Zap {
 
     private static final Logger logger = Logger.getLogger(Zap.class);
 
-    public static IbisCapabilities ibisCapabilities = new IbisCapabilities(
-            IbisCapabilities.ELECTIONS_STRICT);
-    
     private static void usage() {
         System.out
                 .println("zap: Kills running Zorilla jobs(default) or nodes\n"
                         + "usage:  zap [OPTION]... [JOB_TO_CANCEL].."
-                        + "\n-na,  --node_address IP:PORT  address of node"
+                        + "\n-p,  --port PORT port of local zorilla node"
                         + "\n-k                            Kill the node"
                         + "\n-K                            kill the entire node network"
                         + "\n"
@@ -30,37 +22,31 @@ public final class Zap {
                         + "\nIf no job is specified, all jobs are cancelled");
     }
 
-    public static void main(String[] command) {
+    public static void main(String[] arguments) {
         int jobIndex = -1;
         boolean killNode = false;
         boolean killNetwork = false;
-        String hub = null;
-
-        
+        int port = Config.DEFAULT_PORT;
         
         try {
-            String nodeAddress = "localhost";
 
-            for (int i = 0; i < command.length; i++) {
-                if (command[i].equals("-na")
-                        || command[i].equals("--node_address")) {
+            for (int i = 0; i < arguments.length; i++) {
+                if (arguments[i].equals("-p")
+                        || arguments[i].equals("--port")) {
                     i++;
-                    nodeAddress = command[i];
-                } else if (command[i].equals("-h")) {
-                    i++;
-                    hub = command[i];
-                } else if (command[i].equals("-k")) {
+                    port = Integer.parseInt(arguments[i]);
+                } else if (arguments[i].equals("-k")) {
                     killNode = true;
-                } else if (command[i].equals("-K")) {
+                } else if (arguments[i].equals("-K")) {
                     killNetwork = true;
-                } else if (command[i].equals("--help")) {
+                } else if (arguments[i].equals("--help")) {
                     usage();
                     return;
                 } else {
                     // unrecognized option.
-                    if (command[i].startsWith("-")) {
+                    if (arguments[i].startsWith("-")) {
                         System.err
-                                .println("unrecognized option: " + command[i]);
+                                .println("unrecognized option: " + arguments[i]);
                         usage();
                         System.exit(1);
                     }
@@ -69,28 +55,21 @@ public final class Zap {
                     break;
                 }
             }
-
-            Ibis ibis = IbisFactory.createIbis(ibisCapabilities, null,
-                    RPC.rpcPortTypes);
-
-            IbisIdentifier server = ibis.registry().getElectionResult("zorilla");
             
-            NodeInterface node = RPC.createProxy(
-                    NodeInterface.class, server, "zorilla node", ibis);
+            NodeInterface node = LocalSocketRPC.createProxy(
+                    NodeInterface.class, "zorilla node", port);
             
             if (killNode) {
                 System.out.println("killing node");
 
                 node.end();
-                
-                ibis.end();
+
                 return;
             } else if (killNetwork) {
                 System.out.println("killing network");
 
                 node.killNetwork();
                 
-                ibis.end();
                 return;
             }
 
@@ -118,7 +97,7 @@ public final class Zap {
 //            }
 
             // close connection
-            ibis.end();
+   
             
         } catch (Exception e) {
             System.err.println("exception on handling request: " + e);
