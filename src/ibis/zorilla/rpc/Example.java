@@ -2,11 +2,6 @@ package ibis.zorilla.rpc;
 
 import java.util.Date;
 
-import ibis.ipl.Ibis;
-import ibis.ipl.IbisCapabilities;
-import ibis.ipl.IbisFactory;
-import ibis.ipl.IbisIdentifier;
-
 public class Example {
 
 	public interface ExampleInterface {
