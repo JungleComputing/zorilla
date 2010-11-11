@@ -5,11 +5,13 @@ import ibis.ipl.server.ServerProperties;
 import ibis.zorilla.api.JobInterface;
 import ibis.zorilla.api.NodeInterface;
 import ibis.zorilla.api.RemoteNode;
+import ibis.zorilla.api.ZorillaJobDescription;
 import ibis.zorilla.api.rpc.SocketRPC;
 import ibis.zorilla.cluster.ClusterService;
 import ibis.zorilla.cluster.VivaldiService;
 import ibis.zorilla.gossip.GossipService;
 import ibis.zorilla.job.JobService;
+import ibis.zorilla.job.ZorillaJob;
 import ibis.zorilla.net.DiscoveryService;
 import ibis.zorilla.net.FloodService;
 import ibis.zorilla.net.Network;
@@ -374,4 +376,10 @@ public final class Node implements NodeInterface {
     public UUID[] getJobIDs() throws RemoteException {
         return jobService().getJobIDs();
     }
+
+	@Override
+	public UUID submitJob(ZorillaJobDescription jobDescription) throws Exception {
+		ZorillaJob job = jobService().submitJob(jobDescription, null);
+		return job.getID();
+	}
 }

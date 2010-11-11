@@ -4,6 +4,8 @@ import ibis.util.RunProcess;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
+import ibis.zorilla.api.JavaJobDescription;
+import ibis.zorilla.api.NativeJobDescription;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.util.StreamWriter;
 
@@ -92,8 +94,10 @@ public final class Worker implements Runnable {
 
     private ProcessBuilder nativeCommand(File workingDir) throws Exception {
         ProcessBuilder result = new ProcessBuilder();
+        
+        NativeJobDescription description = (NativeJobDescription) job.getDescription();
 
-        File executableFile = job.getDescription().getExecutable();
+        File executableFile = description.getExecutable();
 
         logger.debug("executable location = " + executableFile);
 
@@ -126,20 +130,26 @@ public final class Worker implements Runnable {
         result.command().add(executableFile.getPath());
 
         // add arguments
-        String[] arguments = job.getDescription().getArguments();
+        String[] arguments = description.getArguments();
         for (int i = 0; i < arguments.length; i++) {
             result.command().add(arguments[i]);
         }
 
-        result.environment().putAll(job.getDescription().getEnvironment());
+        result.environment().putAll(description.getEnvironment());
 
         result.directory(workingDir);
 
         return result;
     }
+    
+    private ProcessBuilder virtualCommand(File workingDir) throws Exception {
+    	throw new Exception("Virtual jobs not supported right now");
+	}
 
     private ProcessBuilder javaCommand(File workingDir) throws Exception {
         ProcessBuilder result = new ProcessBuilder();
+        
+        JavaJobDescription description = (JavaJobDescription) job.getDescription();
 
         String javaHome = System.getProperty("java.home");
         // String pathSeparator = System.getProperty("path.separator");
@@ -182,7 +192,7 @@ public final class Worker implements Runnable {
             // result.command().add("-Dibis.pool.cluster=" + job.cluster());
         }
 
-        String appClassPath = job.getDescription().getJavaClassPath();
+        String appClassPath = description.getJavaClassPath();
         if (appClassPath == null) {
             // add root of job to classpath
             appClassPath = "." + File.pathSeparator;
@@ -210,7 +220,7 @@ public final class Worker implements Runnable {
         result.command().add(appClassPath);
 
         // user specified environment options
-        for (Map.Entry<String, String> entry : job.getDescription()
+        for (Map.Entry<String, String> entry : description
                 .getSystemProperties().entrySet()) {
             if (entry.getKey().startsWith("java")) {
                 throw new Exception(
@@ -222,10 +232,10 @@ public final class Worker implements Runnable {
         }
 
         // add main class
-        result.command().add(job.getDescription().getJavaMain());
+        result.command().add(description.getJavaMain());
 
         // arguments
-        String[] arguments = job.getDescription().getArguments();
+        String[] arguments = description.getArguments();
         for (int i = 0; i < arguments.length; i++) {
             result.command().add(arguments[i]);
         }
@@ -366,10 +376,17 @@ public final class Worker implements Runnable {
             setStatus(Status.PRE_STAGE);
             workingDir = createScratchDir(id);
 
-            if (job.getDescription().isJava()) {
+            if (job.isJava()) {
                 processBuilder = javaCommand(workingDir);
-            } else {
+            } else if (job.isNative()) {
                 processBuilder = nativeCommand(workingDir);
+            } else if (job.isVirtual()) {
+            	processBuilder = virtualCommand(workingDir);
+            } else {
+            	log.printlog("unknown job type");
+            	logger.error("unknown job type");
+            	 setStatus(Status.ERROR);
+                 return;
             }
 
             String cmd = "";
@@ -512,7 +529,9 @@ public final class Worker implements Runnable {
         }
     }
 
-    public String toString() {
+  
+
+	public String toString() {
         return id.toString().substring(0, 8);
     }
 

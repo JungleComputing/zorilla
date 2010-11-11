@@ -3,7 +3,10 @@ package ibis.zorilla.apps;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
 import ibis.zorilla.Config;
 import ibis.zorilla.api.JavaJobDescription;
+import ibis.zorilla.api.JobInterface;
+import ibis.zorilla.api.JobPhase;
 import ibis.zorilla.api.NativeJobDescription;
+import ibis.zorilla.api.NodeInterface;
 import ibis.zorilla.api.RemoteNode;
 import ibis.zorilla.api.VirtualJobDescription;
 import ibis.zorilla.api.ZorillaJobDescription;
@@ -14,6 +17,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
@@ -103,8 +107,10 @@ public class Zubmit {
     private static void usage() {
         System.out
                 .println("usage: zubmit TYPE [OPTION].. EXECUTABLE_URI [JOB_ARGUMENTS]"
+                        + "TYPE = type of job (java, native, or virtual)"
+                		
                         + "\n\nOptions:"
-                        + "\n-na,  --node_address IP:PORT        address of node to submit job to"
+                        + "\n-p,  --port PORT                    port of node to submit job to"
                         + "\n-a,  --attribute KEY=VALUE          add key value pair to attributes of job"
                         + "\n-e,  --environment KEY=VALUE        add key value pair to environment of job"
                         + "\n-c,  --count N                      specify initial nr of cores used "
@@ -139,6 +145,9 @@ public class Zubmit {
         JavaJobDescription javaJobDescription = null;
         NativeJobDescription nativeJobDescription = null;
         VirtualJobDescription virtualJobDescription = null;
+        boolean java = false;
+        boolean nativ = false;
+        boolean virtual = false;
         
         try {
             if (arguments.length == 0) {
@@ -150,16 +159,27 @@ public class Zubmit {
             
             if (type.equals("java")) {
                 javaJobDescription = new JavaJobDescription();
+                java = true;
                 
                 jobDescription = javaJobDescription;
             } else if (type.equals("native")) {
                 nativeJobDescription = new NativeJobDescription();
+                nativ = true;
                 
                 jobDescription = nativeJobDescription;
             } else if (type.equals("virtual")) {
                  virtualJobDescription = new VirtualJobDescription();
+                 virtual = true;
+
+                 //also a native job
+                 nativeJobDescription = virtualJobDescription;
+                 nativ = true;
                 
                 jobDescription = virtualJobDescription;
+            } else {
+            	System.err.println("unknown job type: " + type);
+            	usage();
+            	return;
             }
 
             //working directory already set to cwd.
@@ -172,12 +192,11 @@ public class Zubmit {
             // in case of java program
             int argumentIndex = -1;
 
-            if (arguments.length == 0) {
-                usage();
-                return;
-            }
-
-            for (int i = 0; i < arguments.length; i++) {
+            //skip first argument (which is the type)
+            for (int i = 1; i < arguments.length; i++) {
+            	
+            	//generic arguments
+            	
                 if (arguments[i].equals("-p") || arguments[i].equals("--port")) {
                     i++;
                     port = Integer.parseInt(arguments[i]);
@@ -190,9 +209,6 @@ public class Zubmit {
                 } else if (arguments[i].equals("-v")
                         || arguments[i].equals("--verbose")) {
                     verbose = true;
-                } else if (arguments[i].equals("-V")
-                        || arguments[i].equals("--virtual")) {
-                    virtual = true;
                 } else if (arguments[i].equals("-i")
                         || arguments[i].equals("--input")) {
                     i++;
@@ -233,8 +249,14 @@ public class Zubmit {
                         System.exit(1);
                     }
                     jobDescription.setAttribute(parts[0], parts[1]);
-                } else if (arguments[i].equals("-e")
-                        || arguments[i].equals("--environment")) {
+                } else if (arguments[i].equals("--help")) {
+                    usage();
+                    return;
+                    
+                //native options    
+                    
+                } else if (nativ && ((arguments[i].equals("-e")
+                        || arguments[i].equals("--environment")))) {
                     i++;
                     String[] parts = arguments[i].split("=");
                     if (parts.length != 2) {
@@ -243,8 +265,15 @@ public class Zubmit {
                                         + arguments[i] + ")");
                         System.exit(1);
                     }
-                    jobDescription.setEnvironment(parts[0], parts[1]);
-                } else if (arguments[i].startsWith("-D")) {
+                    nativeJobDescription.setEnvironment(parts[0], parts[1]);
+                } else if (nativ && (arguments[i].equals("--exe"))) {
+                    i++;
+                    nativeJobDescription.setExecutable(new File(arguments[i]));
+
+                    
+                //java options    
+                    
+                } else if (java && (arguments[i].startsWith("-D"))) {
                     String[] parts = arguments[i].substring(2).split("=");
                     if (parts.length != 2) {
                         System.err
@@ -252,16 +281,15 @@ public class Zubmit {
                                         + arguments[i] + ")");
                         System.exit(1);
                     }
-                    jobDescription.setSystemProperty(parts[0], parts[1]);
-                } else if (arguments[i].equals("-m") || arguments[i].equals("--main")) {
+                    javaJobDescription.setSystemProperty(parts[0], parts[1]);
+                    
+                } else if (java && (arguments[i].equals("-m") || arguments[i].equals("--main"))) {
                     i++;
-                    jobDescription.setMain(arguments[i]);
-                } else if (arguments[i].equals("--exe")) {
-                    i++;
-                    jobDescription.setExecutable(new File(arguments[i]));
-                } else if (arguments[i].equals("--help")) {
-                    usage();
-                    return;
+                    javaJobDescription.setMain(arguments[i]);
+
+                    
+                //catch all other options    
+                    
                 } else {
                     if (arguments[i].startsWith("-")) {
                         System.err
@@ -282,17 +310,18 @@ public class Zubmit {
             }
 
             jobDescription.setArguments(arguments);
-
             jobDescription.setInteractive(interactive);
-            jobDescription.setVirtual(virtual);
 
             if (verbose) {
                 System.out.println("*** submitting job ***");
                 System.out.println(jobDescription);
             }
+            
+            RemoteNode node = new RemoteNode(port);
 
-            String jobID;
-            jobID = connection.submitJob(jobDescription, null);
+            UUID jobID = node.submitJob(jobDescription);
+            
+            JobInterface job = node.getJob(jobID);
 
             if (verbose || !interactive) {
                 System.err.println("submitted job, id = " + jobID);
@@ -303,9 +332,7 @@ public class Zubmit {
                     System.err.println("waiting until job is running");
                 }
                 while (true) {
-                    JobInfo info = connection.getJobInfo(jobID);
-
-                    if (info.getPhase() >= ZoniProtocol.PHASE_RUNNING) {
+                    if (job.getPhase().atLeast(JobPhase.RUNNING)) {
                         System.out.println("job now running");
                         break;
                     }
@@ -318,82 +345,64 @@ public class Zubmit {
                 if (verbose) {
                     System.out.println("** interactive job **");
                 }
+                
+                throw new Exception("interactive jobs broken for now");
 
-                ZoniConnection stdinConnection = new ZoniConnection(
-                        nodeSocketAddress, factory, null);
-                OutputStream stdinStream = stdinConnection.getInput(jobID);
-                new StreamWriter(System.in, stdinStream);
-
-                ZoniConnection stdoutConnection = new ZoniConnection(
-                        nodeSocketAddress, factory, null);
-                InputStream stdoutStream = stdoutConnection.getOutput(jobID,
-                        false);
-                new StreamWriter(stdoutStream, System.out);
-
-                ZoniConnection stderrConnection = new ZoniConnection(
-                        nodeSocketAddress, factory, null);
-                InputStream stderrStream = stderrConnection.getOutput(jobID,
-                        true);
-                new StreamWriter(stderrStream, System.err);
-
-                // register shutdown hook to cancel job..
-                try {
-                    Runtime.getRuntime().addShutdownHook(
-                            new Shutdown(nodeSocketAddress, factory, jobID));
-                } catch (Exception e) {
-                    // IGNORE
-                }
-
-                while (true) {
-                    JobInfo info = connection.getJobInfo(jobID);
-
-                    if (info.getPhase() >= ZoniProtocol.PHASE_COMPLETED) {
-                        if (verbose) {
-                            System.out.println("job now done");
-                        }
-                        break;
-                    }
-
-                    // Relaaaax
-                    Thread.sleep(1000);
-                }
-
-                logger.debug("copying "
-                        + jobDescription.getOutputFiles().size() + " files");
-
-                // copy output files
-                for (Map.Entry<String, File> entry : jobDescription
-                        .getOutputFiles().entrySet()) {
-                    copyOutputFile(entry.getKey(), entry.getValue(),
-                            connection, jobID);
-                }
+//                ZoniConnection stdinConnection = new ZoniConnection(
+//                        nodeSocketAddress, factory, null);
+//                OutputStream stdinStream = stdinConnection.getInput(jobID);
+//                new StreamWriter(System.in, stdinStream);
+//
+//                ZoniConnection stdoutConnection = new ZoniConnection(
+//                        nodeSocketAddress, factory, null);
+//                InputStream stdoutStream = stdoutConnection.getOutput(jobID,
+//                        false);
+//                new StreamWriter(stdoutStream, System.out);
+//
+//                ZoniConnection stderrConnection = new ZoniConnection(
+//                        nodeSocketAddress, factory, null);
+//                InputStream stderrStream = stderrConnection.getOutput(jobID,
+//                        true);
+//                new StreamWriter(stderrStream, System.err);
+//
+//                // register shutdown hook to cancel job..
+//                try {
+//                    Runtime.getRuntime().addShutdownHook(
+//                            new Shutdown(nodeSocketAddress, factory, jobID));
+//                } catch (Exception e) {
+//                    // IGNORE
+//                }
+//
+//                while (true) {
+//                    JobInfo info = connection.getJobInfo(jobID);
+//
+//                    if (info.getPhase() >= ZoniProtocol.PHASE_COMPLETED) {
+//                        if (verbose) {
+//                            System.out.println("job now done");
+//                        }
+//                        break;
+//                    }
+//
+//                    // Relaaaax
+//                    Thread.sleep(1000);
+//                }
+//
+//                logger.debug("copying "
+//                        + jobDescription.getOutputFiles().size() + " files");
+//
+//                // copy output files
+//                for (Map.Entry<String, File> entry : jobDescription
+//                        .getOutputFiles().entrySet()) {
+//                    copyOutputFile(entry.getKey(), entry.getValue(),
+//                            connection, jobID);
+//                }
             }
 
-            connection.close();
-            factory.end();
         } catch (Exception e) {
             System.err.println("exception on running job: " + e);
             e.printStackTrace(System.err);
             System.exit(1);
         }
-    }
-
-    private static String[] parseVirtualArguments(String[] arguments,
-            VirtualJobDescription virtualJobDescription) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    private static String[] parseNativeArguments(String[] arguments,
-            NativeJobDescription nativeJobDescription) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    private static String[] parseJavaArguments(String[] arguments,
-            JavaJobDescription javaJobDescription) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     private static void addOutputFile(String string,
@@ -409,27 +418,16 @@ public class Zubmit {
     }
 
     private static class Shutdown extends Thread {
-        private final String nodeSocketAddress;
-        private final VirtualSocketFactory factory;
+        private final JobInterface job;
 
-        private final String jobID;
-
-        Shutdown(String nodeSocketAddress, VirtualSocketFactory factory,
-                String jobID) {
-            this.nodeSocketAddress = nodeSocketAddress;
-            this.factory = factory;
-            this.jobID = jobID;
+        Shutdown(JobInterface job) {
+        	this.job = job;
         }
 
         public void run() {
             try {
-                ZoniConnection connection = new ZoniConnection(
-                        nodeSocketAddress, factory, null);
-                logger.debug("shutdown hook triggered, cancelling job");
-
-                connection.cancelJob(jobID);
-                connection.close();
-                System.err.println("job " + jobID + " cancelled");
+            	job.cancel();
+                System.err.println("job " + job.getID() + " cancelled");
             } catch (Exception e) {
                 System.err.println("could not cancel job: " + e);
             }

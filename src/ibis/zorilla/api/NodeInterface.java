@@ -19,4 +19,6 @@ public interface NodeInterface {
     public JobInterface getJob(UUID jobID) throws RemoteException, Exception;
     
     public Map<String, String> getStats() throws RemoteException;
+    
+    public UUID submitJob(ZorillaJobDescription jobDescription) throws RemoteException, Exception;
 }

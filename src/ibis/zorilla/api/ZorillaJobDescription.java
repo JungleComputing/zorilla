@@ -10,6 +10,8 @@ public abstract class ZorillaJobDescription implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Map<String, String> attributes;
+    
+    private String[] arguments;
  
     //path used to resolve relative input and output file paths into
     //absolute files (on the submitting node file system)
@@ -39,9 +41,22 @@ public abstract class ZorillaJobDescription implements Serializable {
         outputFiles = new HashMap<String, File>();
 
         interactive = false;
-
+        
+        arguments = new String[0];
     }
     
+    public synchronized void setArguments(String[] arguments) {
+        if (arguments == null) {
+            this.arguments = new String[0];
+        } else {
+            this.arguments = arguments.clone();
+        }
+    }
+    
+    public synchronized String[] getArguments() {
+        return arguments.clone();
+    }
+
     public synchronized void setWorkingDirectory(File workingDirectory) {
         this.workingDirectory = workingDirectory;
     }

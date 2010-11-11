@@ -8,8 +8,11 @@ import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
+import ibis.zorilla.api.JavaJobDescription;
 import ibis.zorilla.api.JobInterface;
 import ibis.zorilla.api.JobPhase;
+import ibis.zorilla.api.NativeJobDescription;
+import ibis.zorilla.api.VirtualJobDescription;
 import ibis.zorilla.api.ZorillaJobDescription;
 import ibis.zorilla.io.ObjectOutput;
 import ibis.zorilla.io.ZorillaPrintStream;
@@ -308,12 +311,17 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
     @Override
     public boolean isJava() {
-        return jobDescription.isJava();
+        return (jobDescription instanceof JavaJobDescription);
     }
 
     @Override
     public synchronized boolean isVirtual() {
-        return jobDescription.isVirtual();
+        return (jobDescription instanceof VirtualJobDescription);
+    }
+    
+    @Override
+    public synchronized boolean isNative() {
+        return (jobDescription instanceof NativeJobDescription);
     }
 
     @Override
@@ -403,7 +411,6 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         result.put("submission.time", new Date(submissiontime).toString());
         result.put("start.time", new Date(starttime).toString());
         result.put("stop.time", new Date(stoptime).toString());
-        result.put("executable", jobDescription.getExecutable().getPath());
 
         if (isJava()) {
             result.put("java", "yes");

@@ -1,6 +1,5 @@
 package ibis.zorilla.api;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,7 +9,6 @@ public class JavaJobDescription extends ZorillaJobDescription {
         super();
         
         systemProperties = new HashMap<String, String>();
-        arguments = new String[0];
     }
 
     private static final long serialVersionUID = 1L;
@@ -19,14 +17,8 @@ public class JavaJobDescription extends ZorillaJobDescription {
 
     private String main;
 
-    private String[] arguments;
-
     private String classPath;
     
-    public synchronized String[] getArguments() {
-        return arguments.clone();
-    }
-
     public synchronized String getJavaMain() {
         return main;
     }
@@ -65,7 +57,6 @@ public class JavaJobDescription extends ZorillaJobDescription {
 
         result.put("System.properties", toString(systemProperties));
         result.put("Main", main);
-        result.put("Arguments", Arrays.toString(arguments));
         result.put("Classpath", classPath);
 
         return result;
@@ -78,8 +69,6 @@ public class JavaJobDescription extends ZorillaJobDescription {
     public String toMultilineString() {
         String result = super.toMultilineString();
 
-        result += "\nArguments = " + Arrays.toString(arguments);
-        
         result += "\nSystem Properties:"
                 + toNewLineString(systemProperties);
         result += "\nMain = " + main;

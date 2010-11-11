@@ -50,6 +50,8 @@ public abstract class ZorillaJob implements JobInterface {
 	public abstract boolean isJava();
 
 	public abstract boolean isVirtual();
+	
+	public abstract boolean isNative();
 
 	public abstract void updateAttributes(Map<String, String> attributes)
 			throws Exception;

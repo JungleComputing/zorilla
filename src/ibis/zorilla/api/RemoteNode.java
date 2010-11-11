@@ -79,4 +79,9 @@ public class RemoteNode implements NodeInterface {
         return proxy.getStats();
     }
 
+    @Override
+	public UUID submitJob(ZorillaJobDescription jobDescription) throws RemoteException, Exception {
+		return proxy.submitJob(jobDescription);
+	}
+
 }

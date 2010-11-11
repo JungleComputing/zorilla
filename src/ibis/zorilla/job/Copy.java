@@ -7,6 +7,10 @@ import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
+import ibis.zorilla.api.JavaJobDescription;
+import ibis.zorilla.api.VirtualJobDescription;
+import ibis.zorilla.api.NativeJobDescription;
+
 import ibis.zorilla.api.JobPhase;
 import ibis.zorilla.api.ZorillaJobDescription;
 import ibis.zorilla.io.ObjectInput;
@@ -276,7 +280,6 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
             } else {
                 result.put("java", "no");
             }
-            result.put("executable", jobDescription.getExecutable().getPath());
         }
 
         return result;
@@ -579,12 +582,12 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
             readDynamicState(call);
             call.finish();
 
-            if (jobDescription.isVirtual()) {
+            if (isVirtual()) {
                 if (!node.config().getBooleanProperty(Config.VIRTUAL_JOBS)) {
                     throw new Exception(
                             "cannot run virtual job, not allowed and/or possible");
                 }
-            } else if (!jobDescription.isJava()
+            } else if (!isJava()
                     && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
                 throw new Exception("cannot run native job, not allowed");
             }
@@ -670,13 +673,19 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
     @Override
     public synchronized boolean isJava() {
-        return jobDescription.isJava();
+       return (jobDescription instanceof JavaJobDescription);
     }
 
     @Override
     public synchronized boolean isVirtual() {
-        return jobDescription.isVirtual();
+        return (jobDescription instanceof VirtualJobDescription);
     }
+    
+    @Override
+    public synchronized boolean isNative() {
+        return (jobDescription instanceof NativeJobDescription);
+    }
+
 
     /**
      * Tries to create new workers for this job on this node.

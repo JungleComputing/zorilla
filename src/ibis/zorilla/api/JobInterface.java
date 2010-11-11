@@ -14,5 +14,7 @@ public interface JobInterface {
     public void cancel() throws RemoteException, Exception;
     
     public ZorillaJobDescription getDescription() throws RemoteException;
+
+
     
 }
