@@ -1,7 +1,6 @@
 package ibis.zorilla.job;
 
 import ibis.ipl.IbisIdentifier;
-import ibis.zorilla.Node;
 import ibis.zorilla.api.JobInterface;
 import ibis.zorilla.api.JobPhase;
 import ibis.zorilla.api.ZorillaJobDescription;
@@ -19,31 +18,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * A job in the zorilla system. May be created either from a description of the
+ * A job in the Zorilla system. May be created either from a description of the
  * job and all the needed files, or from a serialized from of another
  * ZorillaJobDescription object
  */
 public abstract class ZorillaJob implements JobInterface {
-
-	
-	/**
-	 * create a constituent of the jobstate
-	 * 
-	 * @throws Exception
-	 * @throws IOException
-	 */
-	public static ZorillaJob createConstituent(Advert advert, Node node)
-			throws Exception, IOException {
-		String type = advert.getJobImplementationType();
-
-		if (type.equalsIgnoreCase("primaryCopy")) {
-			return new ibis.zorilla.job.Copy(advert, node);
-		} else {
-			throw new Exception("unknown state type");
-		}
-	}
-
-	
 
 	public abstract UUID getID();
 

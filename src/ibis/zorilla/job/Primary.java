@@ -822,7 +822,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
         try {
             node.floodService().advertise(
-                    new PrimaryCopyAdvert(id, metric, count, endPoint.getID()));
+                    new Advert(id, metric, count, endPoint.getID()));
 
         } catch (Exception e) {
             log("could not send advertizement", e);

@@ -3,7 +3,6 @@ package ibis.zorilla.apps;
 import java.util.ArrayList;
 import java.util.UUID;
 
-import ibis.zorilla.Config;
 import ibis.zorilla.api.JobInterface;
 import ibis.zorilla.api.RemoteNode;
 

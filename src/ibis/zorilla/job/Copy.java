@@ -119,19 +119,14 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
     static final int STATE_UPDATE = 6;
 
     public Copy(Advert advert, Node node) throws IOException, Exception {
-        if (!(advert instanceof PrimaryCopyAdvert)) {
-            throw new Exception("wrong advert type");
-        }
-        PrimaryCopyAdvert ad = (PrimaryCopyAdvert) advert;
-
         this.node = node;
 
         id = Node.generateUUID();
 
         cluster = node.config().getProperty(Config.CLUSTER_NAME);
 
-        jobID = ad.getJobID();
-        primary = ad.getPrimaryReceivePort();
+        jobID = advert.getJobID();
+        primary = advert.getPrimaryReceivePort();
 
         localWorkers = new HashMap<UUID, Worker>();
 

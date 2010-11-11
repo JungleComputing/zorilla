@@ -207,7 +207,7 @@ public final class JobService implements Service, Runnable {
                     logger.debug("recevied job advert for "
                             + jobID.toString().substring(0, 7));
 
-                    job = ZorillaJob.createConstituent(advert, node);
+                    job = new Copy(advert, node);
                     jobs.put(jobID, job);
                 }
             }

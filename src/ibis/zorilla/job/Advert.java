@@ -1,22 +1,45 @@
 package ibis.zorilla.job;
 
+import ibis.ipl.ReceivePortIdentifier;
+
 import java.io.Serializable;
 import java.util.UUID;
 
-public abstract class Advert implements Serializable {
+public class Advert implements Serializable {
 
     private static final long serialVersionUID = 1L;
+	protected final UUID jobID;
+	protected final String metric;
+	protected final int count;
+	protected final ReceivePortIdentifier primaryReceivePort;
+	
+	 public Advert(UUID jobID, String metric, int count,
+	            ReceivePortIdentifier primaryReceivePort) {
 
-    public abstract UUID getJobID();
+	        this.jobID = jobID;
+	        this.metric = metric;
+	        this.count = count;
+	        this.primaryReceivePort = primaryReceivePort;
+	    }
 
-    public abstract String getJobImplementationType();
-
-    public abstract String getMetric();
-
-    public abstract int getCount();
-
-    public String toString() {
+	public String toString() {
         return getJobID().toString() + " " + getMetric() + " " + getCount();
     }
+
+	public UUID getJobID() {
+	    return jobID;
+	}
+
+	public String getMetric() {
+	    return metric;
+	}
+
+	public int getCount() {
+	    return count;
+	}
+
+	public ReceivePortIdentifier getPrimaryReceivePort() {
+	    return primaryReceivePort;
+	}
 
 }
