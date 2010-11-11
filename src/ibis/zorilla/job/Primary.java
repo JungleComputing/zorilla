@@ -6,12 +6,11 @@ import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
-import ibis.zorilla.JobPhase;
 import ibis.zorilla.Node;
 import ibis.zorilla.NodeInfo;
-import ibis.zorilla.ZoniFileInfo;
-import ibis.zorilla.ZoniInputFile;
-import ibis.zorilla.ZorillaJobDescription;
+import ibis.zorilla.api.JobInterface;
+import ibis.zorilla.api.JobPhase;
+import ibis.zorilla.api.ZorillaJobDescription;
 import ibis.zorilla.io.ObjectOutput;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.Worker.Status;
@@ -27,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -121,7 +121,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     private final Node node;
 
     private final Map<UUID, Worker> localWorkers;
-    
+
     boolean moreLocalWorkersPossible = true;
 
     private final Callback callback;
@@ -149,8 +149,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
         this.node = node;
 
-        cluster = node.config()
-                .getProperty(Config.CLUSTER_NAME);
+        cluster = node.config().getProperty(Config.CLUSTER_NAME);
 
         id = Node.generateUUID();
         this.jobDescription = description;
@@ -183,26 +182,24 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
             // initialize files
 
-            ZoniInputFile[] zoniInputFiles = description.getInputFiles();
+            ArrayList<InputFile> preStageFiles = new ArrayList<InputFile>();
 
-            preStageFiles = new InputFile[zoniInputFiles.length];
-            
-            for (int i = 0; i < preStageFiles.length; i++) {
-                ZoniInputFile file = zoniInputFiles[i];
-                preStageFiles[i] = new InputFile(file.getFile(), file
-                        .getSandboxPath(), this);
+            for (Map.Entry<File, String> entry : description.getInputFiles()
+                    .entrySet()) {
+                addInputFile(entry.getKey(), entry.getValue(), preStageFiles);
             }
+            this.preStageFiles = preStageFiles.toArray(new InputFile[0]);
 
             ArrayList<PrimaryOutputStream> postStageFiles = new ArrayList<PrimaryOutputStream>();
 
             if (description.isInteractive()) {
-                stdout = new PrimaryOutputStream("##stdout##", File
-                        .createTempFile(id.toString(), ".stdout", node.config()
-                                .getTmpDir()), this);
+                stdout = new PrimaryOutputStream("##stdout##",
+                        File.createTempFile(id.toString(), ".stdout", node
+                                .config().getTmpDir()), this);
 
-                stderr = new PrimaryOutputStream("##stderr##", File
-                        .createTempFile(id.toString(), ".stderr", node.config()
-                                .getTmpDir()), this);
+                stderr = new PrimaryOutputStream("##stderr##",
+                        File.createTempFile(id.toString(), ".stderr", node
+                                .config().getTmpDir()), this);
 
                 // TODO: support standard in too :)
                 stdin = null;
@@ -214,11 +211,11 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                                     .config().getTmpDir()), this));
                 }
             } else {
-                stdout = new PrimaryOutputStream("##stdout##", description
-                        .getStdoutFile(), this);
+                stdout = new PrimaryOutputStream("##stdout##",
+                        description.getStdoutFile(), this);
 
-                stderr = new PrimaryOutputStream("##stderr##", description
-                        .getStderrFile(), this);
+                stderr = new PrimaryOutputStream("##stderr##",
+                        description.getStderrFile(), this);
 
                 if (description.getStdinFile() == null) {
                     stdin = null;
@@ -253,19 +250,40 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
             constituents = new HashMap<UUID, Constituent>();
             // register self
-            constituents.put(id, new Constituent(id, endPoint.getID(), node
-                    .getInfo()));
+            constituents.put(id,
+                    new Constituent(id, endPoint.getID(), node.getInfo()));
 
             log("Primary created for " + id);
-            logger.info("new job " + id.toString().substring(0, 7)
-                    + " created");
+            logger.info("new job " + id.toString().substring(0, 7) + " created");
             setPhase(JobPhase.INITIAL);
 
             ThreadPool.createNew(this, "Primary of " + this);
+            
+            node.getRPC().exportObject(JobInterface.class, this, id.toString());
 
         } catch (Exception e) {
             log("could not create primary", e);
             throw e;
+        }
+    }
+
+    // recursively add all non-hidden files to the input file set
+    private void addInputFile(File file, String sandboxPath,
+            ArrayList<InputFile> preStageFiles) throws IOException, Exception {
+        if (sandboxPath == null) {
+            sandboxPath = file.getName();
+        }
+
+        if (file.isHidden()) {
+            // IGNORE
+            return;
+        } else if (file.isDirectory()) {
+            for (File child : file.listFiles()) {
+                addInputFile(child, sandboxPath + "/" + child.getName(),
+                        preStageFiles);
+            }
+        } else if (file.isFile()) {
+            preStageFiles.add(new InputFile(file, sandboxPath, this));
         }
     }
 
@@ -292,7 +310,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     public boolean isJava() {
         return jobDescription.isJava();
     }
-    
+
     @Override
     public synchronized boolean isVirtual() {
         return jobDescription.isVirtual();
@@ -385,7 +403,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         result.put("submission.time", new Date(submissiontime).toString());
         result.put("start.time", new Date(starttime).toString());
         result.put("stop.time", new Date(stoptime).toString());
-        result.put("executable", jobDescription.getExecutable());
+        result.put("executable", jobDescription.getExecutable().getPath());
 
         if (isJava()) {
             result.put("java", "yes");
@@ -519,7 +537,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
         return result;
     }
-    
+
     private synchronized boolean moreWorkersNeeded() {
         if (!getBooleanAttribute(JobAttributes.MALLEABLE)) {
             // workers started by scheduler
@@ -535,7 +553,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         if (!(phase == JobPhase.SCHEDULING || phase == JobPhase.RUNNING)) {
             return false;
         }
-        
+
         return true;
     }
 
@@ -649,7 +667,8 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             }
         }
 
-        if (phase == JobPhase.RUNNING && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
+        if (phase == JobPhase.RUNNING
+                && !getBooleanAttribute(JobAttributes.MALLEABLE)) {
             setPhase(JobPhase.CLOSED);
         }
 
@@ -666,7 +685,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
             if (worker.finished()) {
                 iterator.remove();
-                //stop adding local workers if one has finished
+                // stop adding local workers if one has finished
                 moreLocalWorkersPossible = false;
                 Constituent constituent = constituents.get(id);
 
@@ -677,14 +696,15 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                     return;
                 }
 
-                removeWorker(worker.id(), constituent, worker.status(), worker
-                        .exitStatus());
+                removeWorker(worker.id(), constituent, worker.status(),
+                        worker.exitStatus());
             }
         }
 
         if (localWorkers.size() == 0 && phase.isAfter(JobPhase.RUNNING)) {
             if (constituents.remove(id) != null) {
-                log("unregisterred outselves, now " + constituents.size() + " constituents");
+                log("unregisterred outselves, now " + constituents.size()
+                        + " constituents");
                 for (UUID id : constituents.keySet()) {
                     log(id.toString());
                 }
@@ -819,8 +839,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         dirty = true;
         notifyAll();
 
-       
-       if (phase.atLeast(JobPhase.RUNNING) && starttime == 0) {
+        if (phase.atLeast(JobPhase.RUNNING) && starttime == 0) {
             starttime = System.currentTimeMillis();
         }
         if (phase.atLeast(JobPhase.COMPLETED) && stoptime == 0) {
@@ -839,9 +858,9 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             logger.debug("not creating worker, native jobs not allowed");
             return;
         }
-        
+
         while (true) {
-            //stop adding local workers if one has finished
+            // stop adding local workers if one has finished
             if (!moreLocalWorkersPossible) {
                 return;
             }
@@ -855,23 +874,22 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                 logger.debug("cannot create new worker, wrong phase");
                 return;
             }
-            
-            if (!node.jobService()
-                    .resourcesAvailable(workerResources)) {
+
+            if (!node.jobService().resourcesAvailable(workerResources)) {
                 log("cannot claim resources");
                 return; // might get more resources later
             }
 
             UUID workerID = Node.generateUUID();
             Worker worker = new Worker(this, workerID, node, deadline);
-            
-            String hostname = node.jobService().addWorker(worker); 
-            
+
+            String hostname = node.jobService().addWorker(worker);
+
             if (hostname == null) {
                 log("cannot claim resources");
-                return ; // might get more resources later
+                return; // might get more resources later
             }
-            
+
             // claim resources, do not start worker yet.
             localWorkers.put(workerID, worker);
 
@@ -881,7 +899,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                 localWorkers.remove(workerID);
                 return;
             }
-     
+
             worker.start();
         }
 
@@ -945,10 +963,8 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
                 return;
             }
 
-            log("adding new constituent: "
-                    + constituent);
-            logger.info("adding new constituent: "
-                    + constituent);
+            log("adding new constituent: " + constituent);
+            logger.info("adding new constituent: " + constituent);
 
             constituents.put(constituentID, constituent);
         }
@@ -1050,10 +1066,8 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         // remove constituent from list
         constituents.remove(constituent.getID());
 
-        log("removed constituent "
-                + constituent);
-        logger.info("removed constituent "
-                + constituent);
+        log("removed constituent " + constituent);
+        logger.info("removed constituent " + constituent);
 
         if (constituent.nrOfWorkers() > 0) {
             throw new Exception("removed constituent with workers remaining");
@@ -1089,13 +1103,14 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             synchronized (this) {
                 constituent = constituents.get(constituentID);
             }
-            constituent.resetExpirationDate();
 
             if (constituent == null) {
                 throw new Exception("unknown costituent ("
                         + constituentID.toString().substring(0, 7)
                         + ") in request");
             }
+
+            constituent.resetExpirationDate();
 
             switch (opcode) {
             case Primary.REQUEST_STATE:
@@ -1143,30 +1158,27 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     private synchronized UUID[] createWorkers(int nrOfWorkers) {
         for (int i = 0; i < nrOfWorkers; i++) {
             if (!isJava()
-                    && !node.config().getBooleanProperty(
-                            Config.NATIVE_JOBS)) {
+                    && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
                 log("cannot create native worker");
                 break;
             }
-            
-            
-            if (!node.jobService()
-                    .resourcesAvailable(workerResources)) {
+
+            if (!node.jobService().resourcesAvailable(workerResources)) {
                 logger.debug("cannot claim resources");
-                break; 
+                break;
             }
 
             UUID workerID = Node.generateUUID();
             Worker worker = new Worker(this, workerID, node, deadline);
-            
-            String hostname = node.jobService().addWorker(worker); 
-            
+
+            String hostname = node.jobService().addWorker(worker);
+
             if (hostname == null) {
                 logger.debug("cannot claim resources");
                 worker.abort();
                 break; // might get more resources later
             }
-            
+
             synchronized (this) {
                 // claim resources, do not start worker yet.
                 localWorkers.put(workerID, worker);
@@ -1178,11 +1190,11 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
     private void updateLocalMaxWorkers() {
         int maxNrOfWorkers = 0;
-        
+
         if (node.jobService().resourcesAvailable(workerResources)) {
             maxNrOfWorkers = node.jobService().freeNodes();
         }
-        
+
         synchronized (this) {
             Constituent constituent = constituents.get(id);
 
@@ -1193,8 +1205,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
             }
 
             if (!isJava()
-                    && !node.config().getBooleanProperty(
-                            Config.NATIVE_JOBS)) {
+                    && !node.config().getBooleanProperty(Config.NATIVE_JOBS)) {
                 maxNrOfWorkers = 0;
             }
 
@@ -1455,22 +1466,9 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     }
 
     @Override
-    public ZoniFileInfo getFileInfo(String sandboxPath) throws Exception {
-        PrimaryOutputStream file = getOutputFile(sandboxPath);
-
-        if (file == null) {
-            throw new Exception(sandboxPath + " does not exist");
-        }
-
-        String name = new File(sandboxPath).getName();
-
-        return new ZoniFileInfo(sandboxPath, name, false, new ZoniFileInfo[0]);
-
-    }
-
-    @Override
     public ZorillaJobDescription getDescription() {
         return jobDescription;
     }
+
 
 }

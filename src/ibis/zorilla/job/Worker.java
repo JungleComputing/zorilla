@@ -93,17 +93,15 @@ public final class Worker implements Runnable {
     private ProcessBuilder nativeCommand(File workingDir) throws Exception {
         ProcessBuilder result = new ProcessBuilder();
 
-        String location = job.getDescription().getExecutable();
+        File executableFile = job.getDescription().getExecutable();
 
-        File executableFile = new File(location);
-
-        logger.debug("executable location = " + location);
+        logger.debug("executable location = " + executableFile);
 
         // check if the executable is a file in the sandbox, if so: make
         // sure the file is found by exec() by making its path absolute,
         // and try to set the executable bit
         if (!executableFile.isAbsolute()) {
-            File sandboxExeFile = new File(workingDir, location);
+            File sandboxExeFile = new File(workingDir, executableFile.getPath());
 
             logger
                     .debug("executable location (in sandbox) = "
@@ -122,10 +120,10 @@ public final class Worker implements Runnable {
                         .getAbsolutePath()).run();
 
                 // override exe location
-                location = sandboxExeFile.getAbsolutePath();
+                executableFile = sandboxExeFile.getAbsoluteFile();
             }
         }
-        result.command().add(location);
+        result.command().add(executableFile.getPath());
 
         // add arguments
         String[] arguments = job.getDescription().getArguments();
@@ -213,7 +211,7 @@ public final class Worker implements Runnable {
 
         // user specified environment options
         for (Map.Entry<String, String> entry : job.getDescription()
-                .getJavaSystemProperties().entrySet()) {
+                .getSystemProperties().entrySet()) {
             if (entry.getKey().startsWith("java")) {
                 throw new Exception(
                         "cannot add system properties starting with \"java\"");
@@ -227,7 +225,7 @@ public final class Worker implements Runnable {
         result.command().add(job.getDescription().getJavaMain());
 
         // arguments
-        String[] arguments = job.getDescription().getJavaArguments();
+        String[] arguments = job.getDescription().getArguments();
         for (int i = 0; i < arguments.length; i++) {
             result.command().add(arguments[i]);
         }

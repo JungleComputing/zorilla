@@ -1,12 +1,11 @@
 package ibis.zorilla;
 
-import ibis.ipl.Ibis;
 import ibis.ipl.IbisCapabilities;
-import ibis.ipl.IbisFactory;
 import ibis.ipl.server.ServerProperties;
-import ibis.ipl.util.rpc.RPC;
-import ibis.ipl.util.rpc.RemoteException;
-import ibis.ipl.util.rpc.RemoteObject;
+import ibis.zorilla.api.JobInterface;
+import ibis.zorilla.api.NodeInterface;
+import ibis.zorilla.api.RemoteNode;
+import ibis.zorilla.api.rpc.SocketRPC;
 import ibis.zorilla.cluster.ClusterService;
 import ibis.zorilla.cluster.VivaldiService;
 import ibis.zorilla.gossip.GossipService;
@@ -15,12 +14,11 @@ import ibis.zorilla.net.DiscoveryService;
 import ibis.zorilla.net.FloodService;
 import ibis.zorilla.net.Network;
 import ibis.zorilla.net.UdpDiscoveryService;
-import ibis.zorilla.rpc.LocalSocketRPC;
 import ibis.zorilla.www.WebService;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
+import java.rmi.RemoteException;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -63,7 +61,7 @@ public final class Node implements NodeInterface {
 
 	private final Network network;
 
-	private final LocalSocketRPC localRPC;
+	private final SocketRPC socketRPC;
 
 	// ***** Services *****\\
 
@@ -220,16 +218,17 @@ public final class Node implements NodeInterface {
 		logger.info("Saving temporary files to " + config.getTmpDir());
 		logger.info("Node " + name + " started");
 
-		localRPC = new LocalSocketRPC(54321);
+		socketRPC = new SocketRPC(RemoteNode.DEFAULT_PORT);
+		logger.info("Started RPC on port " + socketRPC.getPort());
 
-		localRPC.exportObject(NodeInterface.class, this, "zorilla node");
+		socketRPC.exportObject(NodeInterface.class, this, "zorilla node");
 
 		// machine = new VirtualMachine(new
 		// File("/home/ndrost/vm/windowsssh.ovf"), new
 		// File("/home/ndrost/tmp/sandbox"));
 		// logger.info("vm port = " + machine.getSshPort());
 	}
-
+	
 	public synchronized Config config() {
 		return config;
 	}
@@ -287,6 +286,10 @@ public final class Node implements NodeInterface {
 	public WebService webService() {
 		return webService;
 	}
+	
+	public SocketRPC getRPC() {
+	    return socketRPC;
+	}
 
 	public ibis.ipl.server.Server getIPLServer() {
 		return iplServer;
@@ -307,7 +310,7 @@ public final class Node implements NodeInterface {
 
 		network.end();
 
-		localRPC.end();
+		socketRPC.end();
 
 		logger.info("node done");
 
@@ -339,9 +342,11 @@ public final class Node implements NodeInterface {
 	@Override
 	public void killNetwork() throws Exception, RemoteException {
 		floodService().killNetwork();
+		end();
 	}
 
-	public synchronized boolean hasEnded() {
+	@Override
+	public synchronized boolean hasEnded() throws RemoteException {
 		return ended;
 	}
 
@@ -354,4 +359,19 @@ public final class Node implements NodeInterface {
 			}
 		}
 	}
+
+    @Override
+    public JobInterface[] getJobs() throws RemoteException {
+        return jobService().getJobs();
+    }
+
+    @Override
+    public JobInterface getJob(UUID jobID) throws Exception {
+        return jobService().getJob(jobID);
+    }
+
+    @Override
+    public UUID[] getJobIDs() throws RemoteException {
+        return jobService().getJobIDs();
+    }
 }

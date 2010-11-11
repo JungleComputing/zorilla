@@ -4,7 +4,7 @@ import ibis.util.ThreadPool;
 import ibis.zorilla.Node;
 import ibis.zorilla.Config;
 import ibis.zorilla.Service;
-import ibis.zorilla.ZorillaJobDescription;
+import ibis.zorilla.api.ZorillaJobDescription;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -298,6 +298,10 @@ public final class JobService implements Service, Runnable {
 
         }
         return result;
+    }
+
+    public synchronized UUID[] getJobIDs() {
+        return jobs.keySet().toArray(new UUID[0]);
     }
 
 }

@@ -1,5 +1,6 @@
-package ibis.zorilla.rpc;
+package ibis.zorilla.api.rpc;
 
+import java.rmi.RemoteException;
 import java.util.Date;
 
 public class Example {
@@ -23,7 +24,7 @@ public class Example {
 		int port = Integer.parseInt(arguments[0]);
 
 		if (port == 0) { // server
-			LocalSocketRPC rpc = new LocalSocketRPC(0);
+			SocketRPC rpc = new SocketRPC(0);
 
 			//create object we want to make remotely accessible
 			ExampleClass object = new ExampleClass();
@@ -41,7 +42,7 @@ public class Example {
 			
 			rpc.end();
 		} else { //client
-			ExampleInterface interfaceObject = LocalSocketRPC.createProxy(ExampleInterface.class, "my great object", port);
+			ExampleInterface interfaceObject = SocketRPC.createProxy(ExampleInterface.class, "my great object", port);
 			
 			//call remote object, print result
 			System.err.println(interfaceObject.millisToString(System.currentTimeMillis()));

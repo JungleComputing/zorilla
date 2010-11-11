@@ -65,7 +65,7 @@ public class DiscoveryService implements Service, Runnable {
             logger.warn("invalid peer address: " + address, e);
         }
         if (socketAddress != null) {
-            boolean present = addresses.add(socketAddress);
+            addresses.add(socketAddress);
 
             // nudge the discovery thread
             notifyAll();

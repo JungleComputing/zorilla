@@ -264,7 +264,6 @@ public class Config extends TypedProperties {
     // { MASTER_ADDRESS, null, "Address of the master node" },
     };
 
-	public static final int DEFAULT_PORT = 54321;
 
     // public static final long JOB_STATE_EXPIRATION_TIMEOUT = 30 * 60 * 1000;
     // public static final long JOB_STATE_REFRESH_TIMEOUT = 60 * 1000;

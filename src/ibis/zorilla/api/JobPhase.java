@@ -1,4 +1,4 @@
-package ibis.zorilla;
+package ibis.zorilla.api;
 
 public enum JobPhase {
 

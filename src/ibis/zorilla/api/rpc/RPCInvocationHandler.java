@@ -1,4 +1,4 @@
-package ibis.zorilla.rpc;
+package ibis.zorilla.api.rpc;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.rmi.RemoteException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +78,7 @@ class RPCInvocationHandler implements InvocationHandler {
 				throw new RemoteException("exception while performing remote call", (Throwable) result);
 			}
 		} catch (IOException e) {
-			throw new RemoteException(e);
+			throw new RemoteException("invocation failed", e);
 		} finally {
 			if (socket != null && !socket.isClosed()) {
 				try {

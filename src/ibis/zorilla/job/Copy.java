@@ -6,10 +6,9 @@ import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
-import ibis.zorilla.JobPhase;
 import ibis.zorilla.Node;
-import ibis.zorilla.ZoniFileInfo;
-import ibis.zorilla.ZorillaJobDescription;
+import ibis.zorilla.api.JobPhase;
+import ibis.zorilla.api.ZorillaJobDescription;
 import ibis.zorilla.io.ObjectInput;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.Call;
@@ -277,7 +276,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
             } else {
                 result.put("java", "no");
             }
-            result.put("executable", jobDescription.getExecutable());
+            result.put("executable", jobDescription.getExecutable().getPath());
         }
 
         return result;
@@ -903,7 +902,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         }
     }
 
-    private synchronized int getNrOfWorkers() {
+    public synchronized int getNrOfWorkers() {
         return localWorkers.size();
     }
 
@@ -945,10 +944,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                 "can only read from standard out where job was submitted");
     }
 
-    @Override
-    public ZoniFileInfo getFileInfo(String sandboxPath) throws Exception {
-        throw new Exception("can only get output files where job was submitted");
-    }
+ 
 
     @Override
     public void readOutputFile(String sandboxPath, ObjectOutputStream out)

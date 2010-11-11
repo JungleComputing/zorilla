@@ -35,8 +35,6 @@ public class VirtualMachine {
 
     public static final boolean DELETE_ON_STOP = true;
 
-    private static final long TIMEOUT = 60000;
-
     private final String id;
 
     private final int sshPort;

@@ -1,10 +1,10 @@
 package ibis.zorilla.job;
 
 import ibis.ipl.IbisIdentifier;
-import ibis.zorilla.JobPhase;
 import ibis.zorilla.Node;
-import ibis.zorilla.ZoniFileInfo;
-import ibis.zorilla.ZorillaJobDescription;
+import ibis.zorilla.api.JobInterface;
+import ibis.zorilla.api.JobPhase;
+import ibis.zorilla.api.ZorillaJobDescription;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Receiver;
@@ -23,7 +23,7 @@ import java.util.UUID;
  * job and all the needed files, or from a serialized from of another
  * ZorillaJobDescription object
  */
-public abstract class ZorillaJob {
+public abstract class ZorillaJob implements JobInterface {
 
 	
 	/**
@@ -79,9 +79,6 @@ public abstract class ZorillaJob {
 	 * Returns the output files in virtual file system.
 	 */
 	protected abstract String[] getPostStageFiles() throws Exception;
-
-	public abstract ZoniFileInfo getFileInfo(String sandboxPath)
-			throws Exception;
 
 	/**
 	 * Returns a stream suitable to write standard out to. Do not close stream

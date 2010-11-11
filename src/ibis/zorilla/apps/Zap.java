@@ -1,14 +1,13 @@
 package ibis.zorilla.apps;
 
-import ibis.zorilla.Config;
-import ibis.zorilla.NodeInterface;
-import ibis.zorilla.rpc.LocalSocketRPC;
+import java.util.ArrayList;
+import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import ibis.zorilla.Config;
+import ibis.zorilla.api.JobInterface;
+import ibis.zorilla.api.RemoteNode;
 
 public final class Zap {
-
-    private static final Logger logger = Logger.getLogger(Zap.class);
 
     private static void usage() {
         System.out
@@ -23,16 +22,15 @@ public final class Zap {
     }
 
     public static void main(String[] arguments) {
-        int jobIndex = -1;
+        ArrayList<UUID> ids = new ArrayList<UUID>();
         boolean killNode = false;
         boolean killNetwork = false;
-        int port = Config.DEFAULT_PORT;
-        
+        int port = RemoteNode.DEFAULT_PORT;
+
         try {
 
             for (int i = 0; i < arguments.length; i++) {
-                if (arguments[i].equals("-p")
-                        || arguments[i].equals("--port")) {
+                if (arguments[i].equals("-p") || arguments[i].equals("--port")) {
                     i++;
                     port = Integer.parseInt(arguments[i]);
                 } else if (arguments[i].equals("-k")) {
@@ -45,20 +43,26 @@ public final class Zap {
                 } else {
                     // unrecognized option.
                     if (arguments[i].startsWith("-")) {
-                        System.err
-                                .println("unrecognized option: " + arguments[i]);
+                        System.err.println("unrecognized option: "
+                                + arguments[i]);
                         usage();
                         System.exit(1);
                     }
 
-                    jobIndex = i;
+                    try {
+                        ids.add(UUID.fromString(arguments[i]));
+                    } catch (IllegalArgumentException e) {
+                        System.err.println("expecting UUID, got: "
+                                + arguments[i]);
+                        usage();
+                        System.exit(1);
+                    }
                     break;
                 }
             }
-            
-            NodeInterface node = LocalSocketRPC.createProxy(
-                    NodeInterface.class, "zorilla node", port);
-            
+
+            RemoteNode node = new RemoteNode(port);
+
             if (killNode) {
                 System.out.println("killing node");
 
@@ -69,36 +73,27 @@ public final class Zap {
                 System.out.println("killing network");
 
                 node.killNetwork();
-                
+
                 return;
             }
 
-//            logger.debug("getting job list");
-//
-//            String[] jobIDs = connection.getJobList();
-//
-//            if (jobIDs.length == 0) {
-//                System.out.println("no jobs");
-//            } else if (jobIndex == -1) {
-//                for (int i = 0; i < jobIDs.length; i++) {
-//                    System.out.println("killing job " + jobIDs[i]);
-//                    connection.cancelJob(jobIDs[i]);
-//                }
-//            } else {
-//                for (int i = jobIndex; i < command.length; i++) {
-//                    for (int j = 0; j < jobIDs.length; j++) {
-//                        if (jobIDs[j].toString().toLowerCase().startsWith(
-//                                command[i].toLowerCase())) {
-//                            System.out.println("killing job " + jobIDs[i]);
-//                            connection.cancelJob(jobIDs[i]);
-//                        }
-//                    }
-//                }
-//            }
+            if (ids.size() == 0) {
+                System.out.println("killing all jobs");
+                for(JobInterface job: node.getJobs()) {
+                    System.out.println("killing job: " + job);
+                    job.cancel();
+                }
+            
+            } else {
+                for(UUID id: ids){
+                    JobInterface job = node.getJob(id);
+                    System.out.println("killing job: " + job);
+                    job.cancel();
+                }
+            }
 
             // close connection
-   
-            
+
         } catch (Exception e) {
             System.err.println("exception on handling request: " + e);
             e.printStackTrace(System.err);
