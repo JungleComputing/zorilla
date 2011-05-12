@@ -1,6 +1,8 @@
 package ibis.zorilla.job.net;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ReadOnlyBufferException;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -271,6 +273,11 @@ public final class Call implements ObjectInput, ObjectOutput {
     public void writeArray(double[] source) throws IOException {
         getRequest().writeArray(source);
     }
+    
+    public void writeByteBuffer(ByteBuffer value) throws IOException {
+	getRequest().writeByteBuffer(value);
+	
+    }
 
     public String readString() throws IOException {
         return getReply().readString();
@@ -392,6 +399,11 @@ public final class Call implements ObjectInput, ObjectOutput {
 
     public void readArray(double[] source) throws IOException {
         getReply().readArray(source);
+    }
+
+    public void readByteBuffer(ByteBuffer source) throws IOException,
+	    ReadOnlyBufferException {
+	getReply().readByteBuffer(source);
     }
 
 }

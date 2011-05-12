@@ -11,6 +11,8 @@ import ibis.zorilla.io.ObjectOutput;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ReadOnlyBufferException;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -450,6 +452,15 @@ public class Invocation extends InputStream implements ObjectInput,
     public int read(byte[] b) throws IOException {
         readArray(b, 0, b.length);
         return b.length;
+    }
+
+    public void readByteBuffer(ByteBuffer value) throws IOException,
+	    ReadOnlyBufferException {
+	getRequest().readByteBuffer(value);
+    }
+
+    public void writeByteBuffer(ByteBuffer value) throws IOException {
+	getReply().writeByteBuffer(value);
     }
 
 }

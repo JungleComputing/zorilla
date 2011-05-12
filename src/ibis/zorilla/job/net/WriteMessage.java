@@ -6,6 +6,7 @@ import ibis.ipl.SendPort;
 import ibis.zorilla.io.ObjectOutput;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class WriteMessage implements ObjectOutput {
 
@@ -135,6 +136,10 @@ public class WriteMessage implements ObjectOutput {
 
     public void writeArray(double[] source) throws IOException {
         message.writeArray(source);
+    }
+
+    public void writeByteBuffer(ByteBuffer value) throws IOException {
+	message.writeByteBuffer(value);
     }
 
 }
