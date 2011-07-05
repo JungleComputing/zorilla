@@ -1,7 +1,5 @@
 package ibis.zorilla;
 
-import ibis.util.TypedProperties;
-
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
@@ -272,7 +270,7 @@ public final class Main {
 
         if (remote) {
             System.out.println(ADDRESS_LINE_PREFIX
-                    + node.getIPLServer().getAddress() + ADDRESS_LINE_POSTFIX);
+                    + node.network().getAddress() + ADDRESS_LINE_POSTFIX);
             System.out.flush();
 
             //will kill node if stdin is closed.

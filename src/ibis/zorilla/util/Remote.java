@@ -1,6 +1,5 @@
 package ibis.zorilla.util;
 
-import ibis.util.ThreadPool;
 import ibis.zorilla.Main;
 
 import java.io.BufferedReader;
@@ -19,7 +18,7 @@ import org.slf4j.LoggerFactory;
  * @author Niels Drost
  * 
  */
-public class Remote implements Runnable {
+public class Remote extends Thread {
 
     private static final Logger logger = LoggerFactory
             .getLogger(Remote.class);
@@ -49,7 +48,9 @@ public class Remote implements Runnable {
         this.outputPrefix = outputPrefix;
 
         // thread for parsing address
-        ThreadPool.createNew(this, "remote client");
+        setName("remote client");
+        setDaemon(true);
+        start();
     }
 
     /**

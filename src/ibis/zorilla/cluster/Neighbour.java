@@ -1,8 +1,8 @@
 package ibis.zorilla.cluster;
 
 import ibis.zorilla.Node;
-import ibis.zorilla.NodeInfo;
 import ibis.zorilla.net.Network;
+import ibis.zorilla.net.NodeInfo;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;

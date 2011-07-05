@@ -1,6 +1,6 @@
 package ibis.zorilla.gossip;
 
-import ibis.zorilla.NodeInfo;
+import ibis.zorilla.net.NodeInfo;
 
 import java.io.Serializable;
 import java.util.ArrayList;

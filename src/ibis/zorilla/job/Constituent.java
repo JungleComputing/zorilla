@@ -1,7 +1,7 @@
 package ibis.zorilla.job;
 
 import ibis.ipl.ReceivePortIdentifier;
-import ibis.zorilla.NodeInfo;
+import ibis.zorilla.net.NodeInfo;
 
 import java.io.Serializable;
 import java.util.HashSet;

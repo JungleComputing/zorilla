@@ -4,7 +4,7 @@ import ibis.ipl.IbisIdentifier;
 import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.zorilla.Node;
-import ibis.zorilla.io.Hash;
+import ibis.zorilla.dfs.Hash;
 import ibis.zorilla.io.ObjectInput;
 import ibis.zorilla.io.ObjectOutput;
 import ibis.zorilla.job.net.Call;
@@ -189,7 +189,7 @@ public class InputFile implements Receiver {
         }
     }
 
-    public void receive(ReadMessage message) {
+    public void receive(Message message) {
         job.log("message received in file", new Exception(
                 "message received in file"));
     }

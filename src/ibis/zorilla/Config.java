@@ -1,6 +1,5 @@
 package ibis.zorilla;
 
-import ibis.util.TypedProperties;
 import ibis.zorilla.job.VirtualMachine;
 
 import java.io.File;

@@ -1,10 +1,10 @@
 package ibis.zorilla.job;
 
 import ibis.util.ThreadPool;
+import ibis.zorilla.JobDescription;
 import ibis.zorilla.Node;
 import ibis.zorilla.Config;
 import ibis.zorilla.Service;
-import ibis.zorilla.api.ZorillaJobDescription;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -172,7 +172,7 @@ public final class JobService implements Service, Runnable {
         return jobs.values().toArray(new ZorillaJob[0]);
     }
 
-    public ZorillaJob submitJob(ZorillaJobDescription description,
+    public ZorillaJob submitJob(JobDescription description,
             Callback callback) throws Exception {
 
         synchronized (this) {

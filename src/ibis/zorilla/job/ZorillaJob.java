@@ -1,9 +1,9 @@
 package ibis.zorilla.job;
 
 import ibis.ipl.IbisIdentifier;
+import ibis.zorilla.JobDescription;
+import ibis.zorilla.JobPhase;
 import ibis.zorilla.api.JobInterface;
-import ibis.zorilla.api.JobPhase;
-import ibis.zorilla.api.ZorillaJobDescription;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.EndPoint;
 import ibis.zorilla.job.net.Receiver;
@@ -119,7 +119,7 @@ public abstract class ZorillaJob implements JobInterface {
 	protected abstract ZorillaPrintStream createLogFile(String fileName)
 			throws Exception, IOException;
 
-	public abstract ZorillaJobDescription getDescription();
+	public abstract JobDescription getDescription();
 
 	/**
 	 * Returns the cluster this node is in in this job.

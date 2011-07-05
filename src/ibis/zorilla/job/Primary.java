@@ -6,14 +6,13 @@ import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
+import ibis.zorilla.JobDescription;
+import ibis.zorilla.JobPhase;
 import ibis.zorilla.Node;
-import ibis.zorilla.NodeInfo;
 import ibis.zorilla.api.JavaJobDescription;
 import ibis.zorilla.api.JobInterface;
-import ibis.zorilla.api.JobPhase;
 import ibis.zorilla.api.NativeJobDescription;
 import ibis.zorilla.api.VirtualJobDescription;
-import ibis.zorilla.api.ZorillaJobDescription;
 import ibis.zorilla.io.ObjectOutput;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.Worker.Status;
@@ -23,6 +22,7 @@ import ibis.zorilla.job.net.Factory;
 import ibis.zorilla.job.net.Invocation;
 import ibis.zorilla.job.net.Receiver;
 import ibis.zorilla.job.net.WriteMessage;
+import ibis.zorilla.net.NodeInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -73,7 +73,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
     private final UUID id;
 
-    private final ZorillaJobDescription jobDescription;
+    private final JobDescription jobDescription;
 
     // *** FILES *** \\
 
@@ -147,7 +147,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
 
     Random random = new Random();
 
-    public Primary(ZorillaJobDescription description, Callback callback,
+    public Primary(JobDescription description, Callback callback,
             Node node) throws Exception, IOException {
 
         this.node = node;
@@ -1157,7 +1157,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
         }
     }
 
-    public void receive(ReadMessage message) {
+    public void receive(Message message) {
         Exception e = new Exception("primary received message");
         log(e.getMessage(), e);
     }
@@ -1473,7 +1473,7 @@ public final class Primary extends ZorillaJob implements Runnable, Receiver {
     }
 
     @Override
-    public ZorillaJobDescription getDescription() {
+    public JobDescription getDescription() {
         return jobDescription;
     }
 

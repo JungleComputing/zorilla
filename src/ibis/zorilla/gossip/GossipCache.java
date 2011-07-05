@@ -1,7 +1,7 @@
 package ibis.zorilla.gossip;
 
 import ibis.zorilla.Node;
-import ibis.zorilla.NodeInfo;
+import ibis.zorilla.net.NodeInfo;
 
 import java.util.ArrayList;
 import java.util.BitSet;

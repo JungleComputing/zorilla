@@ -2,9 +2,9 @@ package ibis.zorilla.cluster;
 
 import ibis.util.ThreadPool;
 import ibis.zorilla.Node;
-import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
 import ibis.zorilla.net.Network;
+import ibis.zorilla.net.NodeInfo;
 
 import java.io.IOException;
 import java.io.InputStream;

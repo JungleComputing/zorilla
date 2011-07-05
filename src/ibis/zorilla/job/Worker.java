@@ -3,8 +3,8 @@ package ibis.zorilla.job;
 import ibis.util.RunProcess;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
+import ibis.zorilla.JobDescription;
 import ibis.zorilla.Node;
-import ibis.zorilla.api.JavaJobDescription;
 import ibis.zorilla.api.NativeJobDescription;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.util.StreamWriter;
@@ -149,7 +149,7 @@ public final class Worker implements Runnable {
     private ProcessBuilder javaCommand(File workingDir) throws Exception {
         ProcessBuilder result = new ProcessBuilder();
         
-        JavaJobDescription description = (JavaJobDescription) job.getDescription();
+        JobDescription description = (JobDescription) job.getDescription();
 
         String javaHome = System.getProperty("java.home");
         // String pathSeparator = System.getProperty("path.separator");

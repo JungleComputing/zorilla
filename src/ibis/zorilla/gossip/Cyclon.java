@@ -2,7 +2,7 @@ package ibis.zorilla.gossip;
 
 import ibis.util.ThreadPool;
 import ibis.zorilla.Node;
-import ibis.zorilla.NodeInfo;
+import ibis.zorilla.net.NodeInfo;
 
 import java.io.File;
 import java.io.IOException;

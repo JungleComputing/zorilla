@@ -6,15 +6,13 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.zorilla.Node;
-import ibis.zorilla.NodeInfo;
-import ibis.zorilla.Service;
+import ibis.zorilla.net.NodeInfo;
 
 /**
  * Class taking care of maintaining a list of "close-by" nodes
  */
-public abstract class ClusterService implements Service {
+public abstract class ClusterService {
 
     public static final byte OPCODE_NEIGHBOUR_INFO_REQUEST = 1;
 

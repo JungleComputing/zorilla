@@ -193,7 +193,7 @@ final class PrimaryOutputStream extends OutputStream implements Receiver {
         output.writeObject(endPoint.getID());
     }
 
-    public void receive(ReadMessage message) {
+    public void receive(Message message) {
         try {
             logger.debug("writing to file from message");
 

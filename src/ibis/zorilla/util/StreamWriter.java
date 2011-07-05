@@ -1,7 +1,5 @@
 package ibis.zorilla.util;
 
-import ibis.util.ThreadPool;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -12,7 +10,7 @@ import org.apache.log4j.Logger;
  * 
  *         reads data from a stream and writes it to one or more OutputStreams.
  */
-public final class StreamWriter implements Runnable {
+public final class StreamWriter extends Thread {
 
     static final Logger logger = Logger.getLogger(StreamWriter.class);
 
@@ -30,7 +28,9 @@ public final class StreamWriter implements Runnable {
 
         logger.debug("created stream writer");
 
-        ThreadPool.createNew(this, "stream writer");
+        setName("stream writer");
+        setDaemon(true);
+        start();
     }
 
     public StreamWriter(InputStream in, OutputStream out) {

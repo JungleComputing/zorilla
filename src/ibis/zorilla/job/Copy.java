@@ -6,13 +6,13 @@ import ibis.ipl.ReadMessage;
 import ibis.ipl.ReceivePortIdentifier;
 import ibis.util.ThreadPool;
 import ibis.zorilla.Config;
+import ibis.zorilla.JobDescription;
+import ibis.zorilla.JobPhase;
 import ibis.zorilla.Node;
 import ibis.zorilla.api.JavaJobDescription;
 import ibis.zorilla.api.VirtualJobDescription;
 import ibis.zorilla.api.NativeJobDescription;
 
-import ibis.zorilla.api.JobPhase;
-import ibis.zorilla.api.ZorillaJobDescription;
 import ibis.zorilla.io.ObjectInput;
 import ibis.zorilla.io.ZorillaPrintStream;
 import ibis.zorilla.job.net.Call;
@@ -60,7 +60,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
 
     // *** STATIC INFO ON JOB *** \\
 
-    private ZorillaJobDescription jobDescription;
+    private JobDescription jobDescription;
 
     // *** FILES *** \\
 
@@ -203,7 +203,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
     }
 
     @SuppressWarnings("unchecked")
-    private synchronized void readDynamicState(ReadMessage in)
+    private synchronized void readDynamicState(Message in)
             throws IOException, Exception {
         try {
             status = (Map<String, String>) in.readObject();
@@ -412,7 +412,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
         return stderr;
     }
 
-    public void receive(ReadMessage message) {
+    public void receive(Message message) {
         try {
             int opcode = message.readInt();
 
@@ -541,7 +541,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
                             + "in initialization of copy");
                 }
 
-                jobDescription = (ZorillaJobDescription) call.readObject();
+                jobDescription = (JobDescription) call.readObject();
 
                 File jobDir = new File(node.config().getTmpDir(), id.toString());
 
@@ -957,7 +957,7 @@ public final class Copy extends ZorillaJob implements Receiver, Runnable {
     }
 
     @Override
-    public ZorillaJobDescription getDescription() {
+    public JobDescription getDescription() {
         return jobDescription;
     }
 

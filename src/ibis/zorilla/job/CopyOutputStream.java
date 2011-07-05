@@ -98,7 +98,7 @@ final class CopyOutputStream extends OutputStream implements Receiver {
         endPoint.close();
     }
 
-    public void receive(ReadMessage message) {
+    public void receive(Message message) {
         Exception e = new Exception("message received in copy file");
         copy.log(e.getMessage(), e);
     }

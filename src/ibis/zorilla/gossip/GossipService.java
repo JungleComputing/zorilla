@@ -17,9 +17,9 @@ import org.apache.log4j.Logger;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.zorilla.Config;
 import ibis.zorilla.Node;
-import ibis.zorilla.NodeInfo;
 import ibis.zorilla.Service;
 import ibis.zorilla.net.Network;
+import ibis.zorilla.net.NodeInfo;
 import vu.platform934.analysis.Chart;
 
 public class GossipService implements Service {
